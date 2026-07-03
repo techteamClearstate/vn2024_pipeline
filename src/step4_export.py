@@ -210,10 +210,10 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
                        "(Match_Scope column not present in RawData).", hdr)
         return
     L = {n: xl_col_to_name(cols.index(n)) for n in
-         [cfg.VALUE_COL, "Quantity", cfg.SCOPE_COL, cfg.TIER_COL, "Family"]
+         [cfg.VALUE_COL, "Quantity", cfg.SCOPE_COL, cfg.TIER_COL]
          if n in cols}
     val, qty = L[cfg.VALUE_COL], L["Quantity"]
-    sc, ti, fa = L[cfg.SCOPE_COL], L[cfg.TIER_COL], L["Family"]
+    sc, ti = L[cfg.SCOPE_COL], L[cfg.TIER_COL]
 
     def rng(c):
         return f"RawData!${c}$2:${c}${last_raw}"
@@ -241,13 +241,17 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
         (cfg.SCOPE_EXTENDED_LABEL, scoped(cfg.SCOPE_EXTENDED_LABEL)),
         ("Total", ""),
     ]
+    # Upper bound = the bound tiers (family+category), gated on Match_Tier — NOT on
+    # a non-blank Family — because the family/manufacturer re-rank now predicts a
+    # brand for many non-bound rows too, so "Family<>''" no longer means "bound".
+    bt = sorted(cfg.DASHBOARD_BOUND_TIERS)
     for i, (label, sc_crit) in enumerate(rows):
         r = i + 1
         ws.write_string(r, 0, label, lbl)
         lower = f'=SUMIFS({rng(val)},{sc_crit}{rng(ti)},"family")'
-        upper = f'=SUMIFS({rng(val)},{sc_crit}{rng(fa)},"<>")'
-        vol   = f'=SUMIFS({rng(qty)},{sc_crit}{rng(fa)},"<>")'
-        ships = f'=COUNTIFS({sc_crit}{rng(fa)},"<>")'
+        upper = "=" + "+".join(f'SUMIFS({rng(val)},{sc_crit}{rng(ti)},"{t}")' for t in bt)
+        vol   = "=" + "+".join(f'SUMIFS({rng(qty)},{sc_crit}{rng(ti)},"{t}")' for t in bt)
+        ships = "=" + "+".join(f'COUNTIFS({sc_crit}{rng(ti)},"{t}")' for t in bt)
         ws.write_formula(r, 1, lower, money)
         ws.write_formula(r, 2, upper, money)
         ws.write_formula(r, 3, vol,   money)
@@ -256,7 +260,7 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
     ws.write(len(rows) + 2, 0,
              f"Surgical = HS4 in {sorted(cfg.SURGICAL_HS4)}; Extended = all other "
              f"HS4 recovered by the widened match. Bound = family+category rows "
-             f"(non-blank Family). The Dashboard/rollups show Surgical only.", note)
+             f"(Match_Tier in {bt}). The Dashboard/rollups show Surgical only.", note)
     ws.freeze_panes(1, 0)
 
 
@@ -542,8 +546,20 @@ def run_export() -> Path:
     # so the numbers are identical. The full row set stays in the CSV/TSV cache.
     if len(df_raw) > cfg.XLSX_MAX_ROWS - 1:
         kept = df_raw[df_raw["Match_Status"] == "Matched"].reset_index(drop=True)
+        note = f"writing {len(kept):,} matched rows only"
+        # A handful of very large markets (e.g. India FY2025 ~1.1M matched rows)
+        # still overflow the sheet even after keeping only matched rows. Retain
+        # the highest-Total_Value rows up to the Excel cap so the workbook holds
+        # the material value; the complete matched set stays in the CSV, and the
+        # authoritative $ bounds come from the (full) dashboard slice above.
+        if len(kept) > cfg.XLSX_MAX_ROWS - 1:
+            cap = cfg.XLSX_MAX_ROWS - 1
+            kept = (kept.sort_values(cfg.VALUE_COL, ascending=False)
+                        .head(cap).reset_index(drop=True))
+            note = (f"matched rows also exceed the cap — writing the top "
+                    f"{len(kept):,} by {cfg.VALUE_COL}")
         print(f"  [export] RawData {len(df_raw):,} rows exceeds Excel limit "
-              f"({cfg.XLSX_MAX_ROWS:,}); writing {len(kept):,} matched rows only "
+              f"({cfg.XLSX_MAX_ROWS:,}); {note} "
               f"(full set remains in {cfg.MAPPED_CSV.name}).")
         df_raw = kept
     dims   = _formula_dashboard_dims(df_raw)

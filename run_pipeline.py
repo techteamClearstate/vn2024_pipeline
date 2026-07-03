@@ -32,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import settings as cfg
-from src import step1_extract, step2_match, step3_map, step4_export
+from src import step1_extract, step2_match, step3_map, step3b_hs_prior, step4_export
 
 STAGES = ["extract", "match", "map", "export"]
 
@@ -96,6 +96,11 @@ def main():
     if start_idx <= 2:
         print("\n[3/4] Mapping")
         step3_map.run_mapping()
+        # Re-rank: HS8×maker product prior fills product-less rows (needs GT
+        # labels for the market; guarded so GT-less markets skip cleanly).
+        if getattr(cfg, "USE_HS_PRIOR", False) and \
+                (cfg.INTERMEDIATE / "benchmark_gt_2024.csv").exists():
+            step3b_hs_prior.run(full=True)
 
     if start_idx <= 3:
         print("\n[4/4] Export")

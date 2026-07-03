@@ -24,20 +24,23 @@ from src.step1_extract import canonicalize_products, norm_party
 
 
 def _derive_manufacturers(rows: pd.DataFrame) -> pd.Series:
-    """Recover a manufacturer for rows that have none by matching the curated
-    alias cores against the Importer/Exporter trade-party blob (same cores as
-    Tier-3, longest-first). Rows with no hit resolve to "Unspecified"."""
+    """Recover a manufacturer by matching the curated alias cores (longest-first)
+    against the Importer/Exporter trade-party blob PLUS the product description —
+    the description often names the maker after "HSX:" (Hãng Sản Xuất). This alias
+    match is ~99.9% precise, so its hit is preferred over the reference Player.
+    Rows with no hit resolve to "" (caller keeps the existing value)."""
     with open(cfg.MANUFACTURER_ALIAS_PKL, "rb") as fh:
         alias_cores = pickle.load(fh)                # [(core, canonical), …]
-    blob = (rows[cfg.MANUFACTURER_PARTY_COLS].fillna("").astype(str)
-            .agg(" ".join, axis=1))
+    cols = [c for c in (list(cfg.MANUFACTURER_PARTY_COLS) + [cfg.VN_DESCRIPTION_COL])
+            if c in rows.columns]
+    blob = rows[cols].fillna("").astype(str).agg(" ".join, axis=1)
 
     def derive(text: str) -> str:
         b = " " + norm_party(text) + " "
         for core, canonical in alias_cores:
             if " " + core + " " in b:
                 return canonical
-        return cfg.UNSPECIFIED_LABEL
+        return ""
 
     return blob.map(derive)
 
@@ -55,14 +58,23 @@ def standardize_for_dashboard(out: pd.DataFrame) -> pd.DataFrame:
       * ASP_USD = Total_Value_USD / Quantity per shipment (qty>0) for the
         Min/Max/Avg ASP formulas.
     """
-    out = out.copy()
+    # Mutated in place: the caller (run_mapping) reassigns its variable to our
+    # return value and never reuses the frame passed in, so a defensive copy here
+    # just doubles peak memory — which OOMs the 2M-row India export at the system
+    # commit ceiling. Operate on `out` directly.
     tier   = out[cfg.TIER_COL].fillna("")
     bound  = tier.isin(cfg.DASHBOARD_BOUND_TIERS)
     is_cat = tier == "category"
 
+    # Manufacturer: derive from the trade parties + description for EVERY row and
+    # prefer that alias hit (~99.9% precise) over the reference Player. Rows with
+    # no alias hit keep whatever maker they already carry.
+    if cfg.MANUFACTURER_PARTY_COLS[0] in out.columns:
+        derived = _derive_manufacturers(out)
+        cur = out["Manufacturer"].fillna("")
+        out["Manufacturer"] = derived.where(derived != "", cur)
+
     out.loc[is_cat, "Family"] = cfg.UNSPECIFIED_LABEL
-    if cfg.MANUFACTURER_PARTY_COLS[0] in out.columns and is_cat.any():
-        out.loc[is_cat, "Manufacturer"] = _derive_manufacturers(out.loc[is_cat])
 
     for col in [cfg.DASHBOARD_OU_COL, "Sub-segment", "Product_V0",
                 "Manufacturer", "Family"]:
@@ -87,7 +99,12 @@ def run_mapping() -> pd.DataFrame:
     with open(cfg.MATCHED_MANUFACTURER_JSON) as fh:
         matched_mfr = json.load(fh)
 
-    vn = pd.read_csv(cfg.VN_TSV, sep="\t", low_memory=False, dtype=str)
+    # Read ONLY the carry-through columns (KEEP_COLS) this stage joins onto —
+    # the wide 24-col × 2M-row TSV otherwise exhausts commit charge on India.
+    # Output is identical: the frame is subset to `keep` immediately below.
+    _keepset = set(cfg.KEEP_COLS)
+    vn = pd.read_csv(cfg.VN_TSV, sep="\t", dtype=str,
+                     usecols=lambda c: c in _keepset)
 
     seg, subseg, prod_v0, player, family = [], [], [], [], []
     status, tier, conf = [], [], []

@@ -167,6 +167,11 @@ def build_keyword_lookup() -> int:
             "Family_Name": r[c["keyword"]],
         }
 
+    # Benchmark-supervised gap-fill: merge brand keywords mined from the human
+    # labels (train split only). The reference always WINS on a key conflict, so
+    # harvested entries only ADD families the curated reference lacked.
+    n_harvest = _merge_harvested_keywords(lookup)
+
     prefix_map = defaultdict(list)
     for kw in sorted(lookup.keys(), key=len, reverse=True):
         if len(kw) >= cfg.PREFIX_LEN:
@@ -177,9 +182,31 @@ def build_keyword_lookup() -> int:
     with open(cfg.PREFIX_MAP_PKL, "wb") as fh:
         pickle.dump(dict(prefix_map), fh)
 
+    extra = f" (+{n_harvest:,} benchmark-harvested)" if n_harvest else ""
     print(f"  [lookup] {len(lookup):,} active keywords "
-          f"({len(prefix_map):,} prefix buckets) after blacklist")
+          f"({len(prefix_map):,} prefix buckets) after blacklist{extra}")
     return len(lookup)
+
+
+def _merge_harvested_keywords(lookup: dict) -> int:
+    """Add benchmark-harvested brand keywords into `lookup` in place, skipping any
+    keyword the reference already defines (reference wins) or that the blacklist
+    forbids. Returns the count of net-new keywords added. No-op unless
+    cfg.USE_BENCHMARK_HARVEST and the harvest pickle exists."""
+    if not getattr(cfg, "USE_BENCHMARK_HARVEST", False):
+        return 0
+    path = getattr(cfg, "HARVEST_KEYWORDS_PKL", None)
+    if not path or not Path(path).exists():
+        return 0
+    with open(path, "rb") as fh:
+        harvested = pickle.load(fh)
+    added = 0
+    for kw, rec in harvested.items():
+        if kw in lookup or kw in cfg.BLACKLIST or len(kw) < cfg.MIN_KEYWORD_LEN:
+            continue
+        lookup[kw] = rec
+        added += 1
+    return added
 
 
 def _canon_sep(s) -> str:
@@ -332,12 +359,28 @@ def build_manufacturer_lexicon() -> int:
     for canonical, cores in cfg.MANUFACTURER_ALIASES.items():
         for core in cores:
             core_to_mfr[norm_party(core)] = canonical
+    n_curated = len(core_to_mfr)
+
+    # Benchmark-supervised gap-fill: add maker-name aliases mined from the human
+    # labels (train split only). Curated cores WIN on conflict.
+    n_harvest = 0
+    if getattr(cfg, "USE_BENCHMARK_HARVEST", False):
+        path = getattr(cfg, "HARVEST_MANUFACTURERS_PKL", None)
+        if path and Path(path).exists():
+            with open(path, "rb") as fh:
+                for core, canonical in pickle.load(fh):
+                    core = norm_party(core)
+                    if core and core not in core_to_mfr:
+                        core_to_mfr[core] = canonical
+                        n_harvest += 1
+
     ordered = sorted(core_to_mfr.items(), key=lambda kv: len(kv[0]), reverse=True)
 
     with open(cfg.MANUFACTURER_ALIAS_PKL, "wb") as fh:
         pickle.dump(ordered, fh)
+    extra = f" (+{n_harvest:,} benchmark-harvested)" if n_harvest else ""
     print(f"  [manufacturer] {len(ordered):,} alias cores → "
-          f"{len(set(core_to_mfr.values())):,} manufacturers")
+          f"{len(set(core_to_mfr.values())):,} manufacturers{extra}")
     return len(ordered)
 
 

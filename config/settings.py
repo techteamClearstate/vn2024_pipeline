@@ -39,27 +39,27 @@ OUTPUT_MIRROR_COUNTRY_FOLDERS = {
 
 # Source files (place these in data/uploads/)
 VN_SOURCE_XLSX   = UPLOADS_DIR / "VN-2024_Processed-MLmap_analysis_v0.xlsx"
-# Reference brand/model list. Swapped (2026-07) from Surg_Brand_model_list_V0.xlsx
-# to the richer master "List of companies by sub-OU" (5,094 families / 1,216
-# companies vs 3,714 / 957). Its header sits on a lower row and its columns are
-# named differently, so V0_HEADER_ROW + V0_SOURCE_COLS normalize it to the
-# logical V0_COLS names the pipeline uses everywhere downstream.
-V0_REFERENCE_XLSX = UPLOADS_DIR / "List_of_companies_v1.0_Master.xlsx"
+# Reference brand/model list. Swapped (2026-07, iter-12) to the team's newest
+# canonical master "Surg_Brand_model_list_Master 03July26.xlsx" (Mabel's list
+# merged with MDT_EURASIA, nomenclature standardized to Eurasia forms). We use
+# its "Updated (excl. generic)" tab (10,392 rows) which already DROPS the 709
+# families flagged generic/irrelevant in column I (e.g. "root canal"-class,
+# "Endotracheal Tube", "Filters", "Disposable") — a balanced, non-aggressive
+# irrelevant-term removal curated by the team. Its columns are already named
+# Segment/Sub-segment/Product/Player/Model/ Family Name (logical V0_COLS names),
+# header on row 0, so no V0_SOURCE_COLS remap is needed.
+#   Previous reference (List_of_companies_v1.0_Master.xlsx, sheet "List of
+#   companies by sub-OU", header row 7) kept for provenance in data/uploads/.
+V0_REFERENCE_XLSX = UPLOADS_DIR / "Surg_Brand_model_list_Master_03July26.xlsx"
 
 # Sheet names
 VN_SHEET = "RawData"
-V0_SHEET = "List of companies by sub-OU"
+V0_SHEET = "Updated (excl. generic)"
 # Header row (0-indexed) in the reference sheet; None → pandas default (row 0).
-V0_HEADER_ROW = 7
+V0_HEADER_ROW = 0
 # Map the reference file's own column names → the logical V0_COLS values below.
-# (Set to None to use the reference columns as-is, i.e. already V0-named.)
-V0_SOURCE_COLS = {
-    "Operating Unit (OU)":          "Segment",
-    "Sub Operating Unit (Sub-OU)":  "Sub-segment",
-    "Product Category":             "Product",
-    "Company":                      "Player",
-    "Family":                       "Model/ Family Name",
-}
+# (None → reference columns are already V0-named, used as-is.)
+V0_SOURCE_COLS = None
 
 # Intermediate cache files
 VN_TSV          = INTERMEDIATE / "vn_rawdata.tsv"
@@ -76,6 +76,101 @@ MAPPED_CSV      = INTERMEDIATE / "vn_v0_mapped.csv"
 CATEGORY_LEX_PKL     = INTERMEDIATE / "category_lex.pkl"      # phrase → category record
 HS8_SEGMENT_PKL      = INTERMEDIATE / "hs8_segment.pkl"       # HS8 → {segment, share}
 MATCHED_CATEGORY_JSON = INTERMEDIATE / "matched_category.json"  # per-row category hit
+
+# ── Benchmark-supervised harvest (recall expansion from human labels) ───────
+# When USE_BENCHMARK_HARVEST, build_keyword_lookup / build_manufacturer_lexicon
+# MERGE in brand/maker entries mined from the human-labeled Client-Ready GT
+# (tools/harvest_from_benchmark.py). The reference always WINS on a key conflict,
+# so harvested entries only FILL GAPS the curated reference lacked. Mining runs
+# on the TRAIN split only; the eval measures on the held-out TEST split, so the
+# reported recall gain is honest generalization (we learn brand STRINGS, not
+# per-row answers). Set False to fall back to the reference-only lexicons.
+USE_BENCHMARK_HARVEST      = True
+# HS8×Manufacturer product prior (recall re-rank). A narrow tariff line + a known
+# maker predicts one product; learned from the human labels (train split) and
+# applied ONLY to rows the family/category passes left product-less (Tier-3 maker
+# or unmatched), so it never overrides a stronger lexical hit. Held-out validated.
+USE_HS_PRIOR               = True
+HS_PRODUCT_PRIOR_PKL       = INTERMEDIATE / "hs_product_prior.pkl"
+# Tuned on held-out (2026-07): share 0.50 + loosened hs8-only 0.55/N3 gave the
+# best held-out product recall 80.2% / precision 85.2%.
+HS_MAKER_MIN_SHARE         = 0.50   # (hs8, maker) dominant-device purity floor
+HS_MAKER_MIN_N             = 3      # … with ≥N supporting train rows
+HS_ONLY_MIN_SHARE          = 0.55   # hs8-only fallback (maker-less rows) purity floor
+HS_ONLY_MIN_N              = 3
+# Token-conditioned prior: within an HS8, a discriminative DESCRIPTION token
+# (e.g. "spinal", "brace", "gamma") predicts the device far better than the maker
+# alone — it disambiguates the spine-vs-trauma / nail-vs-plate confusions the coarse
+# (hs8,maker) prior gets wrong. Learned (hs8, token)→dominant OU_Device on the labels;
+# takes PRIORITY over hs_maker/hs_only. Applied ONLY to non-family/non-category rows
+# so the audited lexical tiers (and the dashboard $ bounds) stay untouched.
+# Held-out validated: recall/precision 80.3%/85.3% → 91.5%/91.5%.
+HS_TOKEN_MIN_SHARE         = 0.70   # (hs8, token) dominant-device purity floor
+HS_TOKEN_MIN_N             = 5      # … with ≥N supporting train rows
+HS_TOKEN_MIN_LEN           = 3      # ignore tokens shorter than this
+# MANUFACTURER re-rank: after deriving a maker lexically from the trade-party +
+# description blob (99.9% precise), fill still-blank makers from a learned
+# (hs8, token)→dominant GT Manufacturer prior. Recall-first thresholds (looser
+# than the device prior). Held-out validated ~98.7% recall / precision.
+USE_MFR_PRIOR              = True
+HS_TOKEN_MFR_MIN_SHARE     = 0.50   # (hs8, token) dominant-maker purity floor
+HS_TOKEN_MFR_MIN_N         = 3
+# FAMILY re-rank: Family = the brand/model. Where the lexical family (Tier-1)
+# passes leave it blank, predict the brand with a per-HS8 TF-IDF nearest-family
+# classifier learned from the GT "Family Name" (unigrams + bigrams + model-code
+# tokens, code/bigram up-weighted). Recall-first. Held-out validated ~91% recall.
+USE_FAMILY_PRIOR           = True
+FAMILY_PRIOR_MIN_HS_ROWS   = 3      # need ≥N labeled rows in an HS8 to model it
+# CROSS-MARKET TRANSFER: HS is internationally harmonized to 6 digits and device
+# tokens are language-agnostic, so a VN-learned (hs6, token)→device / →maker rule
+# transfers to GT-less markets (PK/India). The full VN prior is persisted to a
+# stable, country-agnostic file (survives the per-market overwrite of the working
+# prior); GT-less runs load it and apply the hs6 fallback after hs8 misses.
+USE_HS6_TRANSFER           = True
+TRANSFER_PRIOR_PKL         = INTERMEDIATE / "transfer_prior.pkl"         # VN-learned, reused on GT-less markets
+HS6_TOKEN_MIN_SHARE        = 0.75   # (hs6, token) dominant-device purity floor (stricter — coarser key)
+HS6_TOKEN_MIN_N            = 8
+HS6_TOKEN_MFR_MIN_SHARE    = 0.60   # (hs6, token) dominant-maker purity floor
+HS6_TOKEN_MFR_MIN_N        = 5
+# GLOBAL token-specificity gate for transfer: a device word only transfers if it is
+# GLOBALLY discriminative — across ALL VN GT it maps to ONE device with high purity.
+# This rejects multi-referent device words ("tube"→blood-tube vs balloon-tube,
+# "valve"/"pressure"/"instruments") that were locally pure in VN but collide abroad,
+# while keeping specific ones ("angioplasty"/"oxygenator"/"forceps"/"trocar"). The
+# combination (global specificity ∧ per-hs6 purity) is what makes transfer safe.
+HS6_TOKEN_GLOBAL_SHARE     = 0.85
+HS6_TOKEN_GLOBAL_N         = 12
+# CORROBORATION GATE (iter-7): an hs_prior product fill is only KEPT when the
+# description shares at least one discriminative token with the predicted device's
+# learned vocabulary (the tokens that genuinely co-occur with that device in the VN
+# GT, plus the device's own name tokens). Pure HS-code guesses with no lexical
+# support in the text — VN's dominant device stamped onto an unrelated foreign row
+# (dental→Forceps, ultrasound→PTCA Balloon, IOL→Hernia Mesh, knee→Trauma Plating) —
+# are rejected (row stays unmatched). Generalizes the hs6 containment gate to every
+# apply path (national coarse + token + transfer). Market-agnostic, persisted.
+USE_HS_PRIOR_CORROB        = True
+CORROB_MIN_N               = 20     # a token must co-occur ≥N× with a device in GT
+                                    # to enter that device's corroboration vocabulary
+                                    # (kills tiny-support noise: 'per' n=7, 'strip' n=3)
+CORROB_MIN_SHARE           = 0.72   # …and that device must be the token's GLOBAL
+                                    # MAJORITY referent at this SHARE. Measured cut:
+                                    # keeps the containment-uncovered device words
+                                    # (screw 0.83 / plate 0.93 / bone 0.86 / nail 0.72
+                                    # → Trauma), drops the cross-market leaks (shell
+                                    # 0.52→hip cup mislabeled Trauma; electrode 0.64→ECG
+                                    # mislabeled Electrosurgery; instrument 0.61; clip
+                                    # 0.38; pin 0.46). Words already IN the device name
+                                    # (stent/balloon/coil/mesh/cage/suture/cannula/valve)
+                                    # stay corroborated via _cue_tokens containment, so
+                                    # this only prunes the weak global-vocab tail.
+HARVEST_KEYWORDS_PKL       = INTERMEDIATE / "harvest_keywords.pkl"       # kw → V0 record
+HARVEST_MANUFACTURERS_PKL  = INTERMEDIATE / "harvest_manufacturers.pkl"  # [(core, canonical)]
+BENCHMARK_TEST_JK          = INTERMEDIATE / "benchmark_test_jk.csv"      # held-out join keys
+HARVEST_TEST_FRAC          = 0.30   # fraction of GT held out for honest measurement
+# Precision guards on what may be harvested as a keyword (protect the trie):
+HARVEST_MIN_ROWS           = 3      # a brand must appear in ≥N train GT rows
+HARVEST_MIN_OCCUR          = 0.50   # ≥ this share of those rows must literally contain it
+HARVEST_MIN_PURITY         = 0.60   # ≥ this share must share one dominant OU_Device
 
 # Final output — the workbook is country-stamped at export time
 # (outputs/<Country>_ML_Map_Mapped.xlsx) so each market's output coexists; the
@@ -113,6 +208,19 @@ SURGICAL_HS4 = {9018, 9019, 9021, 9022}
 # The export's "Scope" tab reports Surgical vs Extended value so the widening is
 # transparent. Set False to restore the original surgical-only behaviour.
 MATCH_ALL_HS4         = True
+# HS4 chapters kept OUT of scope even when MATCH_ALL_HS4 — clearly non-device goods
+# whose descriptions collide with surgical brand names. 9027 = instruments for
+# physico-chemical analysis (lab/analytical): e.g. "MARATHON FILAMENT FOR GC/MS"
+# collided onto Medtronic's Marathon neuro micro-catheter. These are never surgical
+# devices, so excluding the chapter removes the collision class without touching the
+# surgical GT (which is 9018/9021-dominated). Empty set = original widened behaviour.
+# 3822 = diagnostic / laboratory reagents & calibrators (Abbott ALINITY/ARCHITECT
+# assays, glucose test strips, FACS lysing/wash solutions). Never surgical devices,
+# but the widened family/category pass collided them onto implant brands ('VIVA CHECK'
+# glucose strips → CRT-D 'Viva'; 'H100 ELUENT' reagent kit → Pulse Oximeter; FACS
+# reagents → 'Sheath'). Excluding the chapter drops the whole reagent collision class
+# (measured: 4/100 PK false product matches) and keeps the dashboard to real devices.
+SCOPE_EXCLUDE_HS4     = {9027, 3822}
 SCOPE_COL             = "Match_Scope"
 SCOPE_SURGICAL_LABEL  = "Surgical"
 SCOPE_EXTENDED_LABEL  = "Extended"
@@ -155,6 +263,161 @@ BLACKLIST = {
     "round", "flat", "sharp", "rigid", "delta", "omega", "alpha", "beta",
     "gamma", "prime", "star", "gold", "silver", "blue", "green", "red", "white",
     "black", "chrome",
+    # Benchmark-driven additions (2026-07): generic words / bare materials /
+    # company names that appear as "families" in the reference but map to an
+    # arbitrary specific product, producing systematic false positives when
+    # validated against the human-labeled VN Client-Ready ground truth. Each was
+    # ~0% product-correct on GT-joined rows.
+    "titanium", "hook", "radial", "step", "consumables", "peek", "dynamic",
+    "surgical support", "alligator", "meril life", "ruler",
+    # "autosuture" is a Covidien surgical-stapling brand but resolves to Trocars
+    # in the reference — 100% wrong (35 GT rows, all staplers) → blacklist.
+    "autosuture",
+    # Generic-word family keywords (2026-07-03): real reference brand strings
+    # that collide with common description words and force wrong Tier-1 products.
+    # Measured via tools/measure_generic_family.py against VN GT (GT-proven
+    # wrong) and/or eyeballed on VN descriptions. Each removes a false-positive
+    # product from the $ bound (fertilizer/reagents/lab-standards, not devices):
+    #   liquid  0/1 GT  — BiOWiSH fertilizer, wastewater, drug infusions
+    #   combo   —        — dengue/HAV/rotavirus rapid-test kits (→ DES stent)
+    #   seal    0/14 GT  — dental machines / Angio-Seal (→ TEVAR grafts)
+    #   cobalt  0/1 GT   — humidity cards, lab standards (→ CRT-D)
+    #   helix   16/80 GT — 80% wrong
+    #   export  0/4 GT   — GT-proven wrong
+    #   cleaner —        — hematology probe-cleaner reagents (→ catheter)
+    #   xpress  —        — DELFIA Xpress immunoassay chemicals
+    #   barb    —        — pancreatic stents (→ barbed suture)
+    "liquid", "combo", "seal", "cobalt", "helix", "export", "cleaner",
+    "xpress", "barb",
+    # Generic-word family keywords (2026-07-03, PK spot-check evidence): net-negative
+    # brand strings that collide with common words and mislabel unrelated goods.
+    #   engine — Caterpillar/marine gas-engine parts & coolant → Aspiration Pumps
+    #            (Penumbra "Engine"); the real "Engine Medical" maker is still caught
+    #            by the Tier-3 manufacturer alias, so only the false family is removed.
+    #   radiopaque — a material descriptor; fires on IV catheters/markers → Bone Cement.
+    "engine", "radiopaque",
+}
+
+# ── Tier-1 family conflict guards ──────────────────────────────────────────
+# A family match whose resolved Product contains `product_cue` is REJECTED (the
+# row falls through to the Tier-2 category pass) when the description contains
+# any `forbid` cue and none of the `allow` cues. This stops ambiguous brand
+# names that a maker sells across product lines from being force-mapped to the
+# wrong product by a Tier-1 hit. The motivating case: "Prolene" is both J&J's
+# hernia mesh AND its most common suture, and the reference maps the family to
+# Synthetic Mesh — so "PROLENE SUTURE ..." rows (HS 3006) were mislabeled as
+# hernia mesh. Here a mesh-product hit on a row that says "suture" (and not
+# "mesh") is released to Tier-2, where the suture qualifier maps it correctly.
+TIER1_CONFLICT_GUARDS = [
+    {"product_cue": "mesh", "forbid": {"suture"}, "allow": {"mesh"}},
+    # "Onyx" is BOTH Medtronic's Resolute Onyx coronary DRUG-ELUTING STENT and its
+    # Onyx liquid embolic; the reference maps the family to Liquid Embolics, so
+    # "STENT ... ONYX 3.50x38RX" rows (HS 9021) were mislabeled as embolics. Release
+    # an embolic-product hit whose description says "stent" and carries no
+    # embolization/aneurysm cue → Tier-2 maps it to Stent (correct). Legit embolic
+    # rows (which name embolization/AVM/aneurysm) keep the family via the allow set.
+    {"product_cue": "embolic", "forbid": {"stent", "coronary", "endovascular"},
+     "allow": {"embolization", "embolisation", "aneurysm", "avm", "fistula",
+               "malformation"}},
+]
+
+# ── General Tier-1 consistency reranker (2026-07-03) ───────────────────────
+# A data-driven GENERALIZATION of the hand-written TIER1_CONFLICT_GUARDS above.
+# Per-brand guards do not scale (Onyx, Armada, Pinnacle, DIAM, Marathon … are
+# endless), so we learn from the VN ground truth — for each device head / anatomy
+# CUE token — the set of Segments (OU) it legitimately implies. At match time a
+# Tier-1 family hit is RELEASED to the Tier-2 category pass when BOTH hold:
+#   (1) the description contains a cue whose learned Segment set EXCLUDES the
+#       family Product's own Segment (the cue points at a different device), AND
+#   (2) the description does NOT contain the family Product's own head token
+#       (the brand hit is uncorroborated — a collision, not the real device).
+# Catches Armada(balloon≠spine), Onyx(coronary≠embolic) with no per-brand rule.
+# The map is VN-learned, market-agnostic, persisted to a stable file, and reused
+# on GT-less markets (PK/India) exactly like the transfer prior. Restricted to a
+# curated cue vocabulary so noise stays bounded.
+#
+# SAFETY (VN-neutral): the map stores each cue's full Segment SHARE distribution.
+# A family hit → Product Segment S is released only when, for a cue present in the
+# description, S is TRULY ALIEN to that cue (GT co-occurrence share < ALIEN_MAX,
+# i.e. an S-device essentially never appears with that cue) AND no present cue
+# SUPPORTS S (share >= SEG_FLOOR). This protects legitimate minority combinations
+# (a neuro micro-catheter, a peripheral balloon) — only genuine cross-area brand
+# collisions (a "balloon" on a spinal-fixation brand) are released.
+USE_CONSISTENCY_RERANK   = True
+CONSISTENCY_PKL          = INTERMEDIATE / "consistency_map.pkl"   # VN-learned, market-agnostic
+CONSISTENCY_MIN_PRODUCTS = 4      # a cue needs ≥N distinct reference products to model
+CONSISTENCY_SEG_FLOOR    = 0.10   # a cue SUPPORTS a Segment at ≥this product share (protects the hit)
+CONSISTENCY_ALIEN_MAX    = 0.001  # a cue makes a Segment ALIEN below this share (allows release)
+CONSISTENCY_STORE_EPS    = 0.001  # prune Segments below this share when persisting the map
+# Curated device-head / anatomy cue vocabulary the reranker is allowed to weigh.
+# Each must be a token that strongly implies a clinical area; learned Segment sets
+# below the purity/rows gate are dropped at build time.
+CONSISTENCY_CUES = {
+    # device heads
+    "stent", "balloon", "catheter", "guidewire", "nail", "plate", "screw",
+    "sheath", "cannula", "coil", "suture", "mesh", "valve", "graft", "clip",
+    "forceps", "oxygenator", "cement", "lead", "pacemaker", "defibrillator",
+    "prosthesis", "cage", "disc", "ring", "clamp", "trocar", "electrode",
+    # anatomy / clinical-area qualifiers
+    "coronary", "cerebral", "carotid", "biliary", "ureteral", "urethral",
+    "femoral", "aortic", "spinal", "pedicle", "hip", "knee", "acetabular",
+    "cranial", "dental", "tibial", "vertebral", "intraocular", "corneal",
+}
+
+# ── Ambiguous-brand corroboration guard (2026-07-03, iter-8) ───────────────
+# The consistency reranker above is learned from the SURGICAL reference taxonomy,
+# so it cannot model OUT-OF-DOMAIN cues (ophthalmic 'intraocular lens', radiography
+# 'CR system', 'patient monitor', 'OT light', 'oxygen terminal', 'dialysis'). Many
+# Tier-1 family keywords are common-English words that coincide with such foreign
+# text: 'Lens'→MIS_CCU on an intraocular lens, 'Titan'→spine interbody on a dialysis
+# catheter, 'Pipeline'→flow diverter on an O2 terminal, 'Venus'→spine fusion on a
+# cardiac monitor, 'Solis'→spine on an OT lamp, 'Synergy'→light source on a PICC,
+# 'Viva'→CRT-D on a pump, 'Anchor'→retrieval bags on a biopsy needle. Signature: the
+# description shares NO token with the family's own Product / Sub-segment / Segment
+# label. A hit on an AMBIGUOUS keyword is RELEASED to Tier-2 unless the description
+# carries such a corroborating token. Coined brands (Sofsilk, Firehawk, Euphora) are
+# NOT in the set, so their terse 'BRAND CODE SIZE' rows are untouched; real brands
+# that happen to be here (Armada, Attain) stay whenever their row names the device
+# ('ARMADA … BALLOON' shares 'balloon'), so the guard only drops true collisions.
+USE_AMBIGUOUS_FAMILY_GUARD = True
+AMBIGUOUS_FAMILY_KEYWORDS = {
+    "absolute", "accolade", "achieve", "acquire", "across", "alliance", "allure",
+    "anchor", "approach", "arrive", "athena", "atlas", "attain", "avail", "aviator",
+    "azure", "beacon", "benchmark", "bravo", "breeze", "broom", "caliber", "champion",
+    "charisma", "choice", "circular", "climber", "columbus", "concorde", "contour",
+    "cougar", "coyote", "credo", "crescent", "cruiser", "cupid", "david", "diplomat",
+    "diva", "emerald", "foxtrot", "grip", "lens", "maya", "modular", "mono", "monarch",
+    "pediatric", "pipeline", "prevail", "primo", "restore", "sapphire", "silk", "solis",
+    "synergy", "titan", "venus", "viva", "victory", "vista", "summit", "prime", "pilot",
+    "voyager", "horizon", "legend", "genesis", "orion", "phoenix", "matrix", "quantum",
+    "vantage", "apex", "pinnacle", "eclipse", "fusion", "harmony", "impact", "infinity",
+    # iter-9: cross-category brand collisions surfaced in India/PK spot-checks.
+    # Each is a common word OR a token whose correct referent carries a
+    # distinctive corroborating cue (so true hits survive, collisions release):
+    #   trident  Stryker hip cup    → wrongly hit EUS_FNB endoscopy
+    #   cocoon   septal occluder    → wrongly hit Forced-air Blanket
+    #   shark    resectoscope       → wrongly hit Spinal Fusion Fixation
+    #   artic    ATTUNE knee frag   → wrongly hit Interbody Device_Thoracolumbar
+    #   torque   HI TORQUE g-wire   → wrongly hit Pacemaker_Accessory
+    #   starter  freeze-dried cx    → wrongly hit Guidewires
+    #   versajet S&N debridement    → wrongly hit ENT Microdebriders
+    #   orca     first-aid pouch    → wrongly hit Smoke Evac_Pencils
+    #   stylet   nephrostomy set    → wrongly hit Endotracheal Tubes
+    # ("legion" deliberately EXCLUDED — distinctive S&N knee, mostly correct.)
+    "trident", "cocoon", "shark", "artic", "torque", "starter", "versajet",
+    "excalibur", "orca", "stylet",
+    #   precision  Stryker laparoscope → wrongly hit SCS Recharger (BSC Precision)
+    #   apollo     iodine oral soln    → wrongly hit NV micro-catheter
+    "precision", "apollo",
+    # iter-10: PK 100-line spot-check collisions (genuine referent self-describes,
+    # so its own device token corroborates and true hits survive):
+    #   linex   Dolphin suture brand → wrongly hit DENTAL X-RAY POLISHER
+    #   elite   Stryker powered inst → wrongly hit SPIROMETRY/gas-volume unit
+    # (genuine 'linex' rows say SUTURE/NYLON; genuine 'elite' rows name a
+    #  DRILL/SAW/POWERED device — both corroborate and are kept.)
+    # HELD: 'onyx' — THE Medtronic liquid embolic; terse "ONYX 18" rows lack an
+    #  'embolic/liquid' token so guarding it would drop real liquid-embolic recall.
+    "linex", "elite",
 }
 
 # ── Tier-2 category mapping ────────────────────────────────────────────────
@@ -169,7 +432,7 @@ CATEGORY_QUALIFIER_MAP = {
     "ureteral stent":         "Ureteral Stents",
     "biliary stent":          "Biliary Stents",
     "carotid stent":          "Carotid Stents",
-    "stent graft":            "TEVAR Thoracic Stent Grafts",
+    "stent graft":            "Thoracic Stent Graft",
     "ptca balloon":           "PTCA Balloons",
     "ureteral balloon":       "Ureteral Balloons",
     "guide wire":             "Guidewires",
@@ -194,10 +457,25 @@ CATEGORY_QUALIFIER_MAP = {
     "surgical suture":        "Conventional Suture - Non-Absorbable",
     "hernia mesh":            "Synthetic Mesh",                   # Surgical Innovations | Hernia
     "surgical mesh":          "Synthetic Mesh",
-    "arterial cannula":       "Cannulae - Arterial",              # Cardiac Surgery | Extracorporeal Therapies
-    "aortic cannula":         "Cannulae - Arterial",
-    "venous cannula":         "Cannulae - Venous",
-    "femoral cannula":        "Cannulae - Femoral",
+    "arterial cannula":       "Cannulae_Arterial",                # Cardiac Surgery | Extracorporeal Therapies
+    "aortic cannula":         "Cannulae_Arterial",
+    "venous cannula":         "Cannulae_Venous",
+    "femoral cannula":        "Cannulae_Femoral",
+    # Benchmark-driven recall reinstatements (2026-07): orthopedic and spine
+    # screws ARE in scope (human-labeled GT files put them in Trauma_Plating /
+    # Spine_Fixation) but bare "screw" was blacklisted for precision. Only
+    # anatomically-specific screw qualifiers — which pin one clean Sub-OU — are
+    # added; bare "screw" stays suppressed so precision holds.
+    "cortical screw":         "Plates & Screws",                  # CST | Trauma
+    "cancellous screw":       "Plates & Screws",
+    "orthopedic screw":       "Plates & Screws",
+    "orthopaedic screw":      "Plates & Screws",
+    "bone screw":             "Plates & Screws",
+    "cannulated screw":       "Cannulated Screws",                # CST | Trauma
+    "pedicle screw":          "Spinal Fusion Fixation - Thoracolumbar",  # CST | Total Spinal
+    "multiaxial screw":       "Spinal Fusion Fixation - Thoracolumbar",
+    "polyaxial screw":        "Spinal Fusion Fixation - Thoracolumbar",
+    "monoaxial screw":        "Spinal Fusion Fixation - Thoracolumbar",
 }
 
 # Bare category heads eligible for the HS8-dominant-segment fallback (Tier-2
@@ -219,6 +497,28 @@ CATEGORY_NEGATIVE_CUES = {
     "tray", "rack", "simulator", "trainer", "stopcock", "obturator",
     "dummy", "valve cap", "pump to", "pump for", "measuring kit",
     "size measuring",
+    # iter-9: mechanical (non-medical) uses of category heads seen in PK/India
+    "cable sheath", "brake cable", "console brake",
+}
+
+# iter-11: DENTAL out-of-scope guard. The surgical reference OUs contain NO
+# dental segment, yet dental rows leak into all three tiers via generic tokens:
+#  - family kw "Root" (Masimo Root monitor) hit 9,410 dental rows ($17.0M) — ALL
+#    "root canal", "Well-Root filling", "artificial tooth root", zero legit.
+#  - "endodont/orthodont/periodont/gingiv/denture/gutta percha" category/maker
+#    rows are dental-lab supplies, not surgical implants.
+# Applied as PLAIN-SUBSTRING (cue in text.lower()) — same semantics as
+# CATEGORY_NEGATIVE_CUES — across Tier-1/2/3 match and the HS-prior fill.
+# DELIBERATELY EXCLUDES bare "tooth"/"teeth": those hit legitimate TOOTHED
+# surgical instruments (Jackson 2-tooth tracheostomy hook, toothed forceps).
+# Validated: catches 22,810 rows / $41.8M (11,676 bound / $20.5M) with 0
+# legit-surgical false exclusions (no stent/balloon/cardiac/coronary/spinal/
+# vascular device rows among the bound dental-caught set).
+DENTAL_NEGATIVE_CUES = {
+    "root canal", "dental", "dentist", "dentin", "endodont", "orthodont",
+    "periodont", "gingiv", "denture", "gutta percha", "gutta-percha",
+    "tooth root", "tooth filling", "artificial tooth", "prophy paste",
+    "dental pulp",
 }
 
 # Generic 2-token reference Product labels too vague to map a Segment safely.
@@ -231,6 +531,25 @@ GENERIC_LABEL_BLACKLIST = {
 # HS8→segment fallback only fires when the HS8's dominant segment among Tier-1
 # matches accounts for at least this share; otherwise Segment is left blank.
 HS8_SEGMENT_MIN_SHARE = 0.70
+
+# iter-9: arthroplasty (joint-replacement) components must NEVER be stamped as a
+# fracture-fixation device by the HS-prior, even when a generic shared token
+# (hole/shell/head) makes the (hs8,token) rule fire. Chapters 9021/9018 carry BOTH
+# trauma plating and hip/knee/shoulder arthroplasty; VN GT was plating-dominant so
+# tokens like 'hole'/'shell'/'humeral' learned →Trauma_Plating, then over-fired on
+# India's heavy arthroplasty mix (femoral heads, acetabular cups, tibial inserts).
+# When the predicted product is a fixation device AND the description names a
+# joint-replacement component below, the fill is vetoed (row keeps its maker tag).
+HS_PRIOR_FIXATION_PRODUCTS = (
+    "trauma_plating", "trauma_nailing",
+    "spinal fusion fixation", "spine_fixation",
+)
+ARTHROPLASTY_COMPONENT_CUES = (
+    "femoral head", "humeral head", "humeral insert", "humeral stem",
+    "glenoid", "acetabular", "acetab", "tibial insert", "tibial tray",
+    "femoral component", "baseplate", "patella", "condyle", "trunnion",
+    "hemi cluster", "cluster hole", "shell", "liner",
+)
 
 # Provenance columns added to the output.
 TIER_COL       = "Match_Tier"        # family | category | manufacturer | ""
