@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VN 2024 ML Map — Methodology & Technical Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:      #0f0f0f;
+    --ink-2:    #3a3a3a;
+    --ink-3:    #7a7a7a;
+    --paper:    #f7f4ef;
+    --paper-2:  #ede9e1;
+    --paper-3:  #e0dbd0;
+    --accent:   #1a4d3c;
+    --accent-2: #c9733b;
+    --accent-3: #2d6a9f;
+    --green:    #d4edda;
+    --green-txt:#155724;
+    --tag-bg:   #eae6df;
+    --rule:     #c8c2b5;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── SIDEBAR NAV ─────────────────────────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 220px;
+    height: 100vh;
+    background: var(--accent);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    color: #fff;
+    opacity: 0.95;
+    margin-bottom: 28px;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .sidebar-brand span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    opacity: 0.55;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .nav-section {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    padding: 14px 0 4px;
+  }
+
+  .nav-link {
+    display: block;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.72);
+    text-decoration: none;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1.4;
+  }
+  .nav-link:hover {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+  }
+  .nav-link.active { background: rgba(255,255,255,0.18); color: #fff; }
+
+  /* ── MAIN CONTENT ────────────────────────────────────────────────────── */
+  .main {
+    margin-left: 220px;
+    padding: 64px 64px 120px;
+    max-width: 860px;
+  }
+
+  /* ── PAGE HEADER ─────────────────────────────────────────────────────── */
+  .page-header {
+    margin-bottom: 60px;
+    padding-bottom: 40px;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+
+  .page-header::before {
+    content: 'TECHNICAL DOCUMENTATION';
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--accent-2);
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .page-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .meta-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .meta-value {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* ── SECTION ─────────────────────────────────────────────────────────── */
+  section {
+    margin-bottom: 56px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  section:nth-child(1) { animation-delay: 0.05s; }
+  section:nth-child(2) { animation-delay: 0.10s; }
+  section:nth-child(3) { animation-delay: 0.15s; }
+  section:nth-child(4) { animation-delay: 0.20s; }
+  section:nth-child(5) { animation-delay: 0.25s; }
+  section:nth-child(6) { animation-delay: 0.30s; }
+  section:nth-child(7) { animation-delay: 0.35s; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 18px;
+    line-height: 1.2;
+  }
+
+  h3 {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin-bottom: 10px;
+    margin-top: 28px;
+  }
+
+  p {
+    color: var(--ink-2);
+    margin-bottom: 14px;
+    max-width: 640px;
+  }
+
+  /* ── HORIZONTAL RULE ─────────────────────────────────────────────────── */
+  .rule { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+  /* ── STAT ROW ────────────────────────────────────────────────────────── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 2px;
+    margin: 28px 0;
+  }
+
+  .stat-card {
+    background: var(--paper-2);
+    padding: 20px 22px;
+    border: 1px solid var(--paper-3);
+  }
+
+  .stat-card:first-child { border-radius: 4px 0 0 4px; }
+  .stat-card:last-child  { border-radius: 0 4px 4px 0; }
+
+  .stat-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    line-height: 1.35;
+  }
+
+  /* ── STEP LIST ───────────────────────────────────────────────────────── */
+  .step-list { margin: 24px 0; list-style: none; }
+
+  .step-list li {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--paper-3);
+  }
+
+  .step-list li:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    background: rgba(26,77,60,0.08);
+    border: 1px solid rgba(26,77,60,0.2);
+    border-radius: 3px;
+    padding: 3px 8px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-body strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .step-body p {
+    font-size: 13.5px;
+    margin: 0;
+    color: var(--ink-2);
+  }
+
+  /* ── CODE BLOCK ──────────────────────────────────────────────────────── */
+  .code-block {
+    background: #1a1a1a;
+    color: #d4d0c8;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    padding: 24px 28px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 20px 0;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #666;
+  }
+
+  .code-block .kw  { color: #c792ea; }
+  .code-block .fn  { color: #82aaff; }
+  .code-block .str { color: #c3e88d; }
+  .code-block .cm  { color: #546e7a; font-style: italic; }
+  .code-block .num { color: #f78c6c; }
+
+  /* ── CALLOUT BOX ─────────────────────────────────────────────────────── */
+  .callout {
+    display: flex;
+    gap: 16px;
+    padding: 18px 22px;
+    margin: 24px 0;
+    border-radius: 4px;
+    border-left: 3px solid;
+  }
+
+  .callout.info  { background: #e8f0f8; border-color: var(--accent-3); }
+  .callout.warn  { background: #fff8e6; border-color: #d4a017; }
+  .callout.green { background: var(--green); border-color: #28a745; }
+
+  .callout-icon { font-size: 16px; flex-shrink: 0; line-height: 1.6; }
+
+  .callout-body { font-size: 13.5px; color: var(--ink-2); }
+  .callout-body strong { color: var(--ink); }
+
+  /* ── TAG ─────────────────────────────────────────────────────────────── */
+  .tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    background: var(--tag-bg);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--ink-2);
+    margin: 2px;
+  }
+  .tag.green { background: #d4edda; border-color: #b7ddc4; color: #155724; }
+  .tag.blue  { background: #dce8f5; border-color: #b8d0e8; color: #1a4275; }
+  .tag.orange{ background: #fdebd5; border-color: #f5c89e; color: #7a3a10; }
+
+  /* ── TWO-COL GRID ────────────────────────────────────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+  }
+
+  .col-card {
+    background: var(--paper-2);
+    border: 1px solid var(--paper-3);
+    border-radius: 4px;
+    padding: 20px 22px;
+  }
+
+  .col-card h4 {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+
+  .col-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .col-card ul li {
+    font-size: 13px;
+    color: var(--ink-2);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--paper-3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .col-card ul li:last-child { border-bottom: none; }
+  .col-card ul li .val { font-weight: 600; color: var(--ink); font-size: 12.5px; }
+
+  /* ── MAPPING TABLE ───────────────────────────────────────────────────── */
+  .map-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 20px 0;
+  }
+
+  .map-table thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+  }
+
+  .map-table tbody tr:nth-child(even) { background: var(--paper-2); }
+  .map-table tbody tr:hover { background: #e8e3d8; }
+
+  .map-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--paper-3);
+    vertical-align: top;
+    color: var(--ink-2);
+  }
+
+  .map-table td:first-child {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-3);
+  }
+
+  .map-table td .arrow {
+    color: var(--ink-3);
+    margin: 0 4px;
+  }
+
+  /* ── KNOWN ISSUES TABLE ──────────────────────────────────────────────── */
+  .issue-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 20px 0;
+  }
+  .issue-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    background: var(--paper-2);
+    text-align: left;
+    border: 1px solid var(--paper-3);
+    color: var(--ink-2);
+  }
+  .issue-table td {
+    padding: 9px 14px;
+    border: 1px solid var(--paper-3);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+  .issue-table .severity {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    font-weight: 500;
+  }
+  .sev-low  { background: #d4edda; color: #155724; }
+  .sev-med  { background: #fff3cd; color: #856404; }
+  .sev-high { background: #f8d7da; color: #721c24; }
+
+  /* ── FOOTER ──────────────────────────────────────────────────────────── */
+  footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-family: 'DM Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+  @media (max-width: 860px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 32px 24px 80px; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <span>Report</span>
+    VN 2024<br>ML Map Analysis
+  </div>
+
+  <div class="nav-section">Analysis</div>
+  <a class="nav-link" href="Dashboard.html">Country Dashboard &rarr;</a>
+
+  <div class="nav-section">Overview</div>
+  <a class="nav-link" href="#overview">Project Summary</a>
+  <a class="nav-link" href="#inputs">Input Files</a>
+
+  <div class="nav-section">Pipeline</div>
+  <a class="nav-link" href="#extraction">Data Extraction</a>
+  <a class="nav-link" href="#matching">Keyword Matching</a>
+  <a class="nav-link" href="#mapping">Field Mapping</a>
+  <a class="nav-link" href="#manufacturer">Manufacturer Deduction</a>
+
+  <div class="nav-section">Quality</div>
+  <a class="nav-link" href="#filters">Filters Applied</a>
+  <a class="nav-link" href="#output">Output Structure</a>
+  <a class="nav-link" href="#caveats">Known Caveats</a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <h1 class="page-title">VN 2024 Processed ML Map —<br><em>Methodology & Technical Notes</em></h1>
+    <div class="page-meta">
+      <div class="meta-item">
+        <span class="meta-label">Source File</span>
+        <span class="meta-value">VN-2024_Processed-MLmap_analysis_v0</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Reference File</span>
+        <span class="meta-value">Surg_Brand_model_list_V0 — Updated sheet</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Total Rows Processed</span>
+        <span class="meta-value">520,835</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Final Matched Rows</span>
+        <span class="meta-value">85,378 (16.4%)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- SECTION 1: OVERVIEW -->
+  <section id="overview">
+    <div class="section-label">01 — Overview</div>
+    <h2>Project Summary</h2>
+    <p>This pipeline enriches Vietnam 2024 medical device import trade data by mapping product descriptions against a curated surgical brand model list. Each import row's free-text product description is scanned for known device model or family names; upon a match, the row is tagged with its commercial segment, sub-segment, product classification, manufacturer, and family name — and highlighted in the output file.</p>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">520,835</div>
+        <div class="stat-label">Total import rows processed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">3,507</div>
+        <div class="stat-label">Active keywords after filtering</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">85,378</div>
+        <div class="stat-label">Matched rows (16.4%)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">27</div>
+        <div class="stat-label">Distinct segments identified</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">7.4s</div>
+        <div class="stat-label">Matching runtime (full dataset)</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 2: INPUT FILES -->
+  <section id="inputs">
+    <div class="section-label">02 — Inputs</div>
+    <h2>Input Files</h2>
+
+    <div class="two-col">
+      <div class="col-card">
+        <h4>Trade Data — VN 2024 ML Map</h4>
+        <ul>
+          <li>Sheet <span class="val">RawData</span></li>
+          <li>Rows <span class="val">520,835</span></li>
+          <li>Columns <span class="val">34 original</span></li>
+          <li>Key column <span class="val">Detailed_Product</span></li>
+          <li>HS4 scope <span class="val">9018 / 9019 / 9021 / 9022</span></li>
+        </ul>
+      </div>
+      <div class="col-card">
+        <h4>Reference — Surg Brand Model List V0</h4>
+        <ul>
+          <li>Sheet <span class="val">Updated</span></li>
+          <li>Rows <span class="val">10,397</span></li>
+          <li>Keyword column <span class="val">H — Model/Family Name</span></li>
+          <li>Manufacturer <span class="val">G — Player</span></li>
+          <li>Valid keywords <span class="val">5,809 non-null → 3,507 active</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <p>The VN file was extracted from its native <code>.xlsx</code> format using <strong>openpyxl read-only streaming</strong> into a flat TSV intermediate file to enable fast repeated access across pipeline stages without reloading the full workbook.</p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 3: DATA EXTRACTION -->
+  <section id="extraction">
+    <div class="section-label">03 — Pipeline Step 1</div>
+    <h2>Data Extraction</h2>
+
+    <p>Because the source Excel workbook contains 520,835 rows across multiple sheets and weighs 132 MB, a streaming extraction strategy was used rather than loading the entire workbook into memory at once.</p>
+
+    <ul class="step-list">
+      <li>
+        <span class="step-num">01</span>
+        <div class="step-body">
+          <strong>Streaming read via openpyxl read-only mode</strong>
+          <p>The <em>RawData</em> sheet was iterated row-by-row using <code>openpyxl</code>'s <code>read_only=True</code> mode, which does not load the full DOM into memory — critical for a 520k-row file.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">02</span>
+        <div class="step-body">
+          <strong>TSV intermediate cache</strong>
+          <p>All rows were written to a tab-separated flat file (<code>vn_rawdata.tsv</code>, ~175 MB). Subsequent pipeline stages read from this fast-access cache rather than re-opening the Excel workbook.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">03</span>
+        <div class="step-body">
+          <strong>Keyword reference build</strong>
+          <p>The V0 reference file's <em>Updated</em> sheet was loaded with <code>pandas</code>. Rows with non-null <code>Model/Family Name</code> values were retained, with pure-numeric entries and strings under 4 characters removed, yielding 3,651 candidate keywords before quality filtering.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 4: MATCHING ALGORITHM -->
+  <section id="matching">
+    <div class="section-label">04 — Pipeline Step 2</div>
+    <h2>Keyword Matching — Trie Algorithm</h2>
+
+    <p>Matching 520,835 rows against 3,507 keywords required a sub-linear search strategy. A naïve per-keyword regex scan would have taken over 3,500 seconds; the approach below completed in <strong>7.4 seconds</strong>.</p>
+
+    <h3>Algorithm: 4-character prefix trie</h3>
+
+    <div class="code-block" data-lang="Python">
+<span class="cm"># Build prefix index: first 4 chars → list of keywords</span>
+prefix_map = defaultdict(<span class="fn">list</span>)
+<span class="kw">for</span> kw <span class="kw">in</span> <span class="fn">sorted</span>(lookup.keys(), key=<span class="kw">len</span>, reverse=<span class="kw">True</span>):
+    <span class="kw">if</span> <span class="fn">len</span>(kw) >= <span class="num">4</span>:
+        prefix_map[kw[:<span class="num">4</span>]].append(kw)
+
+<span class="kw">def</span> <span class="fn">find_match</span>(text, hs4):
+    <span class="cm"># HS4 scope gate — skip non-surgical rows entirely</span>
+    <span class="kw">if</span> hs4 <span class="kw">not in</span> SURGICAL_HS4:
+        <span class="kw">return None</span>
+    t = text.lower()
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(t) - <span class="num">3</span>):
+        pfx = t[i:i+<span class="num">4</span>]          <span class="cm"># O(1) hash lookup</span>
+        <span class="kw">if</span> pfx <span class="kw">in</span> prefix_map:
+            <span class="kw">for</span> kw <span class="kw">in</span> prefix_map[pfx]:
+                end = i + <span class="fn">len</span>(kw)
+                <span class="kw">if</span> t[i:end] == kw:
+                    <span class="cm"># Word boundary check</span>
+                    s_ok = (i == <span class="num">0</span>) <span class="kw">or not</span> t[i-<span class="num">1</span>].isalnum()
+                    e_ok = (end >= <span class="fn">len</span>(t)) <span class="kw">or not</span> t[end].isalnum()
+                    <span class="kw">if</span> s_ok <span class="kw">and</span> e_ok:
+                        <span class="kw">return</span> kw
+    <span class="kw">return None</span>
+    </div>
+
+    <h3>Why this is fast</h3>
+    <ul class="step-list">
+      <li>
+        <span class="step-num">Hash</span>
+        <div class="step-body">
+          <strong>O(1) prefix lookup</strong>
+          <p>At each character position the algorithm performs a single dictionary lookup on the 4-character prefix. Only positions where a known keyword could start are examined further — all others are skipped in constant time.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">Boundary</span>
+        <div class="step-body">
+          <strong>Word-boundary enforcement</strong>
+          <p>After a candidate keyword is found, its neighbouring characters are checked: the character before the match and after must not be alphanumeric. This prevents "venous" from matching inside "intravenous" and eliminates a large class of false positives without regex overhead.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">Priority</span>
+        <div class="step-body">
+          <strong>Longest-match-first ordering</strong>
+          <p>Keywords in each prefix bucket are stored longest-first. When multiple keywords share a prefix, the most specific (longest) keyword wins, preventing a short generic keyword from shadowing a longer, more precise one.</p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout info">
+      <span class="callout-icon">⚡</span>
+      <div class="callout-body"><strong>Performance:</strong> The trie approach achieves approximately <strong>70,000 rows/second</strong>, completing the full 520,835-row dataset in 7.4 seconds — roughly 350× faster than a single compiled-regex alternation over the same keyword set.</div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 5: FIELD MAPPING -->
+  <section id="mapping">
+    <div class="section-label">05 — Pipeline Step 3</div>
+    <h2>Field Mapping</h2>
+    <p>Upon a successful keyword match, the following fields are populated in the output row from the V0 reference sheet:</p>
+
+    <table class="map-table">
+      <thead>
+        <tr>
+          <th>V0 Reference Column</th>
+          <th>Output Column</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>C — Segment</td>
+          <td><span class="tag blue">S — Segment</span></td>
+          <td>Top-level commercial segment (e.g. "Coronary and Renal Denervation", "Cranial & Spinal Technologies")</td>
+        </tr>
+        <tr>
+          <td>D — Sub-segment</td>
+          <td><span class="tag blue">T — Sub-segment</span></td>
+          <td>Sub-category within the segment (e.g. "Neurosurgery", "Cardiac Ablation")</td>
+        </tr>
+        <tr>
+          <td>E — Product</td>
+          <td><span class="tag blue">U — Product_V0</span></td>
+          <td>Specific product classification from the V0 reference (e.g. "Core Navigation_Capital", "DES")</td>
+        </tr>
+        <tr>
+          <td>G — Player</td>
+          <td><span class="tag blue">P — Manufacturer</span></td>
+          <td>Manufacturer / brand owner (e.g. "Medtronic", "Abbott", "Boston Scientific")</td>
+        </tr>
+        <tr>
+          <td>H — Model/Family Name</td>
+          <td><span class="tag blue">Q — Family</span></td>
+          <td>The matched keyword itself — the device model or family name that triggered the match</td>
+        </tr>
+        <tr>
+          <td><em>Derived</em></td>
+          <td><span class="tag green">V — Match_Status</span></td>
+          <td>"Matched" or "Unmatched" — used as the basis for conditional green highlighting</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout green">
+      <span class="callout-icon">🟢</span>
+      <div class="callout-body"><strong>Green highlighting</strong> is applied via a single Excel conditional formatting rule driven by the <code>Match_Status</code> column (V = "Matched"), rather than per-cell fills. This keeps the file size manageable across 520k rows and ensures the highlighting updates correctly if data is filtered or sorted.</div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 6: MANUFACTURER DEDUCTION -->
+  <section id="manufacturer">
+    <div class="section-label">06 — Supplementary Step</div>
+    <h2>Manufacturer Deduction</h2>
+    <p>For matched rows where the V0 reference does not supply a manufacturer (or where the user requested broader coverage), a rule-based deduction step was applied using the <strong>Exporter</strong> and <strong>Importer</strong> columns as signals.</p>
+
+    <ul class="step-list">
+      <li>
+        <span class="step-num">P1</span>
+        <div class="step-body">
+          <strong>V0 Player column (highest confidence)</strong>
+          <p>Manufacturer taken directly from the matched V0 reference row's Player column. Used wherever a keyword match exists.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">P2</span>
+        <div class="step-body">
+          <strong>Exporter name extraction</strong>
+          <p>The Exporter field typically names the foreign entity shipping the goods — often the manufacturer's regional trading arm (e.g. "MEDTRONIC INTERNATIONAL TRADING PTE LTD", "CARL ZEISS MEDITEC AG"). A curated rule set of 80+ manufacturer name patterns maps these to canonical names.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">P3</span>
+        <div class="step-body">
+          <strong>Importer name extraction</strong>
+          <p>When the importer is the manufacturer's own Vietnam subsidiary (e.g. "B BRAUN VIETNAM CO LTD", "JOHNSON&JOHNSON(VIET NAM) CO LTD"), the manufacturer can be deduced. Lower confidence than the exporter signal.</p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="two-col">
+      <div class="col-card">
+        <h4>Coverage achieved</h4>
+        <ul>
+          <li>V0 keyword match <span class="val">85,378</span></li>
+          <li>Exporter deduction <span class="val">~90k+</span></li>
+          <li>Importer deduction <span class="val">~30k+</span></li>
+          <li>Total filled <span class="val">190,230</span></li>
+          <li>Still blank <span class="val">330,605</span></li>
+        </ul>
+      </div>
+      <div class="col-card">
+        <h4>Top deduced manufacturers</h4>
+        <ul>
+          <li>Roche <span class="val">~10k rows</span></li>
+          <li>Siemens Healthineers <span class="val">~7k rows</span></li>
+          <li>Kanghui / Medtronic <span class="val">~6k rows</span></li>
+          <li>Beckman Coulter <span class="val">~6k rows</span></li>
+          <li>Karl Storz <span class="val">~6k rows</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 7: FILTERS APPLIED -->
+  <section id="filters">
+    <div class="section-label">07 — Quality Control</div>
+    <h2>Filters &amp; False-Positive Mitigation</h2>
+
+    <p>The initial matching pass (using all available keywords against all rows) produced ~258,000 matches — inflated by two classes of false positives that were systematically eliminated in the final version:</p>
+
+    <h3>Filter 1 — HS4 Scope Gate</h3>
+    <p>Matching is restricted to rows where the <code>HS4</code> code is within the surgical/medical device universe:</p>
+
+    <div style="margin: 12px 0 20px;">
+      <span class="tag blue">9018</span> Surgical &amp; medical instruments &amp; appliances
+      <span class="tag blue">9019</span> Mechano-therapy / breathing apparatus
+      <span class="tag blue">9021</span> Orthopaedic appliances / implants
+      <span class="tag blue">9022</span> X-ray / imaging apparatus
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Why HS4 3006 and 9027 were excluded:</strong> HS4 3006 (pharmaceutical preparations including dental materials) was found to produce false matches — keywords like <code>ultimate</code>, <code>nano</code>, and <code>supreme</code> legitimately appear in dental composite brand names. HS4 9027 (analytical instruments) similarly caused false matches with lab reagent products. Both were excluded from scope.</div>
+    </div>
+
+    <h3>Filter 2 — Keyword Blacklist (77 terms)</h3>
+    <p>Keywords that are common English words, product categories, or material types were removed from the matching set regardless of their presence in the V0 reference file. Key examples:</p>
+
+    <div style="margin: 12px 0;">
+      <span class="tag">accessories</span><span class="tag">others</span><span class="tag">curve</span>
+      <span class="tag">drill tool</span><span class="tag">kick</span><span class="tag">blade</span>
+      <span class="tag">steel</span><span class="tag">agent</span><span class="tag">reagent</span>
+      <span class="tag">normal</span><span class="tag">plain</span><span class="tag">basic</span>
+      <span class="tag">monitor</span><span class="tag">camera</span><span class="tag">circuit</span>
+      <span class="tag">extension</span><span class="tag">linear</span><span class="tag">advance</span>
+      <span class="tag">electrode</span><span class="tag">bipolar</span><span class="tag">monopolar</span>
+      <span class="tag">trocar</span><span class="tag">needle</span><span class="tag">sensor</span>
+      <span class="tag">mesh</span><span class="tag">wire</span><span class="tag">screw</span>
+      <span class="tag">clip</span><span class="tag">filter</span><span class="tag">venous</span>
+      <span class="tag">ultimate</span><span class="tag">nano</span><span class="tag">supreme</span>
+      <span class="tag">freedom</span><span class="tag">classic</span><span class="tag">core</span>
+      <em style="font-size:12px; color: var(--ink-3);">…and 44 more</em>
+    </div>
+
+    <h3>Combined effect</h3>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number" style="color: #c0392b;">258k</div>
+        <div class="stat-label">Matches before filters (49.6% of all rows)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" style="color: var(--accent);">85k</div>
+        <div class="stat-label">Matches after filters (16.4% of all rows)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">~173k</div>
+        <div class="stat-label">False positives eliminated</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 8: OUTPUT -->
+  <section id="output">
+    <div class="section-label">08 — Output</div>
+    <h2>Output File Structure</h2>
+    <p>The output workbook <code>VN_2024_V0_Mapped.xlsx</code> contains two sheets:</p>
+
+    <h3>Sheet 1 — RawData (520,836 rows × 22 columns)</h3>
+    <table class="map-table">
+      <thead>
+        <tr><th>Col</th><th>Field</th><th>Source</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A</td><td>Month</td><td>Original</td></tr>
+        <tr><td>B</td><td>HS_Code</td><td>Original</td></tr>
+        <tr><td>C</td><td>Detailed_Product</td><td>Original — searched for keywords</td></tr>
+        <tr><td>D</td><td>HS_Product</td><td>Original</td></tr>
+        <tr><td>E</td><td>Importer</td><td>Original</td></tr>
+        <tr><td>F</td><td>Exporter</td><td>Original</td></tr>
+        <tr><td>G</td><td>Country_of_Exporters</td><td>Original</td></tr>
+        <tr><td>H</td><td>Partner_Continent</td><td>Original</td></tr>
+        <tr><td>I</td><td>Quantity</td><td>Original</td></tr>
+        <tr><td>J</td><td>Unit_Qty</td><td>Original</td></tr>
+        <tr><td>K</td><td>Total_Value_USD</td><td>Original</td></tr>
+        <tr><td>L</td><td>USD_Per_Qty</td><td>Original</td></tr>
+        <tr><td>M</td><td>HS4</td><td>Original — used for scope filtering</td></tr>
+        <tr><td>N</td><td>Year</td><td>Original</td></tr>
+        <tr><td>O</td><td>UniqueID</td><td>Original</td></tr>
+        <tr><td>P</td><td><strong>Manufacturer</strong></td><td>← V0 col G (Player) on match</td></tr>
+        <tr><td>Q</td><td><strong>Family</strong></td><td>← V0 col H (Model/Family Name) on match</td></tr>
+        <tr><td>R</td><td>Product</td><td>Original (pre-existing classification)</td></tr>
+        <tr><td>S</td><td><strong>Segment</strong></td><td>← V0 col C on match</td></tr>
+        <tr><td>T</td><td><strong>Sub-segment</strong></td><td>← V0 col D on match</td></tr>
+        <tr><td>U</td><td><strong>Product_V0</strong></td><td>← V0 col E on match</td></tr>
+        <tr><td>V</td><td><strong>Match_Status</strong></td><td>"Matched" / "Unmatched"</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Sheet 2 — Summary (241 rows)</h3>
+    <p>Aggregated match counts grouped by <code>Segment → Sub-segment → Product_V0</code>, sorted by frequency. Useful for a quick overview of which device categories have the most import activity.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">📊</span>
+      <div class="callout-body"><strong>Top segments by match volume:</strong> Coronary &amp; Renal Denervation 18,152 · Cranial &amp; Spinal Technologies 12,294 · Acute Care &amp; Monitoring 11,883 · Surgical Innovations 10,349 · Sports Medicine 7,838</div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- SECTION 9: CAVEATS -->
+  <section id="caveats">
+    <div class="section-label">09 — Limitations</div>
+    <h2>Known Caveats &amp; Recommended Next Steps</h2>
+
+    <table class="issue-table">
+      <thead>
+        <tr>
+          <th style="width:140px">Issue</th>
+          <th>Description</th>
+          <th style="width:90px">Severity</th>
+          <th>Recommendation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Homonym keywords</td>
+          <td>Keywords like <code>ranger</code> match both the 3M Ranger warming unit and Bard's Ranger DCB balloon. The correct segment depends on context not captured by keyword alone.</td>
+          <td><span class="severity sev-med">Medium</span></td>
+          <td>Add a secondary HS4 sub-code or manufacturer filter to disambiguate homonyms</td>
+        </tr>
+        <tr>
+          <td>Missing HS4 scope</td>
+          <td>Rows where <code>HS4</code> is blank or outside the 4 surgical codes (9018–9022) are left unmatched even if their description contains a valid device name.</td>
+          <td><span class="severity sev-med">Medium</span></td>
+          <td>Manual review of HS4 null rows; consider extending scope to include 3006 with a tighter keyword whitelist</td>
+        </tr>
+        <tr>
+          <td>Generic blacklisted keywords</td>
+          <td>77 keywords were suppressed to reduce false positives. Some (<code>needle</code>, <code>screw</code>, <code>trocar</code>) are legitimate device names that may result in true matches being missed.</td>
+          <td><span class="severity sev-low">Low</span></td>
+          <td>Reinstate specific multi-word forms (e.g. "Veress needle", "pedicle screw") while keeping single generic words blacklisted</td>
+        </tr>
+        <tr>
+          <td>Manufacturer gaps</td>
+          <td>63.5% of rows (330,605) have no manufacturer populated — primarily rows with unrecognised distributors or non-device imports.</td>
+          <td><span class="severity sev-low">Low</span></td>
+          <td>Provide a distributor-to-manufacturer lookup table for a second-pass enrichment</td>
+        </tr>
+        <tr>
+          <td>Single-match-per-row</td>
+          <td>Only the first (longest) matching keyword is recorded per row. In rare cases a product description may contain multiple device names.</td>
+          <td><span class="severity sev-low">Low</span></td>
+          <td>Acceptable for most use cases; extend to multi-match if needed for complex bundle shipments</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>Generated from VN-2024_Processed-MLmap_analysis_v0.xlsx × Surg_Brand_model_list_V0.xlsx</span>
+    <span>Trie matching · Word-boundary enforcement · HS4 scope filter · 77-term blacklist</span>
+  </footer>
+
+</main>
+
+<script>
+  // Active nav link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.nav-link');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => obs.observe(s));
+</script>
+
+</body>
+</html>
