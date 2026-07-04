@@ -32,11 +32,20 @@ vn2024_pipeline/
 │   ├── step3_map.py         # join matched keywords → reference fields
 │   ├── step3b_hs_prior.py   # learned HS-prior recall re-rank (guarded)
 │   └── step4_export.py      # styled .xlsx + Dashboard + Dashboard.html
+├── tools/
+│   └── reference_compliance.py  # workbook-level DQ pass vs latest master (+ diagnostics)
+├── docs/                    # agent/human docs — START HERE (see note below)
 ├── data/
 │   ├── uploads/             # ← PUT MARKET SOURCE .xlsx / .csv FILES HERE
 │   └── intermediate/        # cached TSV / pickles / csv (regenerated)
 └── outputs/                 # <Country>_ML_Map_Mapped.xlsx (one per market) + report
 ```
+
+> **AI agents / new joiners:** start with [`docs/AGENT_GUIDE.md`](docs/AGENT_GUIDE.md)
+> — the complete file map (incl. the shared-drive delivery folder), run commands,
+> QA_Status vocabulary and publish protocol — then
+> [`docs/REFERENCE_COMPLIANCE_PLAN.md`](docs/REFERENCE_COMPLIANCE_PLAN.md), the
+> current improvement roadmap.
 
 ---
 

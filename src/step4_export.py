@@ -206,28 +206,30 @@ def _rollup_frame(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
-    """Formula-driven Surgical-vs-Extended-vs-Total breakdown so the widened
-    matching is transparent: how much matched Revenue/Volume comes from the core
-    surgical HS4 codes vs the widened (Extended) scope. Aggregates RawData with
-    SUMIFS/COUNTIFS on the Match_Scope / Match_Tier / Family columns."""
+    """Formula-driven trusted-surgical vs Extended-review breakdown.
+
+    Surgical rows use the same Dash_Include="Y" criterion as the Dashboard.
+    Extended rows are visible as pending review, but they do not feed the trusted
+    dashboard or rollups.
+    """
     if cfg.SCOPE_COL not in cols:
         ws.write(0, 0, "Scope breakdown unavailable "
                        "(Match_Scope column not present in RawData).", hdr)
         return
     L = {n: xl_col_to_name(cols.index(n)) for n in
          [cfg.VALUE_COL, "Quantity", cfg.SCOPE_COL, cfg.TIER_COL,
-          cfg.DASH_INCLUDE_COL]
+          cfg.DASH_INCLUDE_COL, cfg.QA_STATUS_COL]
          if n in cols}
     val, qty = L[cfg.VALUE_COL], L["Quantity"]
     sc, ti = L[cfg.SCOPE_COL], L[cfg.TIER_COL]
-    di = L.get(cfg.DASH_INCLUDE_COL)
+    di, qa = L.get(cfg.DASH_INCLUDE_COL), L.get(cfg.QA_STATUS_COL)
 
     def rng(c):
         return f"RawData!${c}$2:${c}${last_raw}"
 
-    # Reference-gate criterion so the Scope totals reflect the reference-valid,
-    # in-scope bound rows (DQ 2026-07) — same rows the Dashboard aggregates.
-    inc = f'{rng(di)},"Y",' if di else ""
+    def crit(pairs):
+        parts = [f'{rng(col)},"{value}"' for col, value in pairs if col]
+        return "," + ",".join(parts) if parts else ""
 
     money = wb.add_format({"num_format": "#,##0", "font_name": "Arial", "font_size": 9})
     cnt   = wb.add_format({"num_format": "#,##0", "font_name": "Arial", "font_size": 9})
@@ -244,25 +246,34 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
     ws.set_column(3, 3, 16, money)
     ws.set_column(4, 4, 18, cnt)
 
-    def scoped(label):
-        return f'{rng(sc)},"{label}",'
-
+    extended_pairs = [(qa, cfg.QA_REVIEW_EXT)] if qa else [(sc, cfg.SCOPE_EXTENDED_LABEL)]
     rows = [
-        (cfg.SCOPE_SURGICAL_LABEL, scoped(cfg.SCOPE_SURGICAL_LABEL)),
-        (cfg.SCOPE_EXTENDED_LABEL, scoped(cfg.SCOPE_EXTENDED_LABEL)),
-        ("Total", ""),
+        (cfg.SCOPE_SURGICAL_LABEL,
+         crit([(sc, cfg.SCOPE_SURGICAL_LABEL), (di, "Y")])),
+        ("Extended pending review",
+         crit(extended_pairs)),
+        ("Total", None),
     ]
     # Upper bound = the bound tiers (family+category), gated on Match_Tier — NOT on
     # a non-blank Family — because the family/manufacturer re-rank now predicts a
     # brand for many non-bound rows too, so "Family<>''" no longer means "bound".
     bt = sorted(cfg.DASHBOARD_BOUND_TIERS)
-    for i, (label, sc_crit) in enumerate(rows):
+    for i, (label, row_crit) in enumerate(rows):
         r = i + 1
         ws.write_string(r, 0, label, lbl)
-        lower = f'=SUMIFS({rng(val)},{sc_crit}{inc}{rng(ti)},"family")'
-        upper = "=" + "+".join(f'SUMIFS({rng(val)},{sc_crit}{inc}{rng(ti)},"{t}")' for t in bt)
-        vol   = "=" + "+".join(f'SUMIFS({rng(qty)},{sc_crit}{inc}{rng(ti)},"{t}")' for t in bt)
-        ships = "=" + "+".join(f'COUNTIFS({sc_crit}{inc}{rng(ti)},"{t}")' for t in bt)
+        if row_crit is None:
+            lower = "=SUM(B2:B3)"
+            upper = "=SUM(C2:C3)"
+            vol = "=SUM(D2:D3)"
+            ships = "=SUM(E2:E3)"
+        else:
+            lower = f'=SUMIFS({rng(val)}{row_crit},{rng(ti)},"family")'
+            upper = "=" + "+".join(
+                f'SUMIFS({rng(val)}{row_crit},{rng(ti)},"{t}")' for t in bt)
+            vol = "=" + "+".join(
+                f'SUMIFS({rng(qty)}{row_crit},{rng(ti)},"{t}")' for t in bt)
+            ships = "=" + "+".join(
+                f'COUNTIFS({row_crit[1:]},{rng(ti)},"{t}")' for t in bt)
         ws.write_formula(r, 1, lower, money)
         ws.write_formula(r, 2, upper, money)
         ws.write_formula(r, 3, vol,   money)
@@ -270,8 +281,9 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
 
     ws.write(len(rows) + 2, 0,
              f"Surgical = HS4 in {sorted(cfg.SURGICAL_HS4)}; Extended = all other "
-             f"HS4 recovered by the widened match. Bound = family+category rows "
-             f"(Match_Tier in {bt}). The Dashboard/rollups show Surgical only.", note)
+             f"HS4 recovered by the widened match and parked as pending review. "
+             f"Bound = family+category rows (Match_Tier in {bt}). The Dashboard/"
+             f"rollups show trusted Surgical rows only.", note)
     ws.freeze_panes(1, 0)
 
 

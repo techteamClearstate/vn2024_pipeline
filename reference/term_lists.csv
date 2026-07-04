@@ -492,3 +492,114 @@ general_consumable_cues,detergent,scope_dq,active,DQ 2026-07: pharma/first-aid/g
 general_consumable_cues,first aid kit,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
 general_consumable_cues,first-aid,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
 general_consumable_cues,adhesive plaster,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+scope_keyword_veterinary,equine,reference_compliance,active,Final compliance veterinary trigger
+scope_keyword_veterinary,bovine,reference_compliance,active,Final compliance veterinary trigger
+scope_keyword_veterinary,canine,reference_compliance,active,Final compliance veterinary trigger
+scope_keyword_veterinary,feline,reference_compliance,active,Final compliance veterinary trigger
+scope_keyword_veterinary,veterinar,reference_compliance,active,Final compliance veterinary trigger
+scope_keyword_veterinary,\banimal\b,reference_compliance,active,Final compliance veterinary trigger
+scope_keyword_dental,dental,reference_compliance,active,Final compliance dental trigger
+scope_keyword_dental,orthodont,reference_compliance,active,Final compliance dental trigger
+scope_keyword_dental,\btooth\b,reference_compliance,active,Final compliance dental trigger
+scope_keyword_dental,\bteeth\b,reference_compliance,active,Final compliance dental trigger
+scope_keyword_cosmetic,cosmetic,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,aesthetic,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,\bbeauty\b,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,dermal filler,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,breast implant,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,botox,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,skin treatment,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_lab_ivd,reagent,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_lab_ivd,\bassay\b,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_lab_ivd,calibrator,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_lab_ivd,\bcontrol\b,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_lab_ivd,diagnostic kit,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_lab_ivd,\bivd\b,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_lab_ivd,laborator,reference_compliance,active,Final compliance lab/IVD trigger
+scope_keyword_imaging,linear accelerator,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,cyclotron,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,radiotherap,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,x[- ]?ray,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,\bct\b,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,\bmri\b,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,ultrasound,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,imaging,reference_compliance,active,Final compliance imaging trigger
+surgical_context_whitelist,(?:dilatation|dilation|dialation|dialatation) catheter,reference_compliance,active,Validated surgical catheter context
+surgical_context_whitelist,x[- ]?ray detectable,reference_compliance,active,Validated surgical detectable-consumable context
+surgical_context_whitelist,electrosurgical pencil,reference_compliance,active,Validated surgical device context
+surgical_context_whitelist,insufflator,reference_compliance,active,Validated laparoscopic device context
+surgical_context_whitelist,diagnostic catheter,reference_compliance,active,Validated cardiovascular catheter context
+generic_token_families,target,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,light source,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,sprinter,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,essential,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,unity,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,hybrid,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,elite,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,optime,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,therapy,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,evolution,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,physio,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,woven,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,cone,reference_compliance,active,Generic-token family anomaly guard
+capital_equipment_cues,\bmachine\b,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,\bequipment\b,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,\bapparatus\b,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,\blaser\b,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,therapy machine,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,tolerance testing,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,\bused\b.*\bmachine\b,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,skin treatment,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,workstation,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,\bconsole\b,reference_compliance,active,Capital-equipment anomaly cue
+surgical_candidate_terms,suture,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,stapler,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,staple,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,trocar,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,cannula,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,catheter,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,stent,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,\bmesh\b,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,scalpel,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,forceps,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,laparoscop,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,arthroscop,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,endoscop,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,electrosurg,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,cauter,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,diathermy,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,ligat,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,clip applier,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,guidewire,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,guide wire,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,bone screw,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,bone plate,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,intramedullary,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,orthopaedic,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,orthopedic,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,\bimplant,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,prosthes,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,knee,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,\bhip\b,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,spinal,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,pedicle,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,vascular graft,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,heart valve,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,annuloplasty,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,oxygenator,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,hernia,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,haemostat,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,hemostat,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,gauze,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,drape,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,retractor,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,osteotomy,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,burr,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,\bdrill\b,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,\bsaw\b,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,kirschner,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,external fixat,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,anchor,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,shaver,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,ablation,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,balloon,reference_compliance,active,Recall audit surgical candidate cue

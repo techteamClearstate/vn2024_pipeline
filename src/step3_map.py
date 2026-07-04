@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import settings as cfg
-from src.step1_extract import canonicalize_products, norm_party
+from src.step1_extract import canonicalize_products, norm_exact, norm_loose, norm_party
 
 
 def _derive_manufacturers(rows: pd.DataFrame) -> pd.Series:
@@ -91,114 +91,298 @@ def standardize_for_dashboard(out: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _norm_series(s: pd.Series) -> pd.Series:
-    """Vectorized taxonomy-dimension normalization (matches step1._norm_dim for the
-    ASCII taxonomy labels): strip, collapse whitespace, lowercase."""
-    return (s.fillna("").astype(str)
-             .str.replace(r"\s+", " ", regex=True).str.strip().str.lower())
+DIM_COLS = ["Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family"]
+CATEGORY_COLS = DIM_COLS[:3]
+GATE_TIERS = {"family", "category", "hs_prior"}
 
 
-def _reference_keyset() -> set | None:
-    """Load the reference (Seg, Sub, Product) tuples as '\\x1f'-joined keys for fast
-    vectorized membership, or None if the gate is off / the pickle is absent."""
+def _reference_master() -> dict | None:
+    """Load the full reference compliance cache built from the latest master."""
     if not getattr(cfg, "REFERENCE_HARDGATE", False):
         return None
     try:
         with open(cfg.REFERENCE_TUPLES_PKL, "rb") as fh:
             data = pickle.load(fh)
     except (FileNotFoundError, OSError):
-        print("  [ref-gate] WARNING reference_tuples.pkl missing — gate disabled "
-              "for this run (re-run --from extract to build it).")
+        print("  [ref-gate] WARNING reference_tuples.pkl missing; all bound rows "
+              "will be parked for review (re-run --from extract to build it).")
         return None
-    return {"\x1f".join(t) for t in data.get("triples", set())}
+
+    def canonical_full(value):
+        if isinstance(value, (tuple, list)) and len(value) == 2 and isinstance(value[0], (tuple, list)):
+            return tuple(value[0])
+        return tuple(value)
+
+    data = dict(data)
+    data["category_exact"] = set(data.get("category_exact",
+                                      data.get("cat_exact",
+                                      data.get("triples", set()))))
+    data["category_loose"] = dict(data.get("category_loose",
+                                       data.get("cat_loose", {})))
+    data["full_exact"] = set(data.get("full_exact", set()))
+    data["full_loose"] = dict(data.get("full_loose", {}))
+    data["generic_exact"] = {
+        k: canonical_full(v)
+        for k, v in dict(data.get("generic_exact", data.get("gen_exact", {}))).items()
+    }
+    data["generic_loose"] = {
+        k: canonical_full(v)
+        for k, v in dict(data.get("generic_loose", data.get("gen_loose", {}))).items()
+    }
+    data["pf_cats"] = {
+        tuple(k): {tuple(vv) for vv in vals}
+        for k, vals in dict(data.get("pf_cats", {})).items()
+    }
+    return data
 
 
-def _scope_flag_series(out: pd.DataFrame) -> pd.Series:
-    """First negative-scope flag whose cue hits the Detailed_Product+Importer+
-    Exporter blob (priority = SCOPE_EXCLUDE_CUES order), else "". One compiled
-    regex per flag → vectorized/fast even on the 2M-row India frame."""
-    if not getattr(cfg, "APPLY_SCOPE_EXCLUSIONS", False):
-        return pd.Series("", index=out.index)
+def _compile_union(patterns):
+    parts = []
+    for pat in patterns or []:
+        pat = str(pat).strip()
+        if not pat:
+            continue
+        try:
+            re.compile(pat)
+            parts.append(pat)
+        except re.error:
+            parts.append(re.escape(pat))
+    if not parts:
+        return None
+    return re.compile("|".join(f"(?:{p})" for p in parts), re.IGNORECASE)
+
+
+def _scope_regexes():
+    scope_rx = [
+        (name, _compile_union(cues))
+        for name, cues in getattr(cfg, "SCOPE_EXCLUDE_CUES", {}).items()
+    ]
+    scope_rx = [(name, rx) for name, rx in scope_rx if rx is not None]
+    whitelist_rx = _compile_union(getattr(cfg, "SURGICAL_CONTEXT_WHITELIST", ()))
+    capital_rx = _compile_union(getattr(cfg, "CAPITAL_EQUIPMENT_CUES", ()))
+    return scope_rx, whitelist_rx, capital_rx
+
+
+def _scope_text(out: pd.DataFrame) -> pd.Series:
     scope_cols = getattr(cfg, "SCOPE_EXCLUDE_COLS", [cfg.VN_DESCRIPTION_COL])
     cols = [c for c in scope_cols if c in out.columns]
     if not cols:
         return pd.Series("", index=out.index)
-    blob = out[cols].fillna("").astype(str).agg(" ".join, axis=1).str.lower()
-    flag = pd.Series("", index=out.index)
-    for name, cues in cfg.SCOPE_EXCLUDE_CUES.items():
-        cues = [c.lower() for c in cues if c]
-        if not cues:
-            continue
-        rx = re.compile("|".join(re.escape(c) for c in cues))
-        hit = blob.str.contains(rx, regex=True, na=False) & (flag == "")
-        flag = flag.mask(hit, name)
-    return flag
+    return out[cols].fillna("").astype(str).agg(" ".join, axis=1).str.lower()
+
+
+def _scope_hit(text: str, scope_rx, whitelist_rx):
+    if whitelist_rx is not None and whitelist_rx.search(text or ""):
+        return None, "whitelist"
+    for name, rx in scope_rx:
+        match = rx.search(text or "")
+        if match:
+            return name, match.group(0)
+    return None, None
+
+
+def _unspecified_mask(out: pd.DataFrame) -> pd.Series:
+    seg = out["Segment"].map(norm_exact)
+    sub = out["Sub-segment"].map(norm_exact)
+    prod = out["Product_V0"].map(norm_exact)
+    unspec = norm_exact(cfg.UNSPECIFIED_LABEL)
+    mark = norm_exact(getattr(cfg, "UNSPECIFIED_PRODUCT_MARK", ""))
+    prod_unspec = (prod == "") | (prod == unspec)
+    if mark:
+        prod_unspec = prod_unspec | prod.map(lambda value: mark in value)
+    return prod_unspec | (seg == "") | (seg == unspec) | (sub == "") | (sub == unspec)
+
+
+def _align_category(out: pd.DataFrame, idx, cat_key):
+    for col, value in zip(CATEGORY_COLS, cat_key):
+        out.loc[idx, col] = value
 
 
 def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
-    """DQ 2026-07 final-output gate. Adds four columns so the trusted
-    Dashboard/Rollup/Scope carry ONLY reference-aligned, in-scope rows — WITHOUT
-    dropping anything (failing rows stay in RawData, tagged for review):
+    """Apply the latest master-list compliance decision tree.
 
-      * Ref_Valid    "Y" if a bound (family/category) row's (Segment, Sub-segment,
-                     Product) tuple exists in the latest reference taxonomy AND the
-                     product is not a "(unspecified)"/blank label;
-      * Scope_Flag   the negative-scope cue group that matched (dental/veterinary/
-                     cosmetic/imaging/lab_ivd/general), else "";
-      * Dash_Include "Y" if the row feeds the trusted Dashboard (bound & Ref_Valid
-                     & not scope-excluded). The Dashboard/rollup formulas key on it;
-      * QA_Status    human-readable disposition (see cfg.QA_* vocabulary).
+    Trusted Dashboard rows must be Surgical scope, exact strict-master rows, and
+    free of unresolved negative-scope cues. All other rows remain in RawData with
+    a review/audit disposition for recall review.
     """
-    tier  = out[cfg.TIER_COL].fillna("")
-    bound = tier.isin(cfg.DASHBOARD_BOUND_TIERS)
+    for col in DIM_COLS:
+        if col not in out.columns:
+            out[col] = ""
+    if cfg.TIER_COL not in out.columns:
+        out[cfg.TIER_COL] = ""
+    if cfg.SCOPE_COL not in out.columns:
+        out[cfg.SCOPE_COL] = ""
+    if cfg.SCOPE_FLAG_COL not in out.columns:
+        out[cfg.SCOPE_FLAG_COL] = ""
 
-    seg  = _norm_series(out[cfg.DASHBOARD_OU_COL])
-    sub  = _norm_series(out["Sub-segment"])
-    prod = _norm_series(out["Product_V0"])
-    unspec = str(cfg.UNSPECIFIED_LABEL).lower()
-    mark   = str(cfg.UNSPECIFIED_PRODUCT_MARK).lower()
-    prod_unspec = prod.str.contains(re.escape(mark), regex=True, na=False) | (prod == unspec) | (prod == "")
-    dims_unspec = prod_unspec | (seg == unspec) | (seg == "") | (sub == unspec) | (sub == "")
+    tier = out[cfg.TIER_COL].fillna("")
+    matched = out.get(cfg.MATCH_STATUS_COL, pd.Series("", index=out.index)).fillna("").eq("Matched")
+    scope_surg = out[cfg.SCOPE_COL].fillna("").eq(cfg.SCOPE_SURGICAL_LABEL)
+    bound = tier.isin(GATE_TIERS)
+    qa = pd.Series(cfg.QA_UNMAPPED, index=out.index, dtype=object)
+    ref_valid = pd.Series("", index=out.index, dtype=object)
+    scope_flag = out[cfg.SCOPE_FLAG_COL].fillna("").astype(str).copy()
 
-    keyset = _reference_keyset()
-    if keyset is not None:
-        key = seg + "\x1f" + sub + "\x1f" + prod
-        ref_valid = bound & key.isin(keyset) & ~prod_unspec
+    master = _reference_master()
+    relabels = 0
+
+    if master is None:
+        qa.loc[tier.eq("manufacturer")] = cfg.QA_AUDIT_MFR
+        qa.loc[matched & bound] = cfg.QA_REVIEW_NOREF
+        qa.loc[matched & bound & _unspecified_mask(out)] = cfg.QA_REVIEW_UNSPEC
     else:
-        ref_valid = bound & ~prod_unspec if getattr(cfg, "DROP_UNSPECIFIED_PRODUCTS", False) else bound
+        family_mask = matched & tier.eq("family")
+        for combo, idx in out.loc[family_mask, DIM_COLS].fillna("").astype(str).groupby(
+                DIM_COLS, dropna=False, sort=False).groups.items():
+            exact = tuple(norm_exact(v) for v in combo)
+            loose = tuple(norm_loose(v) for v in combo)
+            if exact in master["full_exact"]:
+                ref_valid.loc[idx] = "Y"
+                qa.loc[idx] = cfg.QA_MAPPED
+                continue
+            canon = master["full_loose"].get(loose)
+            if canon is not None:
+                for col, value in zip(DIM_COLS, canon):
+                    out.loc[idx, col] = value
+                ref_valid.loc[idx] = "Y"
+                qa.loc[idx] = cfg.QA_MAPPED
+                relabels += len(idx)
+                continue
+            canon = master["generic_exact"].get(exact) or master["generic_loose"].get(loose)
+            if canon is not None:
+                for col, value in zip(DIM_COLS, canon):
+                    out.loc[idx, col] = value
+                ref_valid.loc[idx] = "Y"
+                qa.loc[idx] = cfg.QA_REVIEW_GEN
+                relabels += len(idx)
+                continue
+            conflict_cats = master["pf_cats"].get(loose[3:5])
+            if conflict_cats:
+                qa.loc[idx] = cfg.QA_REVIEW_CAT
+            else:
+                qa.loc[idx] = cfg.QA_REVIEW_NOREF
 
-    # Scope-cue regex is the costly part — only bound rows can be included, so only
-    # they need a scope flag (keeps the 2M-row India pass fast).
-    scope_flag = pd.Series("", index=out.index)
-    if bool(bound.any()):
-        scope_flag.loc[bound] = _scope_flag_series(out.loc[bound])
-    include = ref_valid & (scope_flag == "")
+            cat_canon = master["category_loose"].get(loose[:3])
+            if cat_canon is not None:
+                _align_category(out, idx, cat_canon)
 
-    out[cfg.REF_VALID_COL]    = np.where(ref_valid, "Y", "")
-    out[cfg.SCOPE_FLAG_COL]   = scope_flag
+        unspec = _unspecified_mask(out)
+        for tier_name, ok_status in (
+            ("category", cfg.QA_MAPPED),
+            ("hs_prior", cfg.QA_AUDIT_HSPRIOR),
+        ):
+            cat_mask = matched & tier.eq(tier_name)
+            if not bool(cat_mask.any()):
+                continue
+            bad_unspec = cat_mask & unspec
+            qa.loc[bad_unspec] = cfg.QA_REVIEW_UNSPEC
+
+            valid_cat_mask = cat_mask & ~unspec
+            for combo, idx in out.loc[valid_cat_mask, CATEGORY_COLS].fillna("").astype(str).groupby(
+                    CATEGORY_COLS, dropna=False, sort=False).groups.items():
+                exact = tuple(norm_exact(v) for v in combo)
+                loose = tuple(norm_loose(v) for v in combo)
+                if exact in master["category_exact"]:
+                    if tier_name == "category":
+                        ref_valid.loc[idx] = "Y"
+                    qa.loc[idx] = ok_status
+                    continue
+                canon = master["category_loose"].get(loose)
+                if canon is not None:
+                    _align_category(out, idx, canon)
+                    if tier_name == "category":
+                        ref_valid.loc[idx] = "Y"
+                    qa.loc[idx] = ok_status
+                    relabels += len(idx)
+                else:
+                    qa.loc[idx] = cfg.QA_REVIEW_NOREF
+
+        qa.loc[tier.eq("manufacturer")] = cfg.QA_AUDIT_MFR
+        qa.loc[~matched] = cfg.QA_UNMAPPED
+
+    if getattr(cfg, "APPLY_SCOPE_EXCLUSIONS", False):
+        scope_rx, whitelist_rx, capital_rx = _scope_regexes()
+        desc_lc = _scope_text(out)
+        check_scope = bound
+        for i in out.index[check_scope]:
+            group, keyword = _scope_hit(desc_lc.at[i], scope_rx, whitelist_rx)
+            prior_flag = scope_flag.at[i].strip()
+            if group is None and keyword == "whitelist":
+                if prior_flag:
+                    scope_flag.at[i] = ""
+                continue
+            if group is None and not prior_flag:
+                continue
+            flag = group or prior_flag
+
+            if tier.at[i] == "family" and ref_valid.at[i] == "Y":
+                family_norm = norm_loose(out.at[i, "Family"])
+                keyword_norm = norm_loose(keyword or "")
+                if keyword_norm and keyword_norm in family_norm:
+                    scope_flag.at[i] = ""
+                    continue
+
+            scope_flag.at[i] = flag
+            if qa.at[i] in (cfg.QA_MAPPED, cfg.QA_AUDIT_HSPRIOR, ""):
+                qa.at[i] = cfg.QA_REVIEW_SCOPE + ": " + flag
+    else:
+        capital_rx = None
+        desc_lc = _scope_text(out)
+
+    review_blank = bound & qa.eq("")
+    qa.loc[review_blank & ref_valid.eq("Y")] = cfg.QA_MAPPED
+    qa.loc[review_blank & ~ref_valid.eq("Y")] = cfg.QA_REVIEW_NOREF
+
+    generic_tokens = {norm_loose(value) for value in getattr(cfg, "GENERIC_TOKENS", set())}
+    if generic_tokens and capital_rx is not None:
+        cap_hit = desc_lc.str.contains(capital_rx, regex=True, na=False)
+        fam_loose = out["Family"].map(norm_loose)
+        anomaly = tier.eq("family") & qa.eq(cfg.QA_MAPPED) & fam_loose.isin(generic_tokens) & cap_hit
+        qa.loc[anomaly] = cfg.QA_REVIEW_ANOM
+
+    extended = qa.eq(cfg.QA_MAPPED) & ~scope_surg
+    qa.loc[extended] = cfg.QA_REVIEW_EXT
+
+    include = qa.eq(cfg.QA_MAPPED) & scope_surg & ref_valid.eq("Y") & scope_flag.eq("")
+    out[cfg.REF_VALID_COL] = np.where(ref_valid.eq("Y"), "Y", "")
+    out[cfg.SCOPE_FLAG_COL] = scope_flag
     out[cfg.DASH_INCLUDE_COL] = np.where(include, "Y", "")
+    out[cfg.QA_STATUS_COL] = qa
 
-    # Disposition (priority-ordered): manufacturer-only → unmapped default first,
-    # then bound rows resolved include → scope → unspecified → non-reference.
-    status = pd.Series(cfg.QA_UNMAPPED, index=out.index)
-    status = status.mask(tier == "manufacturer", cfg.QA_AUDIT_MFR)
-    ext = (out[cfg.SCOPE_COL] == cfg.SCOPE_EXTENDED_LABEL) if cfg.SCOPE_COL in out.columns \
-          else pd.Series(False, index=out.index)
-    status = status.mask(include & ext,  cfg.QA_MAPPED_EXT)
-    status = status.mask(include & ~ext, cfg.QA_MAPPED)
-    status = status.mask(bound & ~include & (scope_flag != ""),
-                         cfg.QA_REVIEW_SCOPE + ": " + scope_flag)
-    status = status.mask(bound & ~include & (scope_flag == "") & dims_unspec,
-                         cfg.QA_REVIEW_UNSPEC)
-    status = status.mask(bound & ~include & (scope_flag == "") & ~dims_unspec,
-                         cfg.QA_REVIEW_NONREF)
-    out[cfg.QA_STATUS_COL] = status
+    if master is not None:
+        bad_full = 0
+        for combo in out.loc[include & tier.eq("family"), DIM_COLS].fillna("").astype(str).drop_duplicates().itertuples(index=False, name=None):
+            if tuple(norm_exact(v) for v in combo) not in master["full_exact"]:
+                bad_full += 1
+        bad_cat = 0
+        for combo in out.loc[include, CATEGORY_COLS].fillna("").astype(str).drop_duplicates().itertuples(index=False, name=None):
+            if tuple(norm_exact(v) for v in combo) not in master["category_exact"]:
+                bad_cat += 1
+        scope_leaks = 0
+        scope_rx, whitelist_rx, _ = _scope_regexes()
+        desc_lc = _scope_text(out)
+        for i in out.index[include]:
+            group, keyword = _scope_hit(desc_lc.at[i], scope_rx, whitelist_rx)
+            if group is None:
+                continue
+            family_norm = norm_loose(out.at[i, "Family"])
+            keyword_norm = norm_loose(keyword or "")
+            if not (tier.at[i] == "family" and keyword_norm and keyword_norm in family_norm):
+                scope_leaks += 1
+        if bad_full or bad_cat or scope_leaks:
+            raise AssertionError(
+                "reference gate invariant failed: "
+                f"family={bad_full}, category={bad_cat}, scope_leaks={scope_leaks}"
+            )
 
-    n_inc = int((include).sum()); n_bound = int(bound.sum())
-    n_scope = int((bound & (scope_flag != "")).sum())
-    print(f"  [ref-gate] {n_inc:,}/{n_bound:,} bound rows reference-valid & in-scope "
-          f"→ Dashboard; {n_bound - n_inc:,} parked as Review "
-          f"({n_scope:,} scope-excluded)")
+    n_inc = int(include.sum())
+    n_bound = int(bound.sum())
+    n_scope = int((bound & scope_flag.ne("")).sum())
+    n_ext = int(qa.eq(cfg.QA_REVIEW_EXT).sum())
+    n_ref = int(ref_valid.eq("Y").sum())
+    print(f"  [ref-gate] {n_inc:,}/{n_bound:,} bound rows trusted "
+          f"({n_ref:,} reference-valid; {n_ext:,} Extended-review; "
+          f"{n_scope:,} scope-excluded; {relabels:,} relabelled)")
     return out
 
 

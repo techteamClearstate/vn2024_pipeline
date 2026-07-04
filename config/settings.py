@@ -431,19 +431,20 @@ MANUFACTURER_EXCLUDE_CUES = load_set("manufacturer_exclude_cues")
 # ── Negative-scope exclusion (DQ 2026-07 final-output gate) ─────────────────
 # Out-of-scope categories that still occasionally match a surgical family/category
 # via a generic token. Applied as a FINAL gate (step3.apply_reference_gate) against
-# the Detailed_Product + Importer + Exporter blob: a bound row that hits any cue is
-# parked as Review (kept in RawData, excluded from the trusted Dashboard/Rollup).
-# Plain-substring semantics (cue in text.lower()), same as the other cue guards.
-# Lists are governed in reference/term_lists.csv; keep cues conservative — a hit
-# demotes a row, so over-broad tokens would drop legitimate device revenue.
+# Detailed_Product only: a bound row that hits any cue is parked as Review (kept in
+# RawData, excluded from the trusted Dashboard/Rollup). These are regex terms from
+# the final reference-compliance adjudication, governed in reference/term_lists.csv.
 SCOPE_EXCLUDE_CUES = {
-    "dental":     DENTAL_NEGATIVE_CUES,
-    "veterinary": MANUFACTURER_EXCLUDE_CUES,
-    "cosmetic":   load_set("cosmetic_aesthetic_cues"),
-    "imaging":    load_set("imaging_equipment_cues"),
-    "lab_ivd":    load_set("lab_ivd_cues"),
-    "general":    load_set("general_consumable_cues"),
+    "veterinary": load_tuple("scope_keyword_veterinary"),
+    "dental":     load_tuple("scope_keyword_dental"),
+    "cosmetic":   load_tuple("scope_keyword_cosmetic"),
+    "lab_ivd":    load_tuple("scope_keyword_lab_ivd"),
+    "imaging":    load_tuple("scope_keyword_imaging"),
 }
+SURGICAL_CONTEXT_WHITELIST = load_tuple("surgical_context_whitelist")
+GENERIC_TOKENS = load_set("generic_token_families")
+CAPITAL_EQUIPMENT_CUES = load_tuple("capital_equipment_cues")
+SURGICAL_CANDIDATE_TERMS = load_tuple("surgical_candidate_terms")
 # Columns the scope cues are matched against. DESCRIPTION-ONLY by design: matching
 # the Importer/Exporter party names was tested and caused false positives — e.g. a
 # distributor named "…Imaging Systems…" importing real stents, or an Italian
@@ -477,7 +478,7 @@ UNSPECIFIED_LABEL     = "Unspecified"   # family bucket for Tier-2 category rows
 # QA_STATUS_COL and marked out of DASH_INCLUDE_COL, and surfaced on the QA tab.
 REFERENCE_HARDGATE       = True    # gate final output to the reference taxonomy
 DROP_UNSPECIFIED_PRODUCTS = True   # never accept "<head> (unspecified)"/blank dims
-APPLY_SCOPE_EXCLUSIONS   = True    # park dental/vet/cosmetic/imaging/lab/general hits
+APPLY_SCOPE_EXCLUSIONS   = True    # park dental/vet/cosmetic/imaging/lab/IVD hits
 UNSPECIFIED_PRODUCT_MARK = "(unspecified)"   # bare-head category label suffix
 REF_VALID_COL   = "Ref_Valid"      # "Y" if the (Seg,Sub,Product) tuple is in reference
 DASH_INCLUDE_COL = "Dash_Include"  # "Y" if the row feeds the trusted Dashboard
@@ -485,12 +486,18 @@ QA_STATUS_COL   = "QA_Status"      # human-readable final disposition (see below
 SCOPE_FLAG_COL  = "Scope_Flag"     # which negative-scope cue matched (if any)
 # QA_Status vocabulary (one per row):
 QA_MAPPED        = "Mapped - reference-valid"
-QA_MAPPED_EXT    = "Mapped - reference-valid (Extended HS scope)"
-QA_REVIEW_NONREF = "Review - non-reference label"
+QA_REVIEW_EXT    = "Review - surgical product in Extended HS scope"
+QA_REVIEW_GEN    = "Review - generic reference family"
+QA_REVIEW_CAT    = "Review - reference category conflict"
+QA_REVIEW_NOREF  = "Review - not in latest reference"
 QA_REVIEW_UNSPEC = "Review - unspecified category"
 QA_REVIEW_SCOPE  = "Review - excluded scope"     # + ": <flag>"
+QA_REVIEW_ANOM   = "Review - generic-token mapping anomaly"
 QA_AUDIT_MFR     = "Audit - manufacturer only"
+QA_AUDIT_HSPRIOR = "Audit - hs_prior category (pending validation)"
 QA_UNMAPPED      = "Unmapped"
+QA_MAPPED_EXT    = QA_REVIEW_EXT                 # backwards-compatible alias
+QA_REVIEW_NONREF = QA_REVIEW_NOREF               # backwards-compatible alias
 # Each run writes its country's Dashboard slice here as dashboard_<country>.csv;
 # the export combines every slice present into one cross-country Dashboard sheet.
 # Process one market's file per run (swap VN_SOURCE_XLSX + IMPORT_COUNTRY); delete

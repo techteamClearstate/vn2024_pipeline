@@ -8,7 +8,7 @@ Step 1 — Extraction
 import csv
 import pickle
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -136,6 +136,35 @@ def _load_v0_reference() -> pd.DataFrame:
         v0 = v0.rename(columns=source_map)
     _require_columns(v0.columns, cfg.V0_COLS.values(),
                      f"reference sheet '{cfg.V0_SHEET}'")
+    return v0
+
+
+def _load_master_reference() -> pd.DataFrame:
+    """Load the full master sheet, including generic-family rows.
+
+    The lookup/lexicon builders intentionally use cfg.V0_SHEET
+    ("Updated (excl. generic)") so generic labels do not become match keywords.
+    The final reference gate needs the full "Updated" sheet to distinguish strict
+    master rows from generic-family rows that should be parked for review.
+    """
+    _require(cfg.V0_REFERENCE_XLSX, "V0 reference workbook")
+    sheet = getattr(cfg, "V0_MASTER_SHEET", "Updated")
+    header = getattr(cfg, "V0_HEADER_ROW", None)
+    try:
+        v0 = pd.read_excel(cfg.V0_REFERENCE_XLSX, sheet_name=sheet,
+                           header=header if header is not None else 0)
+    except ValueError as e:
+        raise ValueError(
+            f"reference workbook has no sheet '{sheet}'. "
+            f"Update cfg.V0_MASTER_SHEET in config/settings.py.") from e
+
+    source_map = getattr(cfg, "V0_SOURCE_COLS", None)
+    if source_map:
+        _require_columns(v0.columns, source_map.keys(),
+                         f"reference sheet '{sheet}'")
+        v0 = v0.rename(columns=source_map)
+    need = [*cfg.V0_COLS.values(), "Generic Family Name?"]
+    _require_columns(v0.columns, need, f"reference sheet '{sheet}'")
     return v0
 
 
@@ -269,40 +298,120 @@ def canonicalize_products(series: pd.Series) -> pd.Series:
     return series.map(lambda x: cmap.get(x, x) if isinstance(x, str) else x)
 
 
-def _norm_dim(s) -> str:
+def norm_exact(s) -> str:
     """Normalize a taxonomy dimension (Segment / Sub-segment / Product) for the
     reference-tuple gate: string, strip, collapse whitespace, casefold. Applied
     identically to the reference and the mapped output so they compare like-for-like."""
-    return re.sub(r"\s+", " ", str(s)).strip().casefold()
+    return re.sub(r"\s+", " ", str(s if s is not None else "")).strip().casefold()
+
+
+def norm_loose(s) -> str:
+    """Reference-label normalization that also folds common separators and marks.
+
+    Used only for relabelling to the exact master wording after a punctuation or
+    spacing mismatch, e.g. Product_Qualifier vs Product - Qualifier.
+    """
+    t = str(s if s is not None else "")
+    t = re.sub(r"[™®©]", "", t)
+    t = re.sub(r"[_\-–—/\\]+", " ", t)
+    return re.sub(r"\s+", " ", t).strip().casefold()
+
+
+def _norm_dim(s) -> str:
+    return norm_exact(s)
 
 
 def build_reference_tuples() -> int:
-    """Build the set of valid (Segment, Sub-segment, Product) tuples from the
-    current reference master, for the reference-taxonomy hard-gate (DQ 2026-07,
-    applied in step3.apply_reference_gate). Products are canonicalized with the
-    SAME map step3 applies to Product_V0 so the gate compares like-for-like.
-    Pickles {"triples": set[tuple], "products": set[str]} (both normalized).
+    """Build the final reference-compliance lookup structures from the master.
+
+    Strict family rows are validated on the full five-key
+    (Segment, Sub-segment, Product, Player, Model/Family). Generic-family rows
+    are indexed separately so they can be marked review-only. Category and loose
+    maps support controlled relabelling to the master's exact wording.
 
     MUST run after build_product_canonical_map so canonicalize_products is a no-op-
     free, faithful match of what step3 writes into Product_V0.
     """
-    v0 = _load_v0_reference()
+    v0 = _load_master_reference().fillna("")
     c = cfg.V0_COLS
-    ref = v0[[c["segment"], c["sub_segment"], c["product"]]].dropna(
-        subset=[c["product"]]).copy()
-    prod = canonicalize_products(ref[c["product"]].astype(str))
-    triples, products = set(), set()
-    for seg, sub, p in zip(ref[c["segment"]], ref[c["sub_segment"]], prod):
-        pn = _norm_dim(p)
-        if not pn or pn == _norm_dim(cfg.UNSPECIFIED_LABEL):
+
+    ref = v0[[c["segment"], c["sub_segment"], c["product"],
+              c["player"], c["keyword"], "Generic Family Name?"]].copy()
+    ref[c["product"]] = canonicalize_products(ref[c["product"]].astype(str))
+    gen_flag = ref["Generic Family Name?"].astype(str).str.strip()
+    strict = ref[gen_flag == ""]
+    generic = ref[gen_flag != ""]
+
+    def trip(row):
+        return (str(row[c["segment"]]), str(row[c["sub_segment"]]),
+                str(row[c["product"]]))
+
+    def full(row):
+        return (*trip(row), str(row[c["player"]]), str(row[c["keyword"]]))
+
+    category_exact, products = set(), set()
+    category_votes = defaultdict(Counter)
+    pf_cats = defaultdict(set)
+
+    for _, row in ref.iterrows():
+        t = trip(row)
+        pn = norm_exact(t[2])
+        if not pn or pn == norm_exact(cfg.UNSPECIFIED_LABEL):
             continue
-        triples.add((_norm_dim(seg), _norm_dim(sub), pn))
+        category_exact.add(tuple(norm_exact(x) for x in t))
+        category_votes[tuple(norm_loose(x) for x in t)][t] += 1
+        pf_cats[(norm_loose(row[c["player"]]),
+                 norm_loose(row[c["keyword"]]))].add(t)
         products.add(pn)
+
+    full_exact, full_loose = set(), {}
+    generic_exact, generic_loose = {}, {}
+
+    for _, row in strict.iterrows():
+        f = full(row)
+        if not norm_exact(f[4]):
+            continue
+        full_exact.add(tuple(norm_exact(x) for x in f))
+        full_loose.setdefault(tuple(norm_loose(x) for x in f), f)
+
+    for _, row in generic.iterrows():
+        f = full(row)
+        if not norm_exact(f[4]):
+            continue
+        payload = (f, str(row["Generic Family Name?"]))
+        generic_exact.setdefault(tuple(norm_exact(x) for x in f), payload)
+        generic_loose.setdefault(tuple(norm_loose(x) for x in f), payload)
+
+    category_loose = {
+        k: v.most_common(1)[0][0]
+        for k, v in category_votes.items()
+    }
+    pf_cats = {k: sorted(v) for k, v in pf_cats.items()}
+
+    payload = {
+        "full_exact": full_exact,
+        "full_loose": full_loose,
+        "generic_exact": generic_exact,
+        "generic_loose": generic_loose,
+        "gen_exact": generic_exact,        # compatibility with the compliance tool
+        "gen_loose": generic_loose,
+        "category_exact": category_exact,
+        "category_loose": category_loose,
+        "cat_exact": category_exact,
+        "cat_loose": category_loose,
+        "pf_cats": pf_cats,
+        "triples": category_exact,         # backward-compatible category keyset
+        "products": products,
+        "n_strict": len(strict),
+        "n_generic": len(generic),
+        "n_all": len(ref),
+    }
     with open(cfg.REFERENCE_TUPLES_PKL, "wb") as fh:
-        pickle.dump({"triples": triples, "products": products}, fh)
-    print(f"  [ref-gate] {len(triples):,} valid (Segment, Sub-segment, Product) "
-          f"tuples / {len(products):,} products from the reference taxonomy")
-    return len(triples)
+        pickle.dump(payload, fh)
+    print(f"  [ref-gate] {len(full_exact):,} strict full keys / "
+          f"{len(generic_exact):,} generic full keys / "
+          f"{len(category_exact):,} category tuples from the master taxonomy")
+    return len(full_exact)
 
 
 def norm_phrase(s) -> str:

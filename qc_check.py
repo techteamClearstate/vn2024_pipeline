@@ -16,6 +16,8 @@ Checks:
   4. Dashboard bounds — lower <= upper for every row; manufacturer volume is
      NOT in the bounds (bounds restricted to cfg.DASHBOARD_BOUND_TIERS).
 """
+import pickle
+import re
 import sys
 from pathlib import Path
 
@@ -37,15 +39,39 @@ def _fail(msg):
     return False
 
 
+def _norm_exact(value) -> str:
+    return re.sub(r"\s+", " ", str(value if value is not None else "")).strip().casefold()
+
+
+def _load_reference_master() -> dict | None:
+    if not getattr(cfg, "REFERENCE_HARDGATE", False):
+        return None
+    try:
+        with open(cfg.REFERENCE_TUPLES_PKL, "rb") as fh:
+            data = pickle.load(fh)
+    except (FileNotFoundError, OSError):
+        print("  [QC] SKIP: reference_tuples.pkl missing")
+        return None
+    data = dict(data)
+    data["full_exact"] = set(data.get("full_exact", set()))
+    data["category_exact"] = set(data.get("category_exact",
+                                      data.get("cat_exact",
+                                      data.get("triples", set()))))
+    return data
+
+
 def main() -> int:
     df = pd.read_csv(cfg.MAPPED_CSV, low_memory=False, dtype=str)
     df = df.fillna("")
     tier = cfg.TIER_COL
     ok = True
 
-    # 1. Tier-1 unchanged
+    # 1. Tier-1 unchanged for the Vietnam cached regression market.
     n_fam = (df[tier] == "family").sum()
-    if n_fam != EXPECTED_FAMILY:
+    if cfg.IMPORT_COUNTRY.lower() not in {"vietnam", "vn"}:
+        print(f"  [QC] SKIP: Tier-1 family count pin is Vietnam-only "
+              f"(current market={cfg.IMPORT_COUNTRY})")
+    elif n_fam != EXPECTED_FAMILY:
         ok = _fail(f"Tier-1 family = {n_fam:,}, expected {EXPECTED_FAMILY:,}")
     else:
         print(f"  [QC] PASS: Tier-1 family = {n_fam:,}")
@@ -77,7 +103,38 @@ def main() -> int:
         print(f"  [QC] PASS: provenance shape "
               f"(category={len(cat):,}, manufacturer={len(mfr):,})")
 
-    # 4. Dashboard bounds
+    # 4. Reference-compliance invariants for trusted dashboard rows.
+    include = (df[cfg.DASH_INCLUDE_COL] == "Y") if cfg.DASH_INCLUDE_COL in df.columns \
+              else pd.Series(False, index=df.index)
+    if cfg.SCOPE_COL in df.columns:
+        leaked_scope = include & (df[cfg.SCOPE_COL] != cfg.SCOPE_SURGICAL_LABEL)
+        if leaked_scope.any():
+            ok = _fail(f"{int(leaked_scope.sum()):,} Dash_Include rows are not Surgical")
+    if cfg.QA_STATUS_COL in df.columns:
+        leaked_ext = include & (df[cfg.QA_STATUS_COL] == cfg.QA_REVIEW_EXT)
+        if leaked_ext.any():
+            ok = _fail(f"{int(leaked_ext.sum()):,} Extended-review rows are Dash_Include=Y")
+
+    ref = _load_reference_master()
+    if ref is not None:
+        dim_cols = ["Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family"]
+        cat_cols = dim_cols[:3]
+        bad_family = 0
+        for combo in df.loc[include & (df[tier] == "family"), dim_cols].drop_duplicates().itertuples(index=False, name=None):
+            if tuple(_norm_exact(v) for v in combo) not in ref["full_exact"]:
+                bad_family += 1
+        bad_category = 0
+        for combo in df.loc[include, cat_cols].drop_duplicates().itertuples(index=False, name=None):
+            if tuple(_norm_exact(v) for v in combo) not in ref["category_exact"]:
+                bad_category += 1
+        if bad_family or bad_category:
+            ok = _fail(f"trusted rows not in master: family keys={bad_family:,}, "
+                       f"category keys={bad_category:,}")
+        else:
+            print(f"  [QC] PASS: Dash_Include rows are Surgical and master-valid "
+                  f"({int(include.sum()):,} rows)")
+
+    # 5. Dashboard bounds
     slices = sorted(cfg.INTERMEDIATE.glob(f"{cfg.DASHBOARD_PARTIAL_PREFIX}*.csv"))
     if slices:
         dash = pd.concat([pd.read_csv(p) for p in slices], ignore_index=True)

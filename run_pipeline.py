@@ -30,6 +30,8 @@ import time
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import settings as cfg
 from src import step1_extract, step2_match, step3_map, step3b_hs_prior, step4_export
@@ -102,6 +104,10 @@ def main():
         if getattr(cfg, "USE_HS_PRIOR", False) and \
                 (cfg.INTERMEDIATE / "benchmark_gt_2024.csv").exists():
             step3b_hs_prior.run(full=True)
+            mapped = pd.read_csv(cfg.MAPPED_CSV, dtype=str, low_memory=False).fillna("")
+            mapped = step3_map.apply_reference_gate(mapped)
+            mapped.to_csv(cfg.MAPPED_CSV, index=False)
+            print("  [map] re-applied reference gate after hs_prior rerank")
 
     if start_idx <= 3:
         print("\n[4/4] Export")

@@ -15,3 +15,12 @@ hs_prior_fixation_products,usage,hs_prior_guard,term_list,substring,HS_PRIOR_FIX
 arthroplasty_component_cues,usage,hs_prior_guard,term_list,substring,ARTHROPLASTY_COMPONENT_CUES,step3b_hs_prior,Joint-replacement cues that trigger the fixation-fill veto.
 category_qualifier_map,usage,mapping,mapping,phrase,CATEGORY_QUALIFIER_MAP,"step1_extract, step2_match",Qualifier phrase -> canonical Product label (Tier-2 high confidence).
 manufacturer_aliases,usage,mapping,mapping,alias,MANUFACTURER_ALIASES,"step1_extract, step2_match",Canonical manufacturer -> distinctive cores searched in the Importer+Exporter blob.
+scope_keyword_veterinary,exclusion,scope_exclude,term_list,regex,SCOPE_EXCLUDE_CUES[veterinary],"step3_map, tools/reference_compliance",Final reference-compliance veterinary/animal trigger set; description-only.
+scope_keyword_dental,exclusion,scope_exclude,term_list,regex,SCOPE_EXCLUDE_CUES[dental],"step3_map, tools/reference_compliance",Final reference-compliance dental trigger set; description-only with whitelist adjudication.
+scope_keyword_cosmetic,exclusion,scope_exclude,term_list,regex,SCOPE_EXCLUDE_CUES[cosmetic],"step3_map, tools/reference_compliance",Final reference-compliance cosmetic/aesthetic trigger set; description-only.
+scope_keyword_lab_ivd,exclusion,scope_exclude,term_list,regex,SCOPE_EXCLUDE_CUES[lab_ivd],"step3_map, tools/reference_compliance",Final reference-compliance lab/IVD trigger set; description-only.
+scope_keyword_imaging,exclusion,scope_exclude,term_list,regex,SCOPE_EXCLUDE_CUES[imaging],"step3_map, tools/reference_compliance",Final reference-compliance imaging/radiotherapy trigger set; description-only.
+surgical_context_whitelist,usage,scope_adjudication,term_list,regex,SURGICAL_CONTEXT_WHITELIST,"step3_map, tools/reference_compliance",Surgical contexts that suppress final irrelevant-scope triggers.
+generic_token_families,exclusion,generic,term_list,loose_label,GENERIC_TOKENS,"step3_map, tools/reference_compliance",Generic-looking family labels that require capital-equipment sanity check.
+capital_equipment_cues,exclusion,scope_exclude,term_list,regex,CAPITAL_EQUIPMENT_CUES,"step3_map, tools/reference_compliance",Description cues that make a generic-token family suspicious.
+surgical_candidate_terms,usage,qa_recall,term_list,regex,SURGICAL_CANDIDATE_TERMS,tools/reference_compliance,Recall-audit terms for unmatched surgical candidates in DQ reports.
