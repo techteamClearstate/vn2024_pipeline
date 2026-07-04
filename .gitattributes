@@ -5,3 +5,7 @@
 *.tsv  filter=lfs diff=lfs merge=lfs -text
 *.csv  filter=lfs diff=lfs merge=lfs -text
 *.pkl  filter=lfs diff=lfs merge=lfs -text
+
+# EXCEPTION: the governed reference lists are small, human-editable text — keep
+# them OUT of LFS so they diff and render on GitHub.
+reference/reference_lists.csv !filter !diff !merge text
