@@ -1,0 +1,507 @@
+list_name,layer,kind,seq,key,value
+generic_word_blacklist,exclusion,set,0,,accessories
+generic_word_blacklist,exclusion,set,1,,accessory
+generic_word_blacklist,exclusion,set,2,,adapter
+generic_word_blacklist,exclusion,set,3,,adaptors
+generic_word_blacklist,exclusion,set,4,,advance
+generic_word_blacklist,exclusion,set,5,,agent
+generic_word_blacklist,exclusion,set,6,,alligator
+generic_word_blacklist,exclusion,set,7,,alpha
+generic_word_blacklist,exclusion,set,8,,apex
+generic_word_blacklist,exclusion,set,9,,arch
+generic_word_blacklist,exclusion,set,10,,arise
+generic_word_blacklist,exclusion,set,11,,arterial
+generic_word_blacklist,exclusion,set,12,,atlas
+generic_word_blacklist,exclusion,set,13,,autosuture
+generic_word_blacklist,exclusion,set,14,,balloon
+generic_word_blacklist,exclusion,set,15,,barb
+generic_word_blacklist,exclusion,set,16,,basic
+generic_word_blacklist,exclusion,set,17,,beta
+generic_word_blacklist,exclusion,set,18,,bipolar
+generic_word_blacklist,exclusion,set,19,,black
+generic_word_blacklist,exclusion,set,20,,blade
+generic_word_blacklist,exclusion,set,21,,blue
+generic_word_blacklist,exclusion,set,22,,burr
+generic_word_blacklist,exclusion,set,23,,burrs
+generic_word_blacklist,exclusion,set,24,,camera
+generic_word_blacklist,exclusion,set,25,,cartridge
+generic_word_blacklist,exclusion,set,26,,catheter
+generic_word_blacklist,exclusion,set,27,,catheters
+generic_word_blacklist,exclusion,set,28,,chrome
+generic_word_blacklist,exclusion,set,29,,circuit
+generic_word_blacklist,exclusion,set,30,,clamp
+generic_word_blacklist,exclusion,set,31,,clamps
+generic_word_blacklist,exclusion,set,32,,classic
+generic_word_blacklist,exclusion,set,33,,clean
+generic_word_blacklist,exclusion,set,34,,cleaner
+generic_word_blacklist,exclusion,set,35,,clear
+generic_word_blacklist,exclusion,set,36,,clip
+generic_word_blacklist,exclusion,set,37,,clips
+generic_word_blacklist,exclusion,set,38,,cobalt
+generic_word_blacklist,exclusion,set,39,,combo
+generic_word_blacklist,exclusion,set,40,,compact
+generic_word_blacklist,exclusion,set,41,,consumables
+generic_word_blacklist,exclusion,set,42,,core
+generic_word_blacklist,exclusion,set,43,,curve
+generic_word_blacklist,exclusion,set,44,,dark
+generic_word_blacklist,exclusion,set,45,,dawn
+generic_word_blacklist,exclusion,set,46,,deep
+generic_word_blacklist,exclusion,set,47,,delta
+generic_word_blacklist,exclusion,set,48,,doro
+generic_word_blacklist,exclusion,set,49,,drill
+generic_word_blacklist,exclusion,set,50,,drill tool
+generic_word_blacklist,exclusion,set,51,,dual
+generic_word_blacklist,exclusion,set,52,,dynamic
+generic_word_blacklist,exclusion,set,53,,easy
+generic_word_blacklist,exclusion,set,54,,echo
+generic_word_blacklist,exclusion,set,55,,edge
+generic_word_blacklist,exclusion,set,56,,electrode
+generic_word_blacklist,exclusion,set,57,,electrodes
+generic_word_blacklist,exclusion,set,58,,engine
+generic_word_blacklist,exclusion,set,59,,export
+generic_word_blacklist,exclusion,set,60,,extension
+generic_word_blacklist,exclusion,set,61,,falcon
+generic_word_blacklist,exclusion,set,62,,fast
+generic_word_blacklist,exclusion,set,63,,filter
+generic_word_blacklist,exclusion,set,64,,filters
+generic_word_blacklist,exclusion,set,65,,flat
+generic_word_blacklist,exclusion,set,66,,flex
+generic_word_blacklist,exclusion,set,67,,force
+generic_word_blacklist,exclusion,set,68,,forcep
+generic_word_blacklist,exclusion,set,69,,forceps
+generic_word_blacklist,exclusion,set,70,,free
+generic_word_blacklist,exclusion,set,71,,freedom
+generic_word_blacklist,exclusion,set,72,,full
+generic_word_blacklist,exclusion,set,73,,gamma
+generic_word_blacklist,exclusion,set,74,,generator
+generic_word_blacklist,exclusion,set,75,,gold
+generic_word_blacklist,exclusion,set,76,,green
+generic_word_blacklist,exclusion,set,77,,guide
+generic_word_blacklist,exclusion,set,78,,guides
+generic_word_blacklist,exclusion,set,79,,hard
+generic_word_blacklist,exclusion,set,80,,helix
+generic_word_blacklist,exclusion,set,81,,hero
+generic_word_blacklist,exclusion,set,82,,high
+generic_word_blacklist,exclusion,set,83,,hook
+generic_word_blacklist,exclusion,set,84,,iris
+generic_word_blacklist,exclusion,set,85,,kick
+generic_word_blacklist,exclusion,set,86,,legend
+generic_word_blacklist,exclusion,set,87,,liberty
+generic_word_blacklist,exclusion,set,88,,light
+generic_word_blacklist,exclusion,set,89,,line
+generic_word_blacklist,exclusion,set,90,,linear
+generic_word_blacklist,exclusion,set,91,,liquid
+generic_word_blacklist,exclusion,set,92,,long
+generic_word_blacklist,exclusion,set,93,,low
+generic_word_blacklist,exclusion,set,94,,marker
+generic_word_blacklist,exclusion,set,95,,markers
+generic_word_blacklist,exclusion,set,96,,mass
+generic_word_blacklist,exclusion,set,97,,max
+generic_word_blacklist,exclusion,set,98,,mega
+generic_word_blacklist,exclusion,set,99,,meril life
+generic_word_blacklist,exclusion,set,100,,mesh
+generic_word_blacklist,exclusion,set,101,,micro
+generic_word_blacklist,exclusion,set,102,,mini
+generic_word_blacklist,exclusion,set,103,,monitor
+generic_word_blacklist,exclusion,set,104,,monopolar
+generic_word_blacklist,exclusion,set,105,,moon
+generic_word_blacklist,exclusion,set,106,,multi
+generic_word_blacklist,exclusion,set,107,,nail
+generic_word_blacklist,exclusion,set,108,,nails
+generic_word_blacklist,exclusion,set,109,,nano
+generic_word_blacklist,exclusion,set,110,,navigator
+generic_word_blacklist,exclusion,set,111,,needle
+generic_word_blacklist,exclusion,set,112,,new
+generic_word_blacklist,exclusion,set,113,,next
+generic_word_blacklist,exclusion,set,114,,normal
+generic_word_blacklist,exclusion,set,115,,omega
+generic_word_blacklist,exclusion,set,116,,omni
+generic_word_blacklist,exclusion,set,117,,one
+generic_word_blacklist,exclusion,set,118,,open
+generic_word_blacklist,exclusion,set,119,,other
+generic_word_blacklist,exclusion,set,120,,others
+generic_word_blacklist,exclusion,set,121,,patch
+generic_word_blacklist,exclusion,set,122,,patches
+generic_word_blacklist,exclusion,set,123,,peek
+generic_word_blacklist,exclusion,set,124,,pioneer
+generic_word_blacklist,exclusion,set,125,,plain
+generic_word_blacklist,exclusion,set,126,,plate
+generic_word_blacklist,exclusion,set,127,,plates
+generic_word_blacklist,exclusion,set,128,,plus
+generic_word_blacklist,exclusion,set,129,,polyamide
+generic_word_blacklist,exclusion,set,130,,polyester
+generic_word_blacklist,exclusion,set,131,,power
+generic_word_blacklist,exclusion,set,132,,powered
+generic_word_blacklist,exclusion,set,133,,prime
+generic_word_blacklist,exclusion,set,134,,pro
+generic_word_blacklist,exclusion,set,135,,probe
+generic_word_blacklist,exclusion,set,136,,probes
+generic_word_blacklist,exclusion,set,137,,quick
+generic_word_blacklist,exclusion,set,138,,radial
+generic_word_blacklist,exclusion,set,139,,radiopaque
+generic_word_blacklist,exclusion,set,140,,reagent
+generic_word_blacklist,exclusion,set,141,,red
+generic_word_blacklist,exclusion,set,142,,reed
+generic_word_blacklist,exclusion,set,143,,reef
+generic_word_blacklist,exclusion,set,144,,retractor
+generic_word_blacklist,exclusion,set,145,,retractors
+generic_word_blacklist,exclusion,set,146,,revolution
+generic_word_blacklist,exclusion,set,147,,rigid
+generic_word_blacklist,exclusion,set,148,,ring
+generic_word_blacklist,exclusion,set,149,,rings
+generic_word_blacklist,exclusion,set,150,,rise
+generic_word_blacklist,exclusion,set,151,,round
+generic_word_blacklist,exclusion,set,152,,ruler
+generic_word_blacklist,exclusion,set,153,,safe
+generic_word_blacklist,exclusion,set,154,,scalpel
+generic_word_blacklist,exclusion,set,155,,scissor
+generic_word_blacklist,exclusion,set,156,,scissors
+generic_word_blacklist,exclusion,set,157,,screw
+generic_word_blacklist,exclusion,set,158,,screws
+generic_word_blacklist,exclusion,set,159,,seal
+generic_word_blacklist,exclusion,set,160,,sensor
+generic_word_blacklist,exclusion,set,161,,sharp
+generic_word_blacklist,exclusion,set,162,,sheath
+generic_word_blacklist,exclusion,set,163,,sheaths
+generic_word_blacklist,exclusion,set,164,,short
+generic_word_blacklist,exclusion,set,165,,sigma
+generic_word_blacklist,exclusion,set,166,,signal
+generic_word_blacklist,exclusion,set,167,,silver
+generic_word_blacklist,exclusion,set,168,,sleeve
+generic_word_blacklist,exclusion,set,169,,smart
+generic_word_blacklist,exclusion,set,170,,smooth
+generic_word_blacklist,exclusion,set,171,,soft
+generic_word_blacklist,exclusion,set,172,,sonic
+generic_word_blacklist,exclusion,set,173,,star
+generic_word_blacklist,exclusion,set,174,,steel
+generic_word_blacklist,exclusion,set,175,,step
+generic_word_blacklist,exclusion,set,176,,super
+generic_word_blacklist,exclusion,set,177,,supreme
+generic_word_blacklist,exclusion,set,178,,sure
+generic_word_blacklist,exclusion,set,179,,surgical support
+generic_word_blacklist,exclusion,set,180,,suture
+generic_word_blacklist,exclusion,set,181,,sutures
+generic_word_blacklist,exclusion,set,182,,system
+generic_word_blacklist,exclusion,set,183,,thin
+generic_word_blacklist,exclusion,set,184,,titanium
+generic_word_blacklist,exclusion,set,185,,tri
+generic_word_blacklist,exclusion,set,186,,trocar
+generic_word_blacklist,exclusion,set,187,,trocars
+generic_word_blacklist,exclusion,set,188,,true
+generic_word_blacklist,exclusion,set,189,,tube
+generic_word_blacklist,exclusion,set,190,,tubes
+generic_word_blacklist,exclusion,set,191,,tubing
+generic_word_blacklist,exclusion,set,192,,two
+generic_word_blacklist,exclusion,set,193,,ultimate
+generic_word_blacklist,exclusion,set,194,,ultra
+generic_word_blacklist,exclusion,set,195,,uni
+generic_word_blacklist,exclusion,set,196,,valve
+generic_word_blacklist,exclusion,set,197,,valves
+generic_word_blacklist,exclusion,set,198,,venous
+generic_word_blacklist,exclusion,set,199,,vision
+generic_word_blacklist,exclusion,set,200,,wave
+generic_word_blacklist,exclusion,set,201,,white
+generic_word_blacklist,exclusion,set,202,,wide
+generic_word_blacklist,exclusion,set,203,,wire
+generic_word_blacklist,exclusion,set,204,,work
+generic_word_blacklist,exclusion,set,205,,xpress
+category_negative_cues,exclusion,set,0,,brake cable
+category_negative_cues,exclusion,set,1,,breaker
+category_negative_cues,exclusion,set,2,,cable sheath
+category_negative_cues,exclusion,set,3,,console brake
+category_negative_cues,exclusion,set,4,,cutter
+category_negative_cues,exclusion,set,5,,dummy
+category_negative_cues,exclusion,set,6,,holder
+category_negative_cues,exclusion,set,7,,measuring kit
+category_negative_cues,exclusion,set,8,,obturator
+category_negative_cues,exclusion,set,9,,pump for
+category_negative_cues,exclusion,set,10,,pump to
+category_negative_cues,exclusion,set,11,,punch
+category_negative_cues,exclusion,set,12,,rack
+category_negative_cues,exclusion,set,13,,simulator
+category_negative_cues,exclusion,set,14,,size measuring
+category_negative_cues,exclusion,set,15,,stopcock
+category_negative_cues,exclusion,set,16,,trainer
+category_negative_cues,exclusion,set,17,,tray
+category_negative_cues,exclusion,set,18,,valve cap
+category_negative_cues,exclusion,set,19,,valvotome
+category_negative_cues,exclusion,set,20,,valvulotome
+dental_negative_cues,exclusion,set,0,,artificial tooth
+dental_negative_cues,exclusion,set,1,,dental
+dental_negative_cues,exclusion,set,2,,dental pulp
+dental_negative_cues,exclusion,set,3,,dentin
+dental_negative_cues,exclusion,set,4,,dentist
+dental_negative_cues,exclusion,set,5,,denture
+dental_negative_cues,exclusion,set,6,,endodont
+dental_negative_cues,exclusion,set,7,,gingiv
+dental_negative_cues,exclusion,set,8,,gutta percha
+dental_negative_cues,exclusion,set,9,,gutta-percha
+dental_negative_cues,exclusion,set,10,,orthodont
+dental_negative_cues,exclusion,set,11,,periodont
+dental_negative_cues,exclusion,set,12,,prophy paste
+dental_negative_cues,exclusion,set,13,,root canal
+dental_negative_cues,exclusion,set,14,,tooth filling
+dental_negative_cues,exclusion,set,15,,tooth root
+generic_label_blacklist,exclusion,set,0,,access devices
+generic_label_blacklist,exclusion,set,1,,electrosurgical devices
+generic_label_blacklist,exclusion,set,2,,hand instruments
+generic_label_blacklist,exclusion,set,3,,laser systems
+generic_label_blacklist,exclusion,set,4,,other catheters
+manufacturer_exclude_cues,exclusion,set,0,,animal
+manufacturer_exclude_cues,exclusion,set,1,,veterinari
+manufacturer_exclude_cues,exclusion,set,2,,veterinary
+category_heads,usage,set,0,,balloon
+category_heads,usage,set,1,,cannula
+category_heads,usage,set,2,,catheter
+category_heads,usage,set,3,,graft
+category_heads,usage,set,4,,guidewire
+category_heads,usage,set,5,,nail
+category_heads,usage,set,6,,sheath
+category_heads,usage,set,7,,stent
+consistency_cues,usage,set,0,,acetabular
+consistency_cues,usage,set,1,,aortic
+consistency_cues,usage,set,2,,balloon
+consistency_cues,usage,set,3,,biliary
+consistency_cues,usage,set,4,,cage
+consistency_cues,usage,set,5,,cannula
+consistency_cues,usage,set,6,,carotid
+consistency_cues,usage,set,7,,catheter
+consistency_cues,usage,set,8,,cement
+consistency_cues,usage,set,9,,cerebral
+consistency_cues,usage,set,10,,clamp
+consistency_cues,usage,set,11,,clip
+consistency_cues,usage,set,12,,coil
+consistency_cues,usage,set,13,,corneal
+consistency_cues,usage,set,14,,coronary
+consistency_cues,usage,set,15,,cranial
+consistency_cues,usage,set,16,,defibrillator
+consistency_cues,usage,set,17,,dental
+consistency_cues,usage,set,18,,disc
+consistency_cues,usage,set,19,,electrode
+consistency_cues,usage,set,20,,femoral
+consistency_cues,usage,set,21,,forceps
+consistency_cues,usage,set,22,,graft
+consistency_cues,usage,set,23,,guidewire
+consistency_cues,usage,set,24,,hip
+consistency_cues,usage,set,25,,intraocular
+consistency_cues,usage,set,26,,knee
+consistency_cues,usage,set,27,,lead
+consistency_cues,usage,set,28,,mesh
+consistency_cues,usage,set,29,,nail
+consistency_cues,usage,set,30,,oxygenator
+consistency_cues,usage,set,31,,pacemaker
+consistency_cues,usage,set,32,,pedicle
+consistency_cues,usage,set,33,,plate
+consistency_cues,usage,set,34,,prosthesis
+consistency_cues,usage,set,35,,ring
+consistency_cues,usage,set,36,,screw
+consistency_cues,usage,set,37,,sheath
+consistency_cues,usage,set,38,,spinal
+consistency_cues,usage,set,39,,stent
+consistency_cues,usage,set,40,,suture
+consistency_cues,usage,set,41,,tibial
+consistency_cues,usage,set,42,,trocar
+consistency_cues,usage,set,43,,ureteral
+consistency_cues,usage,set,44,,urethral
+consistency_cues,usage,set,45,,valve
+consistency_cues,usage,set,46,,vertebral
+ambiguous_family_keywords,usage,set,0,,absolute
+ambiguous_family_keywords,usage,set,1,,accolade
+ambiguous_family_keywords,usage,set,2,,achieve
+ambiguous_family_keywords,usage,set,3,,acquire
+ambiguous_family_keywords,usage,set,4,,across
+ambiguous_family_keywords,usage,set,5,,alliance
+ambiguous_family_keywords,usage,set,6,,allure
+ambiguous_family_keywords,usage,set,7,,anchor
+ambiguous_family_keywords,usage,set,8,,apex
+ambiguous_family_keywords,usage,set,9,,apollo
+ambiguous_family_keywords,usage,set,10,,approach
+ambiguous_family_keywords,usage,set,11,,arrive
+ambiguous_family_keywords,usage,set,12,,artic
+ambiguous_family_keywords,usage,set,13,,athena
+ambiguous_family_keywords,usage,set,14,,atlas
+ambiguous_family_keywords,usage,set,15,,attain
+ambiguous_family_keywords,usage,set,16,,avail
+ambiguous_family_keywords,usage,set,17,,aviator
+ambiguous_family_keywords,usage,set,18,,azure
+ambiguous_family_keywords,usage,set,19,,beacon
+ambiguous_family_keywords,usage,set,20,,benchmark
+ambiguous_family_keywords,usage,set,21,,bravo
+ambiguous_family_keywords,usage,set,22,,breeze
+ambiguous_family_keywords,usage,set,23,,broom
+ambiguous_family_keywords,usage,set,24,,caliber
+ambiguous_family_keywords,usage,set,25,,champion
+ambiguous_family_keywords,usage,set,26,,charisma
+ambiguous_family_keywords,usage,set,27,,choice
+ambiguous_family_keywords,usage,set,28,,circular
+ambiguous_family_keywords,usage,set,29,,climber
+ambiguous_family_keywords,usage,set,30,,cocoon
+ambiguous_family_keywords,usage,set,31,,columbus
+ambiguous_family_keywords,usage,set,32,,concorde
+ambiguous_family_keywords,usage,set,33,,contour
+ambiguous_family_keywords,usage,set,34,,cougar
+ambiguous_family_keywords,usage,set,35,,coyote
+ambiguous_family_keywords,usage,set,36,,credo
+ambiguous_family_keywords,usage,set,37,,crescent
+ambiguous_family_keywords,usage,set,38,,cruiser
+ambiguous_family_keywords,usage,set,39,,cupid
+ambiguous_family_keywords,usage,set,40,,david
+ambiguous_family_keywords,usage,set,41,,diplomat
+ambiguous_family_keywords,usage,set,42,,diva
+ambiguous_family_keywords,usage,set,43,,eclipse
+ambiguous_family_keywords,usage,set,44,,elite
+ambiguous_family_keywords,usage,set,45,,emerald
+ambiguous_family_keywords,usage,set,46,,excalibur
+ambiguous_family_keywords,usage,set,47,,foxtrot
+ambiguous_family_keywords,usage,set,48,,fusion
+ambiguous_family_keywords,usage,set,49,,genesis
+ambiguous_family_keywords,usage,set,50,,grip
+ambiguous_family_keywords,usage,set,51,,harmony
+ambiguous_family_keywords,usage,set,52,,horizon
+ambiguous_family_keywords,usage,set,53,,impact
+ambiguous_family_keywords,usage,set,54,,infinity
+ambiguous_family_keywords,usage,set,55,,legend
+ambiguous_family_keywords,usage,set,56,,lens
+ambiguous_family_keywords,usage,set,57,,linex
+ambiguous_family_keywords,usage,set,58,,matrix
+ambiguous_family_keywords,usage,set,59,,maya
+ambiguous_family_keywords,usage,set,60,,modular
+ambiguous_family_keywords,usage,set,61,,monarch
+ambiguous_family_keywords,usage,set,62,,mono
+ambiguous_family_keywords,usage,set,63,,orca
+ambiguous_family_keywords,usage,set,64,,orion
+ambiguous_family_keywords,usage,set,65,,pediatric
+ambiguous_family_keywords,usage,set,66,,phoenix
+ambiguous_family_keywords,usage,set,67,,pilot
+ambiguous_family_keywords,usage,set,68,,pinnacle
+ambiguous_family_keywords,usage,set,69,,pipeline
+ambiguous_family_keywords,usage,set,70,,precision
+ambiguous_family_keywords,usage,set,71,,prevail
+ambiguous_family_keywords,usage,set,72,,prime
+ambiguous_family_keywords,usage,set,73,,primo
+ambiguous_family_keywords,usage,set,74,,quantum
+ambiguous_family_keywords,usage,set,75,,restore
+ambiguous_family_keywords,usage,set,76,,sapphire
+ambiguous_family_keywords,usage,set,77,,shark
+ambiguous_family_keywords,usage,set,78,,silk
+ambiguous_family_keywords,usage,set,79,,solis
+ambiguous_family_keywords,usage,set,80,,starter
+ambiguous_family_keywords,usage,set,81,,stylet
+ambiguous_family_keywords,usage,set,82,,summit
+ambiguous_family_keywords,usage,set,83,,synergy
+ambiguous_family_keywords,usage,set,84,,titan
+ambiguous_family_keywords,usage,set,85,,torque
+ambiguous_family_keywords,usage,set,86,,trident
+ambiguous_family_keywords,usage,set,87,,vantage
+ambiguous_family_keywords,usage,set,88,,venus
+ambiguous_family_keywords,usage,set,89,,versajet
+ambiguous_family_keywords,usage,set,90,,victory
+ambiguous_family_keywords,usage,set,91,,vista
+ambiguous_family_keywords,usage,set,92,,viva
+ambiguous_family_keywords,usage,set,93,,voyager
+hs_prior_fixation_products,usage,ordered,0,,trauma_plating
+hs_prior_fixation_products,usage,ordered,1,,trauma_nailing
+hs_prior_fixation_products,usage,ordered,2,,spinal fusion fixation
+hs_prior_fixation_products,usage,ordered,3,,spine_fixation
+arthroplasty_component_cues,usage,ordered,0,,femoral head
+arthroplasty_component_cues,usage,ordered,1,,humeral head
+arthroplasty_component_cues,usage,ordered,2,,humeral insert
+arthroplasty_component_cues,usage,ordered,3,,humeral stem
+arthroplasty_component_cues,usage,ordered,4,,glenoid
+arthroplasty_component_cues,usage,ordered,5,,acetabular
+arthroplasty_component_cues,usage,ordered,6,,acetab
+arthroplasty_component_cues,usage,ordered,7,,tibial insert
+arthroplasty_component_cues,usage,ordered,8,,tibial tray
+arthroplasty_component_cues,usage,ordered,9,,femoral component
+arthroplasty_component_cues,usage,ordered,10,,baseplate
+arthroplasty_component_cues,usage,ordered,11,,patella
+arthroplasty_component_cues,usage,ordered,12,,condyle
+arthroplasty_component_cues,usage,ordered,13,,trunnion
+arthroplasty_component_cues,usage,ordered,14,,hemi cluster
+arthroplasty_component_cues,usage,ordered,15,,cluster hole
+arthroplasty_component_cues,usage,ordered,16,,shell
+arthroplasty_component_cues,usage,ordered,17,,liner
+category_qualifier_map,usage,map,0,coronary stent,Drug Eluting Stents
+category_qualifier_map,usage,map,1,artery stent,Drug Eluting Stents
+category_qualifier_map,usage,map,2,drug eluting stent,Drug Eluting Stents
+category_qualifier_map,usage,map,3,ureteral stent,Ureteral Stents
+category_qualifier_map,usage,map,4,biliary stent,Biliary Stents
+category_qualifier_map,usage,map,5,carotid stent,Carotid Stents
+category_qualifier_map,usage,map,6,stent graft,Thoracic Stent Graft
+category_qualifier_map,usage,map,7,ptca balloon,PTCA Balloons
+category_qualifier_map,usage,map,8,ureteral balloon,Ureteral Balloons
+category_qualifier_map,usage,map,9,guide wire,Guidewires
+category_qualifier_map,usage,map,10,guidewire,Guidewires
+category_qualifier_map,usage,map,11,diagnostic catheter,Diagnostic Catheter
+category_qualifier_map,usage,map,12,guiding catheter,Guiding Catheters
+category_qualifier_map,usage,map,13,ablation catheter,Ablation Catheter
+category_qualifier_map,usage,map,14,ureteral catheter,Ureteral Catheters
+category_qualifier_map,usage,map,15,intramedullary nail,Intramedullary Nails
+category_qualifier_map,usage,map,16,mechanical heart valve,Mechanical Heart Valves
+category_qualifier_map,usage,map,17,locking plate,Plate
+category_qualifier_map,usage,map,18,locked plate,Plate
+category_qualifier_map,usage,map,19,bone plate,Plate
+category_qualifier_map,usage,map,20,compression plate,Plate
+category_qualifier_map,usage,map,21,absorbable suture,Conventional Suture - Absorbable
+category_qualifier_map,usage,map,22,non absorbable suture,Conventional Suture - Non-Absorbable
+category_qualifier_map,usage,map,23,surgical suture,Conventional Suture - Non-Absorbable
+category_qualifier_map,usage,map,24,hernia mesh,Synthetic Mesh
+category_qualifier_map,usage,map,25,surgical mesh,Synthetic Mesh
+category_qualifier_map,usage,map,26,arterial cannula,Cannulae_Arterial
+category_qualifier_map,usage,map,27,aortic cannula,Cannulae_Arterial
+category_qualifier_map,usage,map,28,venous cannula,Cannulae_Venous
+category_qualifier_map,usage,map,29,femoral cannula,Cannulae_Femoral
+category_qualifier_map,usage,map,30,cortical screw,Plates & Screws
+category_qualifier_map,usage,map,31,cancellous screw,Plates & Screws
+category_qualifier_map,usage,map,32,orthopedic screw,Plates & Screws
+category_qualifier_map,usage,map,33,orthopaedic screw,Plates & Screws
+category_qualifier_map,usage,map,34,bone screw,Plates & Screws
+category_qualifier_map,usage,map,35,cannulated screw,Cannulated Screws
+category_qualifier_map,usage,map,36,pedicle screw,Spinal Fusion Fixation - Thoracolumbar
+category_qualifier_map,usage,map,37,multiaxial screw,Spinal Fusion Fixation - Thoracolumbar
+category_qualifier_map,usage,map,38,polyaxial screw,Spinal Fusion Fixation - Thoracolumbar
+category_qualifier_map,usage,map,39,monoaxial screw,Spinal Fusion Fixation - Thoracolumbar
+manufacturer_aliases,usage,alias,0,Medtronic,medtronic
+manufacturer_aliases,usage,alias,1,Medtronic,covidien
+manufacturer_aliases,usage,alias,2,B. Braun,b braun
+manufacturer_aliases,usage,alias,3,B. Braun,aesculap
+manufacturer_aliases,usage,alias,4,J&J,johnson johnson
+manufacturer_aliases,usage,alias,5,J&J,depuy
+manufacturer_aliases,usage,alias,6,J&J,ethicon
+manufacturer_aliases,usage,alias,7,Boston Scientific,boston scientific
+manufacturer_aliases,usage,alias,8,Abbott,abbott
+manufacturer_aliases,usage,alias,9,Terumo,terumo
+manufacturer_aliases,usage,alias,10,Olympus,olympus
+manufacturer_aliases,usage,alias,11,Karl Storz,karl storz
+manufacturer_aliases,usage,alias,12,Stryker,stryker
+manufacturer_aliases,usage,alias,13,Smith & Nephew,smith nephew
+manufacturer_aliases,usage,alias,14,Zimmer Biomet,zimmer biomet
+manufacturer_aliases,usage,alias,15,Zimmer Biomet,zimmer
+manufacturer_aliases,usage,alias,16,Zimmer Biomet,biomet
+manufacturer_aliases,usage,alias,17,Biotronik,biotronik
+manufacturer_aliases,usage,alias,18,Penumbra,penumbra
+manufacturer_aliases,usage,alias,19,Asahi Intecc,asahi intecc
+manufacturer_aliases,usage,alias,20,Teleflex,teleflex
+manufacturer_aliases,usage,alias,21,MicroPort,microport
+manufacturer_aliases,usage,alias,22,Meril,meril
+manufacturer_aliases,usage,alias,23,Cordis,cordis
+manufacturer_aliases,usage,alias,24,Getinge,getinge
+manufacturer_aliases,usage,alias,25,Nipro,nipro
+manufacturer_aliases,usage,alias,26,Nuvasive,nuvasive
+manufacturer_aliases,usage,alias,27,Mani,mani inc
+manufacturer_aliases,usage,alias,28,Mani,mani hanoi
+manufacturer_aliases,usage,alias,29,Mindray,mindray
+manufacturer_aliases,usage,alias,30,Canwell Medical,canwell
+manufacturer_aliases,usage,alias,31,Medikit,medikit
+manufacturer_aliases,usage,alias,32,Cook Medical,cook medical
+manufacturer_aliases,usage,alias,33,Richard Wolf,richard wolf
+manufacturer_aliases,usage,alias,34,BD,becton dickinson
+manufacturer_aliases,usage,alias,35,BD,bard
+manufacturer_aliases,usage,alias,36,Merit Medical,merit medical
+manufacturer_aliases,usage,alias,37,Gore Medical,w l gore
+manufacturer_aliases,usage,alias,38,Gore Medical,gore associates
+column_map,schema,map,0,segment,Segment
+column_map,schema,map,1,sub_segment,Sub-segment
+column_map,schema,map,2,product,Product
+column_map,schema,map,3,player,Player
+column_map,schema,map,4,keyword,Model/ Family Name

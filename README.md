@@ -21,10 +21,9 @@ vn2024_pipeline/
 ├── reference/               # ← CENTRAL governed reference tables (see its README)
 │   ├── brand_model/         #   canonical master + superseded V0 workbooks
 │   ├── companies/           #   company / sub-OU reference
-│   ├── exclusion_lists/     #   *.csv — terms removed from scope (canonical)
-│   ├── usage_lists/         #   *.csv — qualifier/alias/head maps (canonical)
-│   ├── reference.sqlite     #   queryable DB built from the CSVs + master
-│   └── loader.py, build_reference_db.py, README.md, registry.yml, LINEAGE.md
+│   ├── reference_lists.csv  #   ONE human-editable file: all 13 exclusion+usage lists
+│   ├── reference.sqlite     #   machine-readable query DB built from the CSV + master
+│   └── loader.py, build_reference_db.py, README.md
 ├── src/
 │   ├── step1_extract.py     # source → TSV cache + build family/category/maker lexicons
 │   ├── step2_match.py       # 3-tier trie/category/manufacturer matching
@@ -58,13 +57,13 @@ and is referenced by `config.settings.V0_REFERENCE_XLSX`.
 All reference data — the brand/model master, the **exclusion lists** (generic /
 dental / accessory / veterinary), and the **usage lists** (qualifier→product map,
 manufacturer aliases, category heads, consistency & ambiguous-brand cues) — lives
-in **`reference/`**. The `*_lists/*.csv` files are the **single source of truth**:
-`config/settings.py` loads them at import (so nothing is hard-coded), and
-`reference/reference.sqlite` is rebuilt from them for querying. Edit a CSV, then
-`python reference/build_reference_db.py`. Full usage, intent, storage and data
-lineage are documented in [`reference/README.md`](reference/README.md),
-[`reference/registry.yml`](reference/registry.yml) and
-[`reference/LINEAGE.md`](reference/LINEAGE.md).
+in **`reference/`**. There are two representations, one generated from the other:
+**`reference_lists.csv`** is the single **human-editable** source of truth (all 13
+lists in one file, keyed by `list_name`), and **`reference.sqlite`** is the
+**machine-readable** query DB rebuilt from it. `config/settings.py` loads the CSV
+at import (nothing is hard-coded). Edit the CSV, then
+`python reference/build_reference_db.py`. Full usage, intent, storage, provenance
+and data lineage are in [`reference/README.md`](reference/README.md).
 
 ---
 
