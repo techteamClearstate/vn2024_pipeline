@@ -87,6 +87,12 @@ PREFIX_MAP_PKL  = INTERMEDIATE / "v0_prefix_map.pkl"
 PRODUCT_CANONICAL_PKL = INTERMEDIATE / "product_canonical.pkl"
 MATCHED_KW_JSON = INTERMEDIATE / "matched_kw.json"
 MAPPED_CSV      = INTERMEDIATE / "vn_v0_mapped.csv"
+# Reference-taxonomy hard-gate (DQ 2026-07): the set of valid
+# (Segment, Sub-segment, Product) tuples from the current master list. Only rows
+# whose tuple is in this set feed the trusted Dashboard/Rollup/Scope; the rest are
+# parked as Review. Built in step1.build_reference_tuples (canonicalized products),
+# applied in step3.apply_reference_gate.
+REFERENCE_TUPLES_PKL = INTERMEDIATE / "reference_tuples.pkl"
 # Tier-2 (category) cache files
 CATEGORY_LEX_PKL     = INTERMEDIATE / "category_lex.pkl"      # phrase → category record
 HS8_SEGMENT_PKL      = INTERMEDIATE / "hs8_segment.pkl"       # HS8 → {segment, share}
@@ -422,6 +428,29 @@ MANUFACTURER_ALIASES = load_alias_map("manufacturer_aliases")
 # a visible false-positive source (e.g. "mindray animal medical").
 MANUFACTURER_EXCLUDE_CUES = load_set("manufacturer_exclude_cues")
 
+# ── Negative-scope exclusion (DQ 2026-07 final-output gate) ─────────────────
+# Out-of-scope categories that still occasionally match a surgical family/category
+# via a generic token. Applied as a FINAL gate (step3.apply_reference_gate) against
+# the Detailed_Product + Importer + Exporter blob: a bound row that hits any cue is
+# parked as Review (kept in RawData, excluded from the trusted Dashboard/Rollup).
+# Plain-substring semantics (cue in text.lower()), same as the other cue guards.
+# Lists are governed in reference/term_lists.csv; keep cues conservative — a hit
+# demotes a row, so over-broad tokens would drop legitimate device revenue.
+SCOPE_EXCLUDE_CUES = {
+    "dental":     DENTAL_NEGATIVE_CUES,
+    "veterinary": MANUFACTURER_EXCLUDE_CUES,
+    "cosmetic":   load_set("cosmetic_aesthetic_cues"),
+    "imaging":    load_set("imaging_equipment_cues"),
+    "lab_ivd":    load_set("lab_ivd_cues"),
+    "general":    load_set("general_consumable_cues"),
+}
+# Columns the scope cues are matched against. DESCRIPTION-ONLY by design: matching
+# the Importer/Exporter party names was tested and caused false positives — e.g. a
+# distributor named "…Imaging Systems…" importing real stents, or an Italian
+# "S.p.A." supplier matching a cosmetic "spa" cue. The genuine out-of-scope rows
+# (real MRI machines, hydrafacial devices) name themselves in Detailed_Product.
+SCOPE_EXCLUDE_COLS = [VN_DESCRIPTION_COL]
+
 MANUFACTURER_PARTY_COLS = ["Importer", "Exporter"]
 MATCHED_MANUFACTURER_JSON = INTERMEDIATE / "matched_manufacturer.json"
 MANUFACTURER_ALIAS_PKL    = INTERMEDIATE / "manufacturer_alias.pkl"
@@ -439,6 +468,29 @@ DASHBOARD_OU_COL      = "Segment"
 VALUE_COL             = "Total_Value_USD"
 ASP_COL               = "ASP_USD"       # per-shipment value/qty (built in step3)
 UNSPECIFIED_LABEL     = "Unspecified"   # family bucket for Tier-2 category rows
+
+# ── Reference-taxonomy hard-gate + QA (DQ 2026-07) ─────────────────────────
+# The trusted Dashboard/Rollup/Scope are gated to the latest reference taxonomy:
+# a bound (family/category) row contributes to the $ figures ONLY IF its
+# (Segment, Sub-segment, Product) tuple exists in the current master list AND it
+# carries no negative-scope cue. Rows that fail are kept in RawData, tagged in
+# QA_STATUS_COL and marked out of DASH_INCLUDE_COL, and surfaced on the QA tab.
+REFERENCE_HARDGATE       = True    # gate final output to the reference taxonomy
+DROP_UNSPECIFIED_PRODUCTS = True   # never accept "<head> (unspecified)"/blank dims
+APPLY_SCOPE_EXCLUSIONS   = True    # park dental/vet/cosmetic/imaging/lab/general hits
+UNSPECIFIED_PRODUCT_MARK = "(unspecified)"   # bare-head category label suffix
+REF_VALID_COL   = "Ref_Valid"      # "Y" if the (Seg,Sub,Product) tuple is in reference
+DASH_INCLUDE_COL = "Dash_Include"  # "Y" if the row feeds the trusted Dashboard
+QA_STATUS_COL   = "QA_Status"      # human-readable final disposition (see below)
+SCOPE_FLAG_COL  = "Scope_Flag"     # which negative-scope cue matched (if any)
+# QA_Status vocabulary (one per row):
+QA_MAPPED        = "Mapped - reference-valid"
+QA_MAPPED_EXT    = "Mapped - reference-valid (Extended HS scope)"
+QA_REVIEW_NONREF = "Review - non-reference label"
+QA_REVIEW_UNSPEC = "Review - unspecified category"
+QA_REVIEW_SCOPE  = "Review - excluded scope"     # + ": <flag>"
+QA_AUDIT_MFR     = "Audit - manufacturer only"
+QA_UNMAPPED      = "Unmapped"
 # Each run writes its country's Dashboard slice here as dashboard_<country>.csv;
 # the export combines every slice present into one cross-country Dashboard sheet.
 # Process one market's file per run (swap VN_SOURCE_XLSX + IMPORT_COUNTRY); delete

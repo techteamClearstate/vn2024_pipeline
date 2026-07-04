@@ -269,6 +269,42 @@ def canonicalize_products(series: pd.Series) -> pd.Series:
     return series.map(lambda x: cmap.get(x, x) if isinstance(x, str) else x)
 
 
+def _norm_dim(s) -> str:
+    """Normalize a taxonomy dimension (Segment / Sub-segment / Product) for the
+    reference-tuple gate: string, strip, collapse whitespace, casefold. Applied
+    identically to the reference and the mapped output so they compare like-for-like."""
+    return re.sub(r"\s+", " ", str(s)).strip().casefold()
+
+
+def build_reference_tuples() -> int:
+    """Build the set of valid (Segment, Sub-segment, Product) tuples from the
+    current reference master, for the reference-taxonomy hard-gate (DQ 2026-07,
+    applied in step3.apply_reference_gate). Products are canonicalized with the
+    SAME map step3 applies to Product_V0 so the gate compares like-for-like.
+    Pickles {"triples": set[tuple], "products": set[str]} (both normalized).
+
+    MUST run after build_product_canonical_map so canonicalize_products is a no-op-
+    free, faithful match of what step3 writes into Product_V0.
+    """
+    v0 = _load_v0_reference()
+    c = cfg.V0_COLS
+    ref = v0[[c["segment"], c["sub_segment"], c["product"]]].dropna(
+        subset=[c["product"]]).copy()
+    prod = canonicalize_products(ref[c["product"]].astype(str))
+    triples, products = set(), set()
+    for seg, sub, p in zip(ref[c["segment"]], ref[c["sub_segment"]], prod):
+        pn = _norm_dim(p)
+        if not pn or pn == _norm_dim(cfg.UNSPECIFIED_LABEL):
+            continue
+        triples.add((_norm_dim(seg), _norm_dim(sub), pn))
+        products.add(pn)
+    with open(cfg.REFERENCE_TUPLES_PKL, "wb") as fh:
+        pickle.dump({"triples": triples, "products": products}, fh)
+    print(f"  [ref-gate] {len(triples):,} valid (Segment, Sub-segment, Product) "
+          f"tuples / {len(products):,} products from the reference taxonomy")
+    return len(triples)
+
+
 def norm_phrase(s) -> str:
     """Normalize text for category-phrase matching (used on both the lexicon
     and the description so they line up): lowercase, split compound separators,
@@ -391,3 +427,4 @@ if __name__ == "__main__":
     build_category_lexicon()
     build_manufacturer_lexicon()
     build_product_canonical_map()
+    build_reference_tuples()

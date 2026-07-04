@@ -421,3 +421,74 @@ arthroplasty_component_cues,hemi cluster,internal,active,
 arthroplasty_component_cues,cluster hole,internal,active,
 arthroplasty_component_cues,shell,internal,active,
 arthroplasty_component_cues,liner,internal,active,
+cosmetic_aesthetic_cues,hydrafacial,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,hydra facial,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,aesthetic,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,cosmetic,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,dermabrasion,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,microneedling,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,micro-needling,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,cryolipolysis,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,body slimming,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,laser hair removal,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,tattoo removal,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,skin whitening,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,anti-aging,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,anti aging,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,dermal filler,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,beauty salon,scope_dq,active,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate
+cosmetic_aesthetic_cues,spa ,scope_dq,retired,DQ 2026-07: cosmetic/aesthetic out-of-scope; parked as Review at final gate | retired 2026-07-04: substring collision (SpA suffix / capsule endoscope / tablet)
+imaging_equipment_cues,mri ,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,magnetic resonance,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,ct scanner,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,computed tomography,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,x-ray machine,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,radiograph,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,fluoroscop,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,mammograph,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,pet-ct,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,pet scan,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,bone densitometer,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,densitometry,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,gamma camera,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,c-arm,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,cath lab system,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,ultrasound machine,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,ultrasound system,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,ultrasound scanner,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,imaging system,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+imaging_equipment_cues,dexa scan,scope_dq,active,DQ 2026-07: imaging capital equipment out-of-scope; parked as Review at final gate
+lab_ivd_cues,reagent,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,assay,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,test kit,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,testkit,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,test strip,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,elisa,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,hematology analyzer,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,biochemistry analyzer,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,analyser,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,analyzer,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,microscope,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,centrifuge,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,pipette,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,petri,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,culture medium,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,calibrator,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,in vitro,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,microplate,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,cuvette,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,visocolor,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,urine strip,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+lab_ivd_cues,glucose strip,scope_dq,active,DQ 2026-07: lab/IVD/diagnostic non-surgical; parked as Review at final gate
+general_consumable_cues,tablet,scope_dq,retired,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative) | retired 2026-07-04: substring collision (SpA suffix / capsule endoscope / tablet)
+general_consumable_cues,capsule,scope_dq,retired,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative) | retired 2026-07-04: substring collision (SpA suffix / capsule endoscope / tablet)
+general_consumable_cues,syrup,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,pharmaceutical,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,ointment,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,hand sanitizer,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,sanitizer,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,disinfectant,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,detergent,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,first aid kit,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,first-aid,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)
+general_consumable_cues,adhesive plaster,scope_dq,active,DQ 2026-07: pharma/first-aid/general consumable; parked as Review at final gate (conservative)

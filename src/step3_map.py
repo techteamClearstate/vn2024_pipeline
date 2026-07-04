@@ -13,7 +13,9 @@ enriched output DataFrame:
 """
 import json
 import pickle
+import re
 
+import numpy as np
 import pandas as pd
 
 import sys
@@ -86,6 +88,117 @@ def standardize_for_dashboard(out: pd.DataFrame) -> pd.DataFrame:
         val = pd.to_numeric(out[cfg.VALUE_COL], errors="coerce")
         qty = pd.to_numeric(out["Quantity"], errors="coerce")
         out[cfg.ASP_COL] = (val / qty).where(qty.notna() & (qty > 0))
+    return out
+
+
+def _norm_series(s: pd.Series) -> pd.Series:
+    """Vectorized taxonomy-dimension normalization (matches step1._norm_dim for the
+    ASCII taxonomy labels): strip, collapse whitespace, lowercase."""
+    return (s.fillna("").astype(str)
+             .str.replace(r"\s+", " ", regex=True).str.strip().str.lower())
+
+
+def _reference_keyset() -> set | None:
+    """Load the reference (Seg, Sub, Product) tuples as '\\x1f'-joined keys for fast
+    vectorized membership, or None if the gate is off / the pickle is absent."""
+    if not getattr(cfg, "REFERENCE_HARDGATE", False):
+        return None
+    try:
+        with open(cfg.REFERENCE_TUPLES_PKL, "rb") as fh:
+            data = pickle.load(fh)
+    except (FileNotFoundError, OSError):
+        print("  [ref-gate] WARNING reference_tuples.pkl missing — gate disabled "
+              "for this run (re-run --from extract to build it).")
+        return None
+    return {"\x1f".join(t) for t in data.get("triples", set())}
+
+
+def _scope_flag_series(out: pd.DataFrame) -> pd.Series:
+    """First negative-scope flag whose cue hits the Detailed_Product+Importer+
+    Exporter blob (priority = SCOPE_EXCLUDE_CUES order), else "". One compiled
+    regex per flag → vectorized/fast even on the 2M-row India frame."""
+    if not getattr(cfg, "APPLY_SCOPE_EXCLUSIONS", False):
+        return pd.Series("", index=out.index)
+    scope_cols = getattr(cfg, "SCOPE_EXCLUDE_COLS", [cfg.VN_DESCRIPTION_COL])
+    cols = [c for c in scope_cols if c in out.columns]
+    if not cols:
+        return pd.Series("", index=out.index)
+    blob = out[cols].fillna("").astype(str).agg(" ".join, axis=1).str.lower()
+    flag = pd.Series("", index=out.index)
+    for name, cues in cfg.SCOPE_EXCLUDE_CUES.items():
+        cues = [c.lower() for c in cues if c]
+        if not cues:
+            continue
+        rx = re.compile("|".join(re.escape(c) for c in cues))
+        hit = blob.str.contains(rx, regex=True, na=False) & (flag == "")
+        flag = flag.mask(hit, name)
+    return flag
+
+
+def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
+    """DQ 2026-07 final-output gate. Adds four columns so the trusted
+    Dashboard/Rollup/Scope carry ONLY reference-aligned, in-scope rows — WITHOUT
+    dropping anything (failing rows stay in RawData, tagged for review):
+
+      * Ref_Valid    "Y" if a bound (family/category) row's (Segment, Sub-segment,
+                     Product) tuple exists in the latest reference taxonomy AND the
+                     product is not a "(unspecified)"/blank label;
+      * Scope_Flag   the negative-scope cue group that matched (dental/veterinary/
+                     cosmetic/imaging/lab_ivd/general), else "";
+      * Dash_Include "Y" if the row feeds the trusted Dashboard (bound & Ref_Valid
+                     & not scope-excluded). The Dashboard/rollup formulas key on it;
+      * QA_Status    human-readable disposition (see cfg.QA_* vocabulary).
+    """
+    tier  = out[cfg.TIER_COL].fillna("")
+    bound = tier.isin(cfg.DASHBOARD_BOUND_TIERS)
+
+    seg  = _norm_series(out[cfg.DASHBOARD_OU_COL])
+    sub  = _norm_series(out["Sub-segment"])
+    prod = _norm_series(out["Product_V0"])
+    unspec = str(cfg.UNSPECIFIED_LABEL).lower()
+    mark   = str(cfg.UNSPECIFIED_PRODUCT_MARK).lower()
+    prod_unspec = prod.str.contains(re.escape(mark), regex=True, na=False) | (prod == unspec) | (prod == "")
+    dims_unspec = prod_unspec | (seg == unspec) | (seg == "") | (sub == unspec) | (sub == "")
+
+    keyset = _reference_keyset()
+    if keyset is not None:
+        key = seg + "\x1f" + sub + "\x1f" + prod
+        ref_valid = bound & key.isin(keyset) & ~prod_unspec
+    else:
+        ref_valid = bound & ~prod_unspec if getattr(cfg, "DROP_UNSPECIFIED_PRODUCTS", False) else bound
+
+    # Scope-cue regex is the costly part — only bound rows can be included, so only
+    # they need a scope flag (keeps the 2M-row India pass fast).
+    scope_flag = pd.Series("", index=out.index)
+    if bool(bound.any()):
+        scope_flag.loc[bound] = _scope_flag_series(out.loc[bound])
+    include = ref_valid & (scope_flag == "")
+
+    out[cfg.REF_VALID_COL]    = np.where(ref_valid, "Y", "")
+    out[cfg.SCOPE_FLAG_COL]   = scope_flag
+    out[cfg.DASH_INCLUDE_COL] = np.where(include, "Y", "")
+
+    # Disposition (priority-ordered): manufacturer-only → unmapped default first,
+    # then bound rows resolved include → scope → unspecified → non-reference.
+    status = pd.Series(cfg.QA_UNMAPPED, index=out.index)
+    status = status.mask(tier == "manufacturer", cfg.QA_AUDIT_MFR)
+    ext = (out[cfg.SCOPE_COL] == cfg.SCOPE_EXTENDED_LABEL) if cfg.SCOPE_COL in out.columns \
+          else pd.Series(False, index=out.index)
+    status = status.mask(include & ext,  cfg.QA_MAPPED_EXT)
+    status = status.mask(include & ~ext, cfg.QA_MAPPED)
+    status = status.mask(bound & ~include & (scope_flag != ""),
+                         cfg.QA_REVIEW_SCOPE + ": " + scope_flag)
+    status = status.mask(bound & ~include & (scope_flag == "") & dims_unspec,
+                         cfg.QA_REVIEW_UNSPEC)
+    status = status.mask(bound & ~include & (scope_flag == "") & ~dims_unspec,
+                         cfg.QA_REVIEW_NONREF)
+    out[cfg.QA_STATUS_COL] = status
+
+    n_inc = int((include).sum()); n_bound = int(bound.sum())
+    n_scope = int((bound & (scope_flag != "")).sum())
+    print(f"  [ref-gate] {n_inc:,}/{n_bound:,} bound rows reference-valid & in-scope "
+          f"→ Dashboard; {n_bound - n_inc:,} parked as Review "
+          f"({n_scope:,} scope-excluded)")
     return out
 
 
@@ -162,6 +275,10 @@ def run_mapping() -> pd.DataFrame:
     # attribution, Unspecified labelling, per-shipment ASP) so the export needs no
     # Dash_* helper columns — its formulas key on these columns directly.
     out = standardize_for_dashboard(out)
+
+    # DQ 2026-07 final-output gate: tag reference validity / scope exclusions so the
+    # export keeps only reference-aligned, in-scope rows in the trusted Dashboard.
+    out = apply_reference_gate(out)
 
     out.to_csv(cfg.MAPPED_CSV, index=False)
     n_fam = tier.count("family")

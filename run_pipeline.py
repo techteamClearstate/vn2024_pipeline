@@ -88,6 +88,7 @@ def main():
         step1_extract.build_category_lexicon()
         step1_extract.build_manufacturer_lexicon()
         step1_extract.build_product_canonical_map()
+        step1_extract.build_reference_tuples()
 
     if start_idx <= 1:
         print("\n[2/4] Matching")

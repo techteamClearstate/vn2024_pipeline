@@ -36,8 +36,8 @@ def build():
     c = con.cursor()
     c.executescript("""
     CREATE TABLE list_catalog(
-        list_name TEXT PRIMARY KEY, layer TEXT, content_type TEXT, match_type TEXT,
-        settings_symbol TEXT, consumed_in TEXT, purpose TEXT,
+        list_name TEXT PRIMARY KEY, layer TEXT, list_group TEXT, content_type TEXT,
+        match_type TEXT, settings_symbol TEXT, consumed_in TEXT, purpose TEXT,
         n_active INTEGER, n_total INTEGER);
     CREATE TABLE term_lists(
         list_name TEXT, term TEXT, provider TEXT, status TEXT, notes TEXT);
@@ -68,9 +68,9 @@ def build():
 
     for r in csv.DictReader(open(CATALOG_CSV, encoding="utf-8")):
         n = r["list_name"]
-        c.execute("INSERT INTO list_catalog VALUES(?,?,?,?,?,?,?,?,?)",
-                  (n, r["layer"], r["content_type"], r["match_type"],
-                   r["settings_symbol"], r["consumed_in"], r["purpose"],
+        c.execute("INSERT INTO list_catalog VALUES(?,?,?,?,?,?,?,?,?,?)",
+                  (n, r["layer"], r.get("list_group", ""), r["content_type"],
+                   r["match_type"], r["settings_symbol"], r["consumed_in"], r["purpose"],
                    active.get(n, 0), total.get(n, 0)))
 
     import pandas as pd

@@ -36,6 +36,29 @@ would give, but typed — which is what makes `term_lists` a natural home for th
 Plus `brand_model_master` (the 10,392-row canonical brand list) and `source_files`
 (file lineage) in the DB.
 
+### List families (`list_group`)
+
+Each catalog row also carries a `list_group` so related lists form a queryable
+family — combined *where it makes sense*, without physically merging lists that
+apply differently:
+
+| `list_group` | lists | meaning |
+|---|---|---|
+| `scope_exclude` | dental, veterinary, cosmetic, imaging, lab_ivd, general | **the general out-of-scope negative cues** — different domains, one family; extend by adding a new list here or rows to an existing one |
+| `accessory` | category_negative_cues | in-scope but an instrument *around* the device (kept separate — a different kind of negative) |
+| `generic` | generic_word_blacklist, generic_label_blacklist | generic-word / vague-label suppression |
+| `reranker` · `hs_prior_guard` · `mapping` | the usage lists | matching vocab, HS-prior guards, key→value maps |
+
+```sql
+-- the whole out-of-scope negative-cue family, in one query
+SELECT list_group, list_name, n_active FROM list_catalog WHERE list_group='scope_exclude';
+```
+
+The out-of-scope domains are grouped as one family but stay separate lists because
+they can apply to different fields/stages (e.g. dental across all tiers, veterinary
+also on the trade-party blob at Tier-3); `SCOPE_EXCLUDE_CUES` in `config/settings.py`
+is the runtime dict over the same six.
+
 ## Human file vs machine file
 
 The **CSVs are canonical** (git-diffable, open in Excel — edit here).

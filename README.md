@@ -255,6 +255,44 @@ both the sheet and the site automatically.
 
 ---
 
+### Reference-strict gate & QA tab (DQ 2026-07)
+
+Following a data-quality review, the **trusted Dashboard / Rollup / Scope are
+hard-gated to the latest reference taxonomy**. A bound (family/category) row feeds
+the $ figures only if it passes `step3_map.apply_reference_gate`:
+
+1. **Reference validity** — its `(Segment, Sub-segment, Product)` tuple must exist in
+   the current master list (`step1_extract.build_reference_tuples` →
+   `reference_tuples.pkl`, products canonicalized the same way as `Product_V0`). This
+   removes the generic `… (unspecified)` labels *and* stale legacy labels
+   (`I&L_Hand Instruments`, `CV_PTCA Balloon`, `SH_TAVI`…) in one rule.
+2. **Negative-scope exclusion** — a row whose **`Detailed_Product`** contains a
+   dental / veterinary / cosmetic / imaging / lab-IVD / general-consumable cue
+   (`cfg.SCOPE_EXCLUDE_CUES`, governed in `reference/term_lists.csv`) is parked. Cues
+   are matched on the **description only** — matching Importer/Exporter party names
+   caused false positives (a distributor named "…Imaging Systems…" importing real
+   stents; Italian "S.p.A." suppliers hitting a "spa" cue).
+3. **Manufacturer-only (Tier-3)** rows remain audit-only (already out of the bounds).
+
+Nothing is deleted: gated-out rows stay in `RawData`, tagged in four new columns —
+`Ref_Valid`, `Scope_Flag`, `Dash_Include` (the flag the Dashboard/Rollup/Scope
+formulas key on), and `QA_Status` (e.g. *Mapped - reference-valid*, *Review -
+non-reference label*, *Review - unspecified category*, *Review - excluded scope: …*,
+*Audit - manufacturer only*). Toggle with `cfg.REFERENCE_HARDGATE` /
+`cfg.APPLY_SCOPE_EXCLUSIONS`.
+
+Every workbook gains a **`QA` tab** (`step4_export._qa_frames`): reference-valid vs
+parked rows/revenue, QA-status breakdown, negative-scope hits, the top non-reference
+product labels, and the manufacturer-only summary — computed from the *full* matched
+set (not the row-capped RawData) so the figures are complete even for India.
+
+> **Effect (Pakistan FY2024).** The reference-strict Dashboard upper drops from
+> $131.2M to ~$74.5M: ~$49.8M of non-reference/unspecified value and ~$6.9M of
+> out-of-scope value become Review (all still visible in RawData + the QA tab). This
+> matches the DQ review's ~$50M non-reference finding.
+
+---
+
 ## Tuning
 
 All knobs live in `config/settings.py`:

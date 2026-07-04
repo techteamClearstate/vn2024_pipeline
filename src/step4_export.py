@@ -121,12 +121,17 @@ def _numeric_rawdata(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _surgical_bound(df: pd.DataFrame) -> pd.DataFrame:
-    """Bound (family+category) rows within the core SURGICAL scope only. The
-    trusted Dashboard / rollups stay surgical-only for comparability; the widened
-    (Extended) matches are surfaced separately on the Scope tab."""
+    """Bound (family+category) rows within the core SURGICAL scope that also PASS
+    the reference-taxonomy gate (DQ 2026-07): only rows whose (Segment, Sub-segment,
+    Product) tuple is in the latest reference and which carry no negative-scope cue
+    (Dash_Include == "Y") feed the trusted Dashboard / rollups. The widened
+    (Extended) matches are surfaced on the Scope tab; the parked (non-reference /
+    excluded) rows are surfaced on the QA tab. Both stay in RawData."""
     m = df[cfg.TIER_COL].isin(cfg.DASHBOARD_BOUND_TIERS)
     if cfg.SCOPE_COL in df.columns:
         m &= df[cfg.SCOPE_COL] == cfg.SCOPE_SURGICAL_LABEL
+    if cfg.DASH_INCLUDE_COL in df.columns:
+        m &= df[cfg.DASH_INCLUDE_COL] == "Y"
     return df[m]
 
 
@@ -210,13 +215,19 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
                        "(Match_Scope column not present in RawData).", hdr)
         return
     L = {n: xl_col_to_name(cols.index(n)) for n in
-         [cfg.VALUE_COL, "Quantity", cfg.SCOPE_COL, cfg.TIER_COL]
+         [cfg.VALUE_COL, "Quantity", cfg.SCOPE_COL, cfg.TIER_COL,
+          cfg.DASH_INCLUDE_COL]
          if n in cols}
     val, qty = L[cfg.VALUE_COL], L["Quantity"]
     sc, ti = L[cfg.SCOPE_COL], L[cfg.TIER_COL]
+    di = L.get(cfg.DASH_INCLUDE_COL)
 
     def rng(c):
         return f"RawData!${c}$2:${c}${last_raw}"
+
+    # Reference-gate criterion so the Scope totals reflect the reference-valid,
+    # in-scope bound rows (DQ 2026-07) — same rows the Dashboard aggregates.
+    inc = f'{rng(di)},"Y",' if di else ""
 
     money = wb.add_format({"num_format": "#,##0", "font_name": "Arial", "font_size": 9})
     cnt   = wb.add_format({"num_format": "#,##0", "font_name": "Arial", "font_size": 9})
@@ -248,10 +259,10 @@ def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
     for i, (label, sc_crit) in enumerate(rows):
         r = i + 1
         ws.write_string(r, 0, label, lbl)
-        lower = f'=SUMIFS({rng(val)},{sc_crit}{rng(ti)},"family")'
-        upper = "=" + "+".join(f'SUMIFS({rng(val)},{sc_crit}{rng(ti)},"{t}")' for t in bt)
-        vol   = "=" + "+".join(f'SUMIFS({rng(qty)},{sc_crit}{rng(ti)},"{t}")' for t in bt)
-        ships = "=" + "+".join(f'COUNTIFS({sc_crit}{rng(ti)},"{t}")' for t in bt)
+        lower = f'=SUMIFS({rng(val)},{sc_crit}{inc}{rng(ti)},"family")'
+        upper = "=" + "+".join(f'SUMIFS({rng(val)},{sc_crit}{inc}{rng(ti)},"{t}")' for t in bt)
+        vol   = "=" + "+".join(f'SUMIFS({rng(qty)},{sc_crit}{inc}{rng(ti)},"{t}")' for t in bt)
+        ships = "=" + "+".join(f'COUNTIFS({sc_crit}{inc}{rng(ti)},"{t}")' for t in bt)
         ws.write_formula(r, 1, lower, money)
         ws.write_formula(r, 2, upper, money)
         ws.write_formula(r, 3, vol,   money)
@@ -347,8 +358,110 @@ def _write_rollup_outline_sheet(wb, ws, roll: pd.DataFrame, hdr) -> None:
     ws.freeze_panes(1, 0)
 
 
+def _qa_frames(matched: pd.DataFrame) -> list:
+    """Value-based QA tables (DQ 2026-07), computed from the FULL matched set (not
+    the row-capped RawData) so the numbers are complete even for India: QA-status
+    breakdown, reference alignment, negative-scope exclusions, top non-reference
+    labels, and manufacturer-only matches. Each is (title, DataFrame)."""
+    d = matched.copy()
+    d["_rev"] = pd.to_numeric(d[cfg.VALUE_COL], errors="coerce").fillna(0.0)
+    tier  = d[cfg.TIER_COL].fillna("")
+    bound = tier.isin(cfg.DASHBOARD_BOUND_TIERS)
+    surg  = (d[cfg.SCOPE_COL] == cfg.SCOPE_SURGICAL_LABEL) if cfg.SCOPE_COL in d.columns \
+            else pd.Series(True, index=d.index)
+    inc   = (d[cfg.DASH_INCLUDE_COL] == "Y") if cfg.DASH_INCLUDE_COL in d.columns \
+            else pd.Series(False, index=d.index)
+    flag  = d[cfg.SCOPE_FLAG_COL].fillna("") if cfg.SCOPE_FLAG_COL in d.columns \
+            else pd.Series("", index=d.index)
+    frames = []
+
+    if cfg.QA_STATUS_COL in d.columns:
+        qs = (d.assign(_s=d[cfg.QA_STATUS_COL].fillna(""))
+                .groupby("_s").agg(Rows=("_rev", "size"), Revenue_USD=("_rev", "sum"))
+                .reset_index().rename(columns={"_s": "QA_Status"})
+                .sort_values("Revenue_USD", ascending=False))
+        frames.append(("QA status — all matched rows", qs))
+
+    bs = d[bound & surg]
+    v, iv = bs[inc.loc[bs.index]], bs[~inc.loc[bs.index]]
+    align = pd.DataFrame({
+        "Check": ["Reference-valid (feeds Dashboard)",
+                  "Non-reference / excluded (parked as Review)",
+                  "Total bound surgical rows"],
+        "Rows": [len(v), len(iv), len(bs)],
+        "Revenue_USD": [v["_rev"].sum(), iv["_rev"].sum(), bs["_rev"].sum()],
+    })
+    frames.append(("Reference alignment — surgical bound rows", align))
+
+    sf = d[bound & (flag != "")]
+    if len(sf):
+        sfg = (sf.groupby(cfg.SCOPE_FLAG_COL)
+                 .agg(Rows=("_rev", "size"), Revenue_USD=("_rev", "sum"))
+                 .reset_index().rename(columns={cfg.SCOPE_FLAG_COL: "Scope_Flag"})
+                 .sort_values("Revenue_USD", ascending=False))
+    else:
+        sfg = pd.DataFrame({"Scope_Flag": ["(none)"], "Rows": [0], "Revenue_USD": [0.0]})
+    frames.append(("Negative-scope exclusions parked as Review (bound rows)", sfg))
+
+    nr = d[bound & surg & ~inc & (flag == "")]
+    nrg = (nr.groupby(["Segment", "Sub-segment", "Product_V0"])
+             .agg(Rows=("_rev", "size"), Revenue_USD=("_rev", "sum"))
+             .reset_index().sort_values("Revenue_USD", ascending=False).head(25))
+    frames.append(("Top non-reference product labels (excluded from Dashboard)", nrg))
+
+    mo = d[tier == "manufacturer"]
+    if len(mo):
+        mog = (mo.groupby("Manufacturer")
+                 .agg(Rows=("_rev", "size"), Revenue_USD=("_rev", "sum"))
+                 .reset_index().sort_values("Revenue_USD", ascending=False).head(20))
+    else:
+        mog = pd.DataFrame({"Manufacturer": ["(none)"], "Rows": [0], "Revenue_USD": [0.0]})
+    frames.append(("Manufacturer-only matches (audit only — NOT a product mapping)", mog))
+    return frames
+
+
+def _write_qa_sheet(wb, ws, frames: list, hdr) -> None:
+    """Stack the QA tables on one sheet with section titles. Revenue columns are
+    money-formatted. Gives every workbook a mandatory data-quality view: what is
+    reference-valid vs parked, why, and where the biggest non-reference value is."""
+    title = wb.add_format({"bold": True, "font_name": "Arial", "font_size": 10,
+                           "font_color": "#1A4D3C"})
+    money = wb.add_format({"num_format": "#,##0", "font_name": "Arial", "font_size": 9})
+    cell  = wb.add_format({"font_name": "Arial", "font_size": 9})
+    ws.set_column(0, 0, 44)
+    ws.set_column(1, 1, 26)
+    ws.set_column(2, 5, 20)
+    r = 0
+    ws.write(r, 0, "QA / Data-Quality Review — reference-strict gate (DQ 2026-07). "
+                   "Non-reference, unspecified and out-of-scope rows are parked as "
+                   "Review (kept in RawData, QA_Status column) and excluded from the "
+                   "trusted Dashboard/Rollup/Scope.", title)
+    r += 2
+    for name, fr in frames:
+        ws.write(r, 0, name, title)
+        r += 1
+        cols = list(fr.columns)
+        for ci, c in enumerate(cols):
+            ws.write(r, ci, str(c), hdr)
+        r += 1
+        for _, row in fr.iterrows():
+            for ci, c in enumerate(cols):
+                val = row[c]
+                is_num = isinstance(val, (int, float)) and not isinstance(val, bool)
+                if is_num and pd.notna(val) and ("Revenue" in str(c) or "USD" in str(c)):
+                    ws.write_number(r, ci, float(val), money)
+                elif is_num and pd.notna(val):
+                    ws.write_number(r, ci, float(val), cell)
+                else:
+                    ws.write(r, ci, "" if (val is None or (is_num and pd.isna(val))) else str(val), cell)
+            r += 1
+        r += 2
+    ws.freeze_panes(1, 0)
+
+
 def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
-                    dims: pd.DataFrame, rollup: pd.DataFrame) -> None:
+                    dims: pd.DataFrame, rollup: pd.DataFrame,
+                    qa_frames: list) -> None:
     """Write RawData, Summary and the formula-driven Dashboard sheet.
 
     `df` must already carry standardized dimension columns and numeric
@@ -446,13 +559,18 @@ def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
 
     # RawData column letters the formulas aggregate over (real standardized cols).
     L = {name: xl_col_to_name(cols.index(name)) for name in
-         [cfg.VALUE_COL, "Quantity", cfg.ASP_COL, cfg.SCOPE_COL, *DASH_DIM_COLS]
+         [cfg.VALUE_COL, "Quantity", cfg.ASP_COL, cfg.SCOPE_COL,
+          cfg.DASH_INCLUDE_COL, *DASH_DIM_COLS]
          if name in cols}
 
     # Every Dashboard formula is also scoped to Surgical rows so the widened
     # (Extended) matches never leak into these trusted numbers.
     scope_crit = (f',RawData!${L[cfg.SCOPE_COL]}$2:${L[cfg.SCOPE_COL]}${last_raw}'
                   f',"{cfg.SCOPE_SURGICAL_LABEL}"') if cfg.SCOPE_COL in L else ""
+    # …and gated to reference-valid, in-scope rows (Dash_Include="Y") so the
+    # non-reference / unspecified / excluded rows never contribute (DQ 2026-07).
+    include_crit = (f',RawData!${L[cfg.DASH_INCLUDE_COL]}$2:${L[cfg.DASH_INCLUDE_COL]}'
+                    f'${last_raw},"Y"') if cfg.DASH_INCLUDE_COL in L else ""
 
     def _crit(er: int) -> str:
         pairs = [
@@ -464,7 +582,7 @@ def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
         ]
         return "".join(
             f",RawData!${c}$2:${c}${last_raw},{ref}"
-            for c, ref in pairs) + scope_crit
+            for c, ref in pairs) + scope_crit + include_crit
 
     prev_block, band = None, 0
     for i, row in enumerate(dims.itertuples(index=False)):
@@ -505,11 +623,15 @@ def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
     ws5 = wb.add_worksheet("Rollup")
     _write_rollup_outline_sheet(wb, ws5, rollup, hdr)
 
+    # ── QA tab (reference alignment, scope flags, non-reference labels) ─────
+    ws6 = wb.add_worksheet("QA")
+    _write_qa_sheet(wb, ws6, qa_frames, hdr)
+
     writer.close()
     print(f"  [export] wrote {out_xlsx.name} "
           f"({n_raw:,} rows, {len(summary):,} summary rows, "
-          f"{len(dims):,} dashboard lines, {len(rollup):,} rollup rows "
-          f"for {cfg.IMPORT_COUNTRY})")
+          f"{len(dims):,} dashboard lines, {len(rollup):,} rollup rows, "
+          f"QA tab for {cfg.IMPORT_COUNTRY})")
 
 
 def run_export() -> Path:
@@ -564,7 +686,10 @@ def run_export() -> Path:
         df_raw = kept
     dims   = _formula_dashboard_dims(df_raw)
     rollup = _rollup_frame(df_raw)
-    _write_workbook(out_xlsx, df_raw, summary, dims, rollup)
+    # QA tables computed from the FULL matched set (not the row-capped df_raw) so
+    # the reference-alignment / scope-flag figures are complete for large markets.
+    qa = _qa_frames(matched)
+    _write_workbook(out_xlsx, df_raw, summary, dims, rollup, qa)
 
     # Interactive, cross-country dashboard site (client-side filtering) that
     # links back to the methodology page. Rebuilt every export from the same

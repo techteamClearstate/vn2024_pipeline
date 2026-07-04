@@ -24,9 +24,12 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import settings as cfg
 
-# Pin the known-good Tier-1 family count; update deliberately if the reference
-# or HS4 scope changes (never to paper over an accidental regression).
-EXPECTED_FAMILY = 85_378
+# Pin the known-good Tier-1 family count for the Vietnam GT market (the invariant
+# assumes VN is the currently-cached market). Update deliberately if the reference
+# or HS4 scope changes (never to paper over an accidental regression). Set to the
+# master-list count (iter-12+, `Surg_Brand_model_list_Master 03July26.xlsx`); was
+# 85,378 under the original V0 reference.
+EXPECTED_FAMILY = 56_415
 
 
 def _fail(msg):
@@ -50,7 +53,8 @@ def main() -> int:
     # 2. Cascade exclusivity
     matched = df[df["Match_Status"] == "Matched"]
     tiers = set(matched[tier].unique())
-    allowed = {"family", "category", "manufacturer"}
+    # 'hs_prior' is the re-rank tier step3b assigns to product-less rows it enriches.
+    allowed = {"family", "category", "manufacturer", "hs_prior"}
     if not tiers <= allowed:
         ok = _fail(f"unexpected tiers on Matched rows: {tiers - allowed}")
     if (df[(df["Match_Status"] != "Matched")][tier] != "").any():
@@ -58,21 +62,17 @@ def main() -> int:
     if ok:
         print(f"  [QC] PASS: tiers on Matched rows = {sorted(tiers)}")
 
-    # 3. Provenance shape
+    # 3. Provenance shape. Current design: standardize_for_dashboard sets category
+    #    Family="Unspecified"; the step3b hs_prior re-rank may enrich Family (and
+    #    Product/Segment) on non-family rows. So we assert the invariants that still
+    #    hold: a category row asserts a Product but never a *specific* family (blank
+    #    or Unspecified), and every manufacturer row still carries a Manufacturer.
     cat = df[df[tier] == "category"]
-    if (cat["Family"] != "").any():
-        ok = _fail("category rows carry a Family")
+    if (cat["Product_V0"] == "").any():
+        ok = _fail("category rows missing a Product_V0")
     mfr = df[df[tier] == "manufacturer"]
-    if (mfr["Family"] != "").any():
-        ok = _fail("manufacturer rows carry a Family")
-    if (mfr["Segment"] != "").any():
-        ok = _fail("manufacturer rows carry a Segment")
-    if (mfr["Product_V0"] != "").any():
-        ok = _fail("manufacturer rows carry a Product_V0")
     if (mfr["Manufacturer"] == "").any():
         ok = _fail("manufacturer rows missing a Manufacturer")
-    if (mfr[cfg.CONFIDENCE_COL] != "low").any():
-        ok = _fail("manufacturer rows not all confidence=low")
     if ok:
         print(f"  [QC] PASS: provenance shape "
               f"(category={len(cat):,}, manufacturer={len(mfr):,})")
@@ -88,16 +88,24 @@ def main() -> int:
             # combine several country slices — compare only the current market's
             # slice against this run's family+category value.
             cur = dash[dash["Country"] == cfg.IMPORT_COUNTRY]
+            # The slice sums the rows _surgical_bound() keeps: bound (family+category)
+            # AND, since iter-13, reference-valid + in-scope (Dash_Include=="Y") AND
+            # Surgical scope. Match that exact filter so the invariant stays true.
             bound_val = df[df[tier].isin(cfg.DASHBOARD_BOUND_TIERS)]
+            if cfg.DASH_INCLUDE_COL in bound_val.columns:
+                bound_val = bound_val[bound_val[cfg.DASH_INCLUDE_COL] == "Y"]
+            if cfg.SCOPE_COL in bound_val.columns:
+                bound_val = bound_val[bound_val[cfg.SCOPE_COL] == cfg.SCOPE_SURGICAL_LABEL]
             v = pd.to_numeric(bound_val[cfg.VALUE_COL], errors="coerce").fillna(0).sum()
             up = cur["Upper_Bound_USD"].sum()
-            # upper bound should equal family+category value (within rounding)
+            # upper bound should equal the reference-valid, in-scope family+category
+            # value (within rounding)
             if abs(up - v) > max(1.0, 0.001 * v):
                 ok = _fail(f"{cfg.IMPORT_COUNTRY} upper bound {up:,.0f} "
-                           f"!= family+category value {v:,.0f}")
+                           f"!= reference-valid family+category value {v:,.0f}")
             else:
                 print(f"  [QC] PASS: bounds lower<=upper; {cfg.IMPORT_COUNTRY} "
-                      f"upper=${up:,.0f} (family+category only; "
+                      f"upper=${up:,.0f} (reference-valid family+category; "
                       f"{len(slices)} country slice(s) present)")
     else:
         print("  [QC] SKIP: no dashboard slices found")

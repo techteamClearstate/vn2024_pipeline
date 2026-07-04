@@ -1,13 +1,17 @@
-list_name,layer,content_type,match_type,settings_symbol,consumed_in,purpose
-generic_word_blacklist,exclusion,term_list,whole_word,BLACKLIST,step1_extract,Generic words/materials/company names too generic to be Tier-1 family keywords.
-category_negative_cues,exclusion,term_list,substring,CATEGORY_NEGATIVE_CUES,step2_match,Accessory/tool cues -> instrument AROUND a device; vetoes the category hit.
-dental_negative_cues,exclusion,term_list,substring,DENTAL_NEGATIVE_CUES,"step2_match, step3b_hs_prior",Out-of-scope dental substrings; drops dental leakage across all tiers + HS-prior.
-generic_label_blacklist,exclusion,term_list,exact_label,GENERIC_LABEL_BLACKLIST,step1_extract,Vague 2-token Product labels excluded from the label-derived category lexicon.
-manufacturer_exclude_cues,exclusion,term_list,substring,MANUFACTURER_EXCLUDE_CUES,step2_match,Veterinary/animal-health cues excluded from Tier-3 maker attribution.
-category_heads,usage,term_list,token,CATEGORY_HEADS,step2_match,Bare device heads eligible for the HS8-dominant-segment fallback.
-consistency_cues,usage,term_list,token,CONSISTENCY_CUES,step2_match,Device-head + anatomy vocabulary the Tier-1 consistency reranker may weigh.
-ambiguous_family_keywords,usage,term_list,keyword,AMBIGUOUS_FAMILY_KEYWORDS,step2_match,Common-English / collision brand keywords released unless the row corroborates.
-hs_prior_fixation_products,usage,term_list,substring,HS_PRIOR_FIXATION_PRODUCTS,step3b_hs_prior,Fixation product names never stamped onto a joint-replacement row.
-arthroplasty_component_cues,usage,term_list,substring,ARTHROPLASTY_COMPONENT_CUES,step3b_hs_prior,Joint-replacement cues that trigger the fixation-fill veto.
-category_qualifier_map,usage,mapping,phrase,CATEGORY_QUALIFIER_MAP,"step1_extract, step2_match",Qualifier phrase -> canonical Product label (Tier-2 high confidence).
-manufacturer_aliases,usage,mapping,alias,MANUFACTURER_ALIASES,"step1_extract, step2_match",Canonical manufacturer -> distinctive cores searched in the Importer+Exporter blob.
+list_name,layer,list_group,content_type,match_type,settings_symbol,consumed_in,purpose
+generic_word_blacklist,exclusion,generic,term_list,whole_word,BLACKLIST,step1_extract,Generic words/materials/company names too generic to be Tier-1 family keywords.
+category_negative_cues,exclusion,accessory,term_list,substring,CATEGORY_NEGATIVE_CUES,step2_match,Accessory/tool cues -> instrument AROUND a device (in scope but not the device); vetoes the category hit.
+dental_negative_cues,exclusion,scope_exclude,term_list,substring,DENTAL_NEGATIVE_CUES,"step2_match, step3b_hs_prior, step3_map",Out-of-scope DENTAL domain; drops dental leakage across tiers + HS-prior and via the final scope gate.
+generic_label_blacklist,exclusion,generic,term_list,exact_label,GENERIC_LABEL_BLACKLIST,step1_extract,Vague 2-token Product labels excluded from the label-derived category lexicon.
+manufacturer_exclude_cues,exclusion,scope_exclude,term_list,substring,MANUFACTURER_EXCLUDE_CUES,"step2_match, step3_map",Out-of-scope VETERINARY/animal domain; excluded from Tier-3 maker attribution and via the final scope gate.
+cosmetic_aesthetic_cues,exclusion,scope_exclude,term_list,substring,SCOPE_EXCLUDE_CUES[cosmetic],step3_map,Out-of-scope COSMETIC/aesthetic domain; rows parked as Review at the final reference gate.
+imaging_equipment_cues,exclusion,scope_exclude,term_list,substring,SCOPE_EXCLUDE_CUES[imaging],step3_map,Out-of-scope IMAGING capital equipment; rows parked as Review at the final reference gate.
+lab_ivd_cues,exclusion,scope_exclude,term_list,substring,SCOPE_EXCLUDE_CUES[lab_ivd],step3_map,Out-of-scope LAB/IVD/diagnostic domain; rows parked as Review at the final reference gate.
+general_consumable_cues,exclusion,scope_exclude,term_list,substring,SCOPE_EXCLUDE_CUES[general],step3_map,Out-of-scope pharma/first-aid/GENERAL consumable domain; rows parked as Review (conservative cues).
+category_heads,usage,reranker,term_list,token,CATEGORY_HEADS,step2_match,Bare device heads eligible for the HS8-dominant-segment fallback.
+consistency_cues,usage,reranker,term_list,token,CONSISTENCY_CUES,step2_match,Device-head + anatomy vocabulary the Tier-1 consistency reranker may weigh.
+ambiguous_family_keywords,usage,reranker,term_list,keyword,AMBIGUOUS_FAMILY_KEYWORDS,step2_match,Common-English / collision brand keywords released unless the row corroborates.
+hs_prior_fixation_products,usage,hs_prior_guard,term_list,substring,HS_PRIOR_FIXATION_PRODUCTS,step3b_hs_prior,Fixation product names never stamped onto a joint-replacement row.
+arthroplasty_component_cues,usage,hs_prior_guard,term_list,substring,ARTHROPLASTY_COMPONENT_CUES,step3b_hs_prior,Joint-replacement cues that trigger the fixation-fill veto.
+category_qualifier_map,usage,mapping,mapping,phrase,CATEGORY_QUALIFIER_MAP,"step1_extract, step2_match",Qualifier phrase -> canonical Product label (Tier-2 high confidence).
+manufacturer_aliases,usage,mapping,mapping,alias,MANUFACTURER_ALIASES,"step1_extract, step2_match",Canonical manufacturer -> distinctive cores searched in the Importer+Exporter blob.
