@@ -17,14 +17,22 @@ vn2024_pipeline/
 ├── requirements.txt
 ├── README.md
 ├── config/
-│   └── settings.py          # all paths, columns, HS4 scope, blacklist, tuning
+│   └── settings.py          # paths, HS4 scope, tuning (lists load from reference/)
+├── reference/               # ← CENTRAL governed reference tables (see its README)
+│   ├── brand_model/         #   canonical master + superseded V0 workbooks
+│   ├── companies/           #   company / sub-OU reference
+│   ├── exclusion_lists/     #   *.csv — terms removed from scope (canonical)
+│   ├── usage_lists/         #   *.csv — qualifier/alias/head maps (canonical)
+│   ├── reference.sqlite     #   queryable DB built from the CSVs + master
+│   └── loader.py, build_reference_db.py, README.md, registry.yml, LINEAGE.md
 ├── src/
-│   ├── step1_extract.py     # VN .xlsx → TSV cache + build V0 keyword trie
-│   ├── step2_match.py       # trie keyword matching (HS4-scoped)
-│   ├── step3_map.py         # join matched keywords → V0 fields
-│   └── step4_export.py      # styled .xlsx (green highlight + summary)
+│   ├── step1_extract.py     # source → TSV cache + build family/category/maker lexicons
+│   ├── step2_match.py       # 3-tier trie/category/manufacturer matching
+│   ├── step3_map.py         # join matched keywords → reference fields
+│   ├── step3b_hs_prior.py   # learned HS-prior recall re-rank (guarded)
+│   └── step4_export.py      # styled .xlsx + Dashboard + Dashboard.html
 ├── data/
-│   ├── uploads/             # ← PUT SOURCE .xlsx / .csv FILES HERE
+│   ├── uploads/             # ← PUT MARKET SOURCE .xlsx / .csv FILES HERE
 │   └── intermediate/        # cached TSV / pickles / csv (regenerated)
 └── outputs/                 # <Country>_ML_Map_Mapped.xlsx (one per market) + report
 ```
@@ -37,10 +45,26 @@ vn2024_pipeline/
 pip install -r requirements.txt
 ```
 
-Place the two source workbooks in `data/uploads/`:
+Place the **market source** workbook/CSV in `data/uploads/`:
 
 - `VN-2024_Processed-MLmap_analysis_v0.xlsx`  (the trade data, sheet `RawData`)
-- `Surg_Brand_model_list_V0.xlsx`             (the reference, sheet `Updated`)
+
+The **reference brand/model list** now lives under `reference/brand_model/`
+(`Surg_Brand_model_list_Master_03July26.xlsx`, sheet `Updated (excl. generic)`)
+and is referenced by `config.settings.V0_REFERENCE_XLSX`.
+
+### Reference tables (central + governed)
+
+All reference data — the brand/model master, the **exclusion lists** (generic /
+dental / accessory / veterinary), and the **usage lists** (qualifier→product map,
+manufacturer aliases, category heads, consistency & ambiguous-brand cues) — lives
+in **`reference/`**. The `*_lists/*.csv` files are the **single source of truth**:
+`config/settings.py` loads them at import (so nothing is hard-coded), and
+`reference/reference.sqlite` is rebuilt from them for querying. Edit a CSV, then
+`python reference/build_reference_db.py`. Full usage, intent, storage and data
+lineage are documented in [`reference/README.md`](reference/README.md),
+[`reference/registry.yml`](reference/registry.yml) and
+[`reference/LINEAGE.md`](reference/LINEAGE.md).
 
 ---
 

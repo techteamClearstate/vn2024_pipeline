@@ -1,0 +1,135 @@
+# Machine-readable catalogue of every governed reference table.
+# Canonical source = the CSVs listed under `source`. Regenerate the DB with:
+#   python reference/build_reference_db.py
+# Mirrors the reference_lists / source_files tables in reference.sqlite.
+
+meta:
+  project: vn2024_pipeline
+  purpose: >
+    Central registry of the brand/model master, exclusion lists, and usage lists
+    that drive the surgical trade-data mapping. CSV is canonical; config/settings.py
+    and reference.sqlite are both derived from it.
+  updated: 2026-07-04
+  canonical_layer: reference/exclusion_lists + reference/usage_lists (CSV)
+  database: reference/reference.sqlite
+  loader: reference/loader.py
+  builder: reference/build_reference_db.py
+
+file_references:
+  - id: brand_model_master
+    path: reference/brand_model/Surg_Brand_model_list_Master_03July26.xlsx
+    sheet: "Updated (excl. generic)"
+    header_row: 0
+    rows: 10392
+    role: canonical brand/model reference
+    status: active
+    consumed_by: [step1_extract]
+    settings_symbol: V0_REFERENCE_XLSX
+  - id: brand_model_v0
+    path: reference/brand_model/Surg_Brand_model_list_V0.xlsx
+    role: superseded brand/model reference
+    status: superseded
+  - id: companies_master
+    path: reference/companies/List_of_companies_v1.0_Master.xlsx
+    sheet: "List of companies by sub-OU"
+    header_row: 7
+    role: company / sub-OU reference
+    status: reference
+
+exclusion_lists:
+  - name: generic_word_blacklist
+    source: reference/exclusion_lists/generic_word_blacklist.csv
+    symbol: BLACKLIST
+    kind: set
+    rows: 206
+    consumed_in: step1_extract
+  - name: category_negative_cues
+    source: reference/exclusion_lists/category_negative_cues.csv
+    symbol: CATEGORY_NEGATIVE_CUES
+    kind: set
+    rows: 21
+    consumed_in: step2_match
+  - name: dental_negative_cues
+    source: reference/exclusion_lists/dental_negative_cues.csv
+    symbol: DENTAL_NEGATIVE_CUES
+    kind: set
+    rows: 16
+    consumed_in: step2_match, step3b_hs_prior
+  - name: generic_label_blacklist
+    source: reference/exclusion_lists/generic_label_blacklist.csv
+    symbol: GENERIC_LABEL_BLACKLIST
+    kind: set
+    rows: 5
+    consumed_in: step1_extract
+  - name: manufacturer_exclude_cues
+    source: reference/exclusion_lists/manufacturer_exclude_cues.csv
+    symbol: MANUFACTURER_EXCLUDE_CUES
+    kind: set
+    rows: 3
+    consumed_in: step2_match
+
+usage_lists:
+  - name: category_qualifier_map
+    source: reference/usage_lists/category_qualifier_map.csv
+    symbol: CATEGORY_QUALIFIER_MAP
+    kind: map
+    key: qualifier_phrase
+    value: product_label
+    rows: 40
+    consumed_in: step1_extract, step2_match
+  - name: manufacturer_aliases
+    source: reference/usage_lists/manufacturer_aliases.csv
+    symbol: MANUFACTURER_ALIASES
+    kind: alias_map
+    key: canonical
+    value: core
+    makers: 30
+    cores: 39
+    consumed_in: step1_extract, step2_match
+  - name: category_heads
+    source: reference/usage_lists/category_heads.csv
+    symbol: CATEGORY_HEADS
+    kind: set
+    rows: 8
+    consumed_in: step2_match
+  - name: consistency_cues
+    source: reference/usage_lists/consistency_cues.csv
+    symbol: CONSISTENCY_CUES
+    kind: set
+    rows: 47
+    consumed_in: step2_match
+  - name: ambiguous_family_keywords
+    source: reference/usage_lists/ambiguous_family_keywords.csv
+    symbol: AMBIGUOUS_FAMILY_KEYWORDS
+    kind: set
+    rows: 94
+    consumed_in: step2_match
+  - name: hs_prior_fixation_products
+    source: reference/usage_lists/hs_prior_fixation_products.csv
+    symbol: HS_PRIOR_FIXATION_PRODUCTS
+    kind: ordered
+    rows: 4
+    consumed_in: step3b_hs_prior
+  - name: arthroplasty_component_cues
+    source: reference/usage_lists/arthroplasty_component_cues.csv
+    symbol: ARTHROPLASTY_COMPONENT_CUES
+    kind: ordered
+    rows: 18
+    consumed_in: step3b_hs_prior
+  - name: column_map
+    source: reference/usage_lists/column_map.csv
+    symbol: V0_COLS
+    kind: map
+    key: logical_name
+    value: source_column
+    rows: 5
+    consumed_in: step1_extract
+
+# Reference-like constants deliberately kept in config/settings.py (not flat tables):
+code_resident:
+  - symbol: TIER1_CONFLICT_GUARDS
+    reason: nested {product_cue, forbid, allow} rule dicts, not a flat lookup
+  - symbol: SURGICAL_HS4
+    reason: small integer HS-chapter set bound to scope logic
+  - symbol: SCOPE_EXCLUDE_HS4
+    reason: small integer HS-chapter set bound to scope logic
