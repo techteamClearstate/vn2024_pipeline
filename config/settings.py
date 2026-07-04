@@ -13,10 +13,10 @@ INTERMEDIATE  = DATA_DIR / "intermediate"     # cached TSV / pickles
 OUTPUTS_DIR   = ROOT / "outputs"
 # Central home for governed REFERENCE tables (brand/model master, companies,
 # and every exclusion + usage list). See reference/README.md for lineage. The
-# flat lists below are LOADED from reference/reference_lists.csv (one file, keyed
-# by list_name — the single source of truth) rather than hard-coded, so the repo,
-# the pipeline, and reference.sqlite never drift. Raw market data stays in
-# data/uploads/.
+# flat lists below are LOADED from the reference/ star schema — term_lists.csv
+# (blacklists + flat lists, provider-aware) and term_mappings.csv (key→value
+# maps), catalogued by list_catalog.csv — the single source of truth. reference.
+# sqlite is generated from the same CSVs. Raw market data stays in data/uploads/.
 REFERENCE_DIR = ROOT / "reference"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -193,12 +193,16 @@ HARVEST_MIN_PURITY         = 0.60   # ≥ this share must share one dominant OU_
 # step4_export._output_path().
 
 # ── Column mapping (V0 reference → output) ─────────────────────────────────
-# Reference sheet columns used for the lookup. Loaded from
-# reference_lists.csv list_name=column_map (logical_name → source_column):
-#   segment→Segment, sub_segment→Sub-segment, product→Product (→ Product_V0),
-#   player→Player (→ Manufacturer), keyword→"Model/ Family Name" (matched against
-#   Detailed_Product; → output Family).
-V0_COLS = load_str_map("column_map")
+# Reference sheet column → logical output field. This is a fixed schema contract
+# for the reference workbook (not provider-editable reference data), so it lives
+# here as a literal rather than in the reference/ tables.
+V0_COLS = {
+    "segment":     "Segment",            # → output Segment
+    "sub_segment": "Sub-segment",        # → output Sub-segment
+    "product":     "Product",            # → output Product_V0
+    "player":      "Player",             # → output Manufacturer
+    "keyword":     "Model/ Family Name", # → matched against Detailed_Product; → output Family
+}
 
 # Key column in the VN file that is searched for keywords
 VN_DESCRIPTION_COL = "Detailed_Product"
@@ -251,7 +255,7 @@ KEEP_COLS = [
 # Generic English words / product categories / materials that appear in the
 # reference brand list but are too generic to safely match — suppressed
 # regardless of their presence in the reference file. The full 206-value list is
-# reference_lists.csv list_name=generic_word_blacklist; per-term provenance is in
+# term_lists.csv list_name=generic_word_blacklist; per-term provenance is in
 # reference/README.md.
 BLACKLIST = load_set("generic_word_blacklist")
 
@@ -309,7 +313,7 @@ CONSISTENCY_STORE_EPS    = 0.001  # prune Segments below this share when persist
 # Curated device-head / anatomy cue vocabulary the reranker is allowed to weigh.
 # Each must be a token that strongly implies a clinical area; learned Segment sets
 # below the purity/rows gate are dropped at build time. Vocabulary lives in
-# reference_lists.csv list_name=consistency_cues (device heads + anatomy qualifiers).
+# term_lists.csv list_name=consistency_cues (device heads + anatomy qualifiers).
 CONSISTENCY_CUES = load_set("consistency_cues")
 
 # ── Ambiguous-brand corroboration guard (2026-07-03, iter-8) ───────────────
@@ -329,7 +333,7 @@ CONSISTENCY_CUES = load_set("consistency_cues")
 # ('ARMADA … BALLOON' shares 'balloon'), so the guard only drops true collisions.
 USE_AMBIGUOUS_FAMILY_GUARD = True
 # The 94 ambiguous (common-English / cross-category-collision) brand keywords
-# live in reference_lists.csv list_name=ambiguous_family_keywords. Per-term
+# live in term_lists.csv list_name=ambiguous_family_keywords. Per-term
 # collision provenance (which foreign device each wrongly hit) is in reference/README.md.
 AMBIGUOUS_FAMILY_KEYWORDS = load_set("ambiguous_family_keywords")
 
@@ -339,7 +343,7 @@ AMBIGUOUS_FAMILY_KEYWORDS = load_set("ambiguous_family_keywords")
 # canonical V0 Product label whose Segment/Sub-segment are resolved from the
 # reference at build time. Seeded from description-bigram frequency analysis.
 # Qualifier phrase → canonical Product label. Loaded from
-# reference_lists.csv list_name=category_qualifier_map (40 entries). Includes the
+# term_mappings.csv map_name=category_qualifier_map (40 entries). Includes the
 # Sub-OU-safe reinstatements (locking/bone plate→Plate, hernia mesh→Synthetic
 # Mesh, *cannula→Cannulae_*, anatomically-specific screws→Trauma/Spine) that
 # recover a blacklisted bare head only when the qualifier pins one clean Sub-OU.
@@ -409,7 +413,7 @@ CONFIDENCE_COL = "Match_Confidence"  # high | med | low | ""
 # substring of an unrelated shipper before adding).
 # Canonical manufacturer → distinctive lowercase "cores" (whole-word searched in
 # the normalized Importer+Exporter blob). Loaded from
-# reference_lists.csv list_name=manufacturer_aliases (30 makers, one row per core,
+# term_mappings.csv map_name=manufacturer_aliases (30 makers, one row per core,
 # core order preserved for longest-first matching downstream).
 MANUFACTURER_ALIASES = load_alias_map("manufacturer_aliases")
 

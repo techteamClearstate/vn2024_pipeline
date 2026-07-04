@@ -6,6 +6,8 @@
 *.csv  filter=lfs diff=lfs merge=lfs -text
 *.pkl  filter=lfs diff=lfs merge=lfs -text
 
-# EXCEPTION: the governed reference lists are small, human-editable text — keep
+# EXCEPTION: the governed reference tables are small, human-editable text — keep
 # them OUT of LFS so they diff and render on GitHub.
-reference/reference_lists.csv !filter !diff !merge text
+reference/list_catalog.csv   !filter !diff !merge text
+reference/term_lists.csv     !filter !diff !merge text
+reference/term_mappings.csv  !filter !diff !merge text

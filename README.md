@@ -21,8 +21,10 @@ vn2024_pipeline/
 ├── reference/               # ← CENTRAL governed reference tables (see its README)
 │   ├── brand_model/         #   canonical master + superseded V0 workbooks
 │   ├── companies/           #   company / sub-OU reference
-│   ├── reference_lists.csv  #   ONE human-editable file: all 13 exclusion+usage lists
-│   ├── reference.sqlite     #   machine-readable query DB built from the CSV + master
+│   ├── list_catalog.csv     #   dimension: one row per list (what each list is)
+│   ├── term_lists.csv       #   fact: all flat lists + blacklists, provider-aware
+│   ├── term_mappings.csv    #   fact: key→value maps (qualifier→product, aliases)
+│   ├── reference.sqlite     #   machine-readable query DB built from the CSVs + master
 │   └── loader.py, build_reference_db.py, README.md
 ├── src/
 │   ├── step1_extract.py     # source → TSV cache + build family/category/maker lexicons
@@ -57,13 +59,16 @@ and is referenced by `config.settings.V0_REFERENCE_XLSX`.
 All reference data — the brand/model master, the **exclusion lists** (generic /
 dental / accessory / veterinary), and the **usage lists** (qualifier→product map,
 manufacturer aliases, category heads, consistency & ambiguous-brand cues) — lives
-in **`reference/`**. There are two representations, one generated from the other:
-**`reference_lists.csv`** is the single **human-editable** source of truth (all 13
-lists in one file, keyed by `list_name`), and **`reference.sqlite`** is the
-**machine-readable** query DB rebuilt from it. `config/settings.py` loads the CSV
-at import (nothing is hard-coded). Edit the CSV, then
-`python reference/build_reference_db.py`. Full usage, intent, storage, provenance
-and data lineage are in [`reference/README.md`](reference/README.md).
+in **`reference/`**, modelled as a small **star schema**: `list_catalog.csv`
+(one row per list) over two typed fact tables — `term_lists.csv` (flat lists +
+blacklists, **provider-aware**) and `term_mappings.csv` (key→value maps). These
+CSVs are the **human-editable** source of truth; **`reference.sqlite`** is the
+**machine-readable** query DB rebuilt from them. `config/settings.py` loads the
+CSVs at import (nothing is hard-coded). Edit a CSV, then
+`python reference/build_reference_db.py`. Multi-provider blacklists combine by
+appending rows tagged with their `provider` (a `retired` status keeps a term on
+record without applying it). Full usage, intent, storage, provenance and data
+lineage are in [`reference/README.md`](reference/README.md).
 
 ---
 
