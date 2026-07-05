@@ -509,6 +509,8 @@ scope_keyword_cosmetic,dermal filler,reference_compliance,active,Final complianc
 scope_keyword_cosmetic,breast implant,reference_compliance,active,Final compliance cosmetic trigger
 scope_keyword_cosmetic,botox,reference_compliance,active,Final compliance cosmetic trigger
 scope_keyword_cosmetic,skin treatment,reference_compliance,active,Final compliance cosmetic trigger
+scope_keyword_cosmetic,hydra ?facial,reference_compliance,active,DQ 2026-07-05 cosmetic hydrafacial false-positive guard
+scope_keyword_cosmetic,hydrafacial,reference_compliance,active,DQ 2026-07-05 cosmetic hydrafacial false-positive guard
 scope_keyword_lab_ivd,reagent,reference_compliance,active,Final compliance lab/IVD trigger
 scope_keyword_lab_ivd,\bassay\b,reference_compliance,active,Final compliance lab/IVD trigger
 scope_keyword_lab_ivd,calibrator,reference_compliance,active,Final compliance lab/IVD trigger
@@ -524,6 +526,15 @@ scope_keyword_imaging,\bct\b,reference_compliance,active,Final compliance imagin
 scope_keyword_imaging,\bmri\b,reference_compliance,active,Final compliance imaging trigger
 scope_keyword_imaging,ultrasound,reference_compliance,active,Final compliance imaging trigger
 scope_keyword_imaging,imaging,reference_compliance,active,Final compliance imaging trigger
+scope_keyword_imaging,tomography,reference_compliance,active,DQ 2026-07-05 imaging-only conflict guard
+scope_keyword_imaging,optical coherence tomography,reference_compliance,active,DQ 2026-07-05 OCT imaging-only conflict guard
+scope_keyword_imaging,\boct[- ]?1\b,reference_compliance,active,DQ 2026-07-05 OCT model conflict guard
+scope_keyword_imaging,angiography machine,reference_compliance,active,DQ 2026-07-05 imaging capital conflict guard
+scope_keyword_imaging,laser imager,reference_compliance,active,DQ 2026-07-05 imaging capital conflict guard
+scope_keyword_imaging,intraoral scanner,reference_compliance,active,DQ 2026-07-05 dental or imaging capital conflict guard
+scope_keyword_imaging,fru detector,reference_compliance,active,DQ 2026-07-05 imaging detector conflict guard
+scope_keyword_imaging,defibrillator,reference_compliance,active,DQ 2026-07-05 non-surgical capital conflict guard
+scope_keyword_imaging,ecg machine,reference_compliance,active,DQ 2026-07-05 non-surgical capital conflict guard
 surgical_context_whitelist,(?:dilatation|dilation|dialation|dialatation) catheter,reference_compliance,active,Validated surgical catheter context
 surgical_context_whitelist,x[- ]?ray detectable,reference_compliance,active,Validated surgical detectable-consumable context
 surgical_context_whitelist,electrosurgical pencil,reference_compliance,active,Validated surgical device context
@@ -542,6 +553,14 @@ generic_token_families,evolution,reference_compliance,active,Generic-token famil
 generic_token_families,physio,reference_compliance,active,Generic-token family anomaly guard
 generic_token_families,woven,reference_compliance,active,Generic-token family anomaly guard
 generic_token_families,cone,reference_compliance,active,Generic-token family anomaly guard
+generic_token_families,celsius,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,express,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,hydra,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,zero,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,hawk,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,trilogy,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,direx,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
+generic_token_families,bio 1,reference_compliance,active,DQ 2026-07-05 generic-token family anomaly guard
 capital_equipment_cues,\bmachine\b,reference_compliance,active,Capital-equipment anomaly cue
 capital_equipment_cues,\bequipment\b,reference_compliance,active,Capital-equipment anomaly cue
 capital_equipment_cues,\bapparatus\b,reference_compliance,active,Capital-equipment anomaly cue
@@ -552,6 +571,15 @@ capital_equipment_cues,\bused\b.*\bmachine\b,reference_compliance,active,Capital
 capital_equipment_cues,skin treatment,reference_compliance,active,Capital-equipment anomaly cue
 capital_equipment_cues,workstation,reference_compliance,active,Capital-equipment anomaly cue
 capital_equipment_cues,\bconsole\b,reference_compliance,active,Capital-equipment anomaly cue
+capital_equipment_cues,scientific refrigerator,reference_compliance,active,DQ 2026-07-05 non-surgical capital conflict guard
+capital_equipment_cues,\brefrigerator\b,reference_compliance,active,DQ 2026-07-05 non-surgical capital conflict guard
+capital_equipment_cues,body warmer,reference_compliance,active,DQ 2026-07-05 non-surgical capital conflict guard
+capital_equipment_cues,blood warmer,reference_compliance,active,DQ 2026-07-05 non-surgical capital conflict guard
+capital_equipment_cues,swiss lithoclast,reference_compliance,active,DQ 2026-07-05 urology lithotripsy collision guard
+capital_equipment_cues,swiss trilogy,reference_compliance,active,DQ 2026-07-05 urology lithotripsy collision guard
+capital_equipment_cues,lithotripter,reference_compliance,active,DQ 2026-07-05 urology lithotripsy collision guard
+capital_equipment_cues,lithotripsy,reference_compliance,active,DQ 2026-07-05 urology lithotripsy collision guard
+capital_equipment_cues,lithoclast,reference_compliance,active,DQ 2026-07-05 urology lithotripsy collision guard
 surgical_candidate_terms,suture,reference_compliance,active,Recall audit surgical candidate cue
 surgical_candidate_terms,stapler,reference_compliance,active,Recall audit surgical candidate cue
 surgical_candidate_terms,staple,reference_compliance,active,Recall audit surgical candidate cue
@@ -603,3 +631,11 @@ surgical_candidate_terms,anchor,reference_compliance,active,Recall audit surgica
 surgical_candidate_terms,shaver,reference_compliance,active,Recall audit surgical candidate cue
 surgical_candidate_terms,ablation,reference_compliance,active,Recall audit surgical candidate cue
 surgical_candidate_terms,balloon,reference_compliance,active,Recall audit surgical candidate cue
+surgical_candidate_terms,dialyzer,reference_compliance,active,DQ 2026-07-05 recall audit dialysis cue
+surgical_candidate_terms,dialyser,reference_compliance,active,DQ 2026-07-05 recall audit dialysis cue
+surgical_candidate_terms,hemodialysis,reference_compliance,active,DQ 2026-07-05 recall audit dialysis cue
+surgical_candidate_terms,haemodialysis,reference_compliance,active,DQ 2026-07-05 recall audit dialysis cue
+surgical_candidate_terms,on[- ]?x,reference_compliance,active,DQ 2026-07-05 recall audit prosthetic valve cue
+surgical_candidate_terms,prosthetic heart valve,reference_compliance,active,DQ 2026-07-05 recall audit prosthetic valve cue
+surgical_candidate_terms,sheath,reference_compliance,active,DQ 2026-07-05 recall audit sheath cue
+surgical_candidate_terms,introducer,reference_compliance,active,DQ 2026-07-05 recall audit introducer cue
