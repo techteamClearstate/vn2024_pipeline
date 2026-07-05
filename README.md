@@ -113,6 +113,21 @@ After a run, check invariants with:
 python qc_check.py     # asserts Tier-1 count, cascade exclusivity, bounds
 ```
 
+### CodeGraph
+
+The repo includes a static **CodeGraph** builder for Python modules, functions,
+classes, imports, and local call edges. It is safe to run without source data
+because it parses code with `ast` instead of importing pipeline stages or loading
+workbooks.
+
+```bash
+python tools/codegraph.py --format markdown --output docs/CODEGRAPH.md
+python tools/codegraph.py --format json --output codegraph.json
+python tools/codegraph.py --format dot --output codegraph.dot
+```
+
+`docs/CODEGRAPH.md` is the checked-in human-readable snapshot.
+
 ---
 
 ## How it works
