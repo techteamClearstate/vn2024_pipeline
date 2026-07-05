@@ -1468,11 +1468,53 @@ def main() -> None:
             }
         ]
     )
+    recommendations = pd.DataFrame(
+        [
+            (
+                "Implement immediately",
+                "Keep strict Trusted_Dashboard gates, candidate evidence columns, review clustering, Extended_Surgical_Decision, Alias_Update_Request, and Reference_Update_Request.",
+                "These changes improve capture recall and auditability without allowing unvalidated fuzzy/semantic matches into Trusted_Dashboard.",
+                "Adopt in the FY2024 Vietnam production workflow and reuse for FY2025/India/Pakistan remaps.",
+            ),
+            (
+                "Implement immediately",
+                "Review high-value clusters first: Extended HS, manufacturer-only with product evidence, unspecified-category with product evidence, and latest-reference gaps.",
+                "This targets the largest unresolved value while avoiding row-by-row manual review.",
+                "Label cluster samples and convert corrections into alias/rule/reference update tables.",
+            ),
+            (
+                "Test in controlled experiment",
+                "Add sklearn-backed word and character n-gram TF-IDF retrieval when available.",
+                "This should improve recall for misspellings, truncated customs descriptions, and punctuation/model variation.",
+                "Compare A3/A4 against the current deterministic proxy using Gold_Labels before promotion.",
+            ),
+            (
+                "Test in controlled experiment",
+                "Add semantic retrieval and LLM resolver/conflict agents only after deterministic candidate generation.",
+                "These methods may find missed surgical rows but carry false-positive risk for imaging, lab/IVD, capital equipment, ophthalmic, dental, cosmetic, and veterinary rows.",
+                "Route semantic-only and LLM-only suggestions to Review_Queue unless master validation and evidence thresholds pass.",
+            ),
+            (
+                "Defer",
+                "Trusted inclusion for Extended HS surgical rows.",
+                "The current run isolates them because the business rule is unresolved.",
+                "Decide Option A core HS only vs Option B surgical product regardless of HS code.",
+            ),
+            (
+                "Avoid",
+                "Direct Trusted_Dashboard promotion from fuzzy, semantic, generic-token, or manufacturer-only evidence.",
+                "This would damage defensibility and repeat known false-positive patterns.",
+                "Require latest-master validation plus product/family/manufacturer support and no unresolved conflict term.",
+            ),
+        ],
+        columns=["Recommendation_Category", "Recommendation", "Reason", "Next_Action"],
+    )
 
     tables = OrderedDict(
         [
             ("Executive_Summary", summary),
             ("Baseline_vs_Improved", metrics),
+            ("Metrics_Summary", metrics),
             ("Validation", validations),
             ("Changes_Applied", changes),
             ("Dashboard_Rebuild", dashboard),
@@ -1493,6 +1535,7 @@ def main() -> None:
             ("Gold_Label_Template", gold_template),
             ("Active_Learning_Updates", active_learning),
             ("Change_Log", change_log),
+            ("Workflow_Recommendations", recommendations),
         ]
     )
     print(f"[vn2024] writing QA report {args.qa_output}")
