@@ -1,0 +1,761 @@
+# CodeGraph
+
+Root: `/workspace/vn2024_pipeline`
+
+## `config/__init__.py`
+
+## `config/settings.py`
+
+## `qc_check.py`
+- `qc_check._fail` (function, line 32)
+- `qc_check.main` (function, line 37)
+
+## `reference/__init__.py`
+
+## `reference/build_reference_db.py`
+- `reference.build_reference_db.build` (function, line 62)
+
+## `reference/loader.py`
+- `reference.loader._load` (function, line 28)
+- `reference.loader._rows` (function, line 41)
+- `reference.loader.list_names` (function, line 48)
+- `reference.loader.load_set` (function, line 53)
+- `reference.loader.load_tuple` (function, line 57)
+- `reference.loader.load_str_map` (function, line 61)
+- `reference.loader.load_alias_map` (function, line 66)
+
+## `run_pipeline.py`
+- `run_pipeline._check_inputs` (function, line 40)
+- `run_pipeline.main` (function, line 50)
+
+## `src/__init__.py`
+
+## `src/codegraph.py`
+- `src.codegraph.CodeNode` (class, line 19)
+- `src.codegraph.CodeEdge` (class, line 30)
+- `src.codegraph.CodeGraph` (class, line 41)
+- `src.codegraph.CodeGraph.from_repo` (method, line 53)
+- `src.codegraph.CodeGraph._add_file` (method, line 74)
+- `src.codegraph.CodeGraph._add_call_edges` (method, line 102)
+- `src.codegraph.CodeGraph.to_dict` (method, line 116)
+- `src.codegraph.CodeGraph.to_json` (method, line 123)
+- `src.codegraph.CodeGraph.to_dot` (method, line 126)
+- `src.codegraph.CodeGraph.to_markdown` (method, line 136)
+- `src.codegraph._module_id` (function, line 154)
+- `src.codegraph._import_names` (function, line 162)
+- `src.codegraph._CallVisitor` (class, line 169)
+- `src.codegraph._CallVisitor.__init__` (method, line 170)
+- `src.codegraph._CallVisitor.visit_FunctionDef` (method, line 175)
+- `src.codegraph._CallVisitor.visit_AsyncFunctionDef` (method, line 178)
+- `src.codegraph._CallVisitor.visit_ClassDef` (method, line 181)
+- `src.codegraph._CallVisitor.visit_Call` (method, line 184)
+- `src.codegraph._CallVisitor._with_scope` (method, line 192)
+- `src.codegraph._call_name` (function, line 202)
+
+## `src/dashboard_html.py`
+- `src.dashboard_html.build_dashboard_html` (function, line 21)
+
+## `src/step1_extract.py`
+- `src.step1_extract._require` (function, line 22)
+- `src.step1_extract._require_columns` (function, line 30)
+- `src.step1_extract.extract_vn_to_tsv` (function, line 41)
+- `src.step1_extract._extract_csv_to_tsv` (function, line 57)
+- `src.step1_extract._extract_xlsx_to_tsv` (function, line 84)
+- `src.step1_extract._load_v0_reference` (function, line 113)
+- `src.step1_extract.build_keyword_lookup` (function, line 142)
+- `src.step1_extract._merge_harvested_keywords` (function, line 191)
+- `src.step1_extract._canon_sep` (function, line 212)
+- `src.step1_extract._canon_tokens` (function, line 224)
+- `src.step1_extract._choose_canonical` (function, line 229)
+- `src.step1_extract.build_product_canonical_map` (function, line 238)
+- `src.step1_extract.canonicalize_products` (function, line 262)
+- `src.step1_extract.norm_phrase` (function, line 272)
+- `src.step1_extract.build_category_lexicon` (function, line 283)
+- `src.step1_extract.norm_party` (function, line 344)
+- `src.step1_extract.build_manufacturer_lexicon` (function, line 353)
+
+## `src/step2_match.py`
+- `src.step2_match._load_trie` (function, line 23)
+- `src.step2_match._load_consistency` (function, line 31)
+- `src.step2_match.make_matcher` (function, line 43)
+- `src.step2_match._in_scope` (function, line 75)
+- `src.step2_match._match_allowed` (function, line 83)
+- `src.step2_match.build_hs8_segment` (function, line 97)
+- `src.step2_match.make_category_matcher` (function, line 121)
+- `src.step2_match.make_manufacturer_matcher` (function, line 169)
+- `src.step2_match.run_matching` (function, line 191)
+
+## `src/step3_map.py`
+- `src.step3_map._derive_manufacturers` (function, line 26)
+- `src.step3_map.standardize_for_dashboard` (function, line 48)
+- `src.step3_map.run_mapping` (function, line 92)
+
+## `src/step3b_hs_prior.py`
+- `src.step3b_hs_prior._norm` (function, line 45)
+- `src.step3b_hs_prior._hs8` (function, line 49)
+- `src.step3b_hs_prior._hs6_of` (function, line 53)
+- `src.step3b_hs_prior._tokens` (function, line 59)
+- `src.step3b_hs_prior._sing` (function, line 66)
+- `src.step3b_hs_prior._cue_tokens` (function, line 73)
+- `src.step3b_hs_prior._device_vocab` (function, line 80)
+- `src.step3b_hs_prior.build_consistency` (function, line 99)
+- `src.step3b_hs_prior._dominant` (function, line 150)
+- `src.step3b_hs_prior._blank` (function, line 158)
+- `src.step3b_hs_prior._fam_feats` (function, line 167)
+- `src.step3b_hs_prior._build_family_model` (function, line 181)
+- `src.step3b_hs_prior._score_family` (function, line 205)
+- `src.step3b_hs_prior.build_prior` (function, line 227)
+- `src.step3b_hs_prior.apply_prior` (function, line 456)
+- `src.step3b_hs_prior.run` (function, line 603)
+
+## `src/step4_export.py`
+- `src.step4_export._slug` (function, line 48)
+- `src.step4_export._combine_dashboards` (function, line 52)
+- `src.step4_export._build_dashboard` (function, line 63)
+- `src.step4_export._numeric_rawdata` (function, line 109)
+- `src.step4_export._surgical_bound` (function, line 123)
+- `src.step4_export._formula_dashboard_dims` (function, line 133)
+- `src.step4_export._output_path` (function, line 146)
+- `src.step4_export._mirror_country_folder` (function, line 151)
+- `src.step4_export._mirror_outputs` (function, line 157)
+- `src.step4_export._rollup_frame` (function, line 180)
+- `src.step4_export._write_scope_sheet` (function, line 203)
+- `src.step4_export._write_rollup_outline_sheet` (function, line 267)
+- `src.step4_export._write_workbook` (function, line 350)
+- `src.step4_export.run_export` (function, line 515)
+
+## `tools/build_benchmark.py`
+- `tools.build_benchmark.norm_desc` (function, line 44)
+- `tools.build_benchmark.main` (function, line 50)
+
+## `tools/codegraph.py`
+- `tools.codegraph.main` (function, line 13)
+
+## `tools/diag_corrob_path.py`
+- `tools.diag_corrob_path.best_token` (function, line 32)
+
+## `tools/diag_pk_errors.py`
+
+## `tools/diagnose_ceiling.py`
+- `tools.diagnose_ceiling.dominant` (function, line 26)
+- `tools.diagnose_ceiling.main` (function, line 34)
+
+## `tools/diagnose_wrong.py`
+- `tools.diagnose_wrong.prod_ok` (function, line 20)
+- `tools.diagnose_wrong.main` (function, line 29)
+
+## `tools/eval_benchmark.py`
+- `tools.eval_benchmark.nd` (function, line 32)
+- `tools.eval_benchmark.toks` (function, line 37)
+- `tools.eval_benchmark.tok_overlap` (function, line 41)
+- `tools.eval_benchmark.load` (function, line 52)
+- `tools.eval_benchmark.test_jk` (function, line 65)
+- `tools.eval_benchmark.evaluate` (function, line 74)
+- `tools.eval_benchmark.main` (function, line 117)
+
+## `tools/eval_breakdown.py`
+- `tools.eval_breakdown.agree` (function, line 22)
+- `tools.eval_breakdown.pr` (function, line 32)
+- `tools.eval_breakdown.main` (function, line 39)
+
+## `tools/harvest_from_benchmark.py`
+- `tools.harvest_from_benchmark.norm` (function, line 38)
+- `tools.harvest_from_benchmark.is_test` (function, line 43)
+- `tools.harvest_from_benchmark.load_gt` (function, line 49)
+- `tools.harvest_from_benchmark._viable_kw` (function, line 60)
+- `tools.harvest_from_benchmark.harvest_keywords` (function, line 70)
+- `tools.harvest_from_benchmark.harvest_manufacturers` (function, line 107)
+- `tools.harvest_from_benchmark.main` (function, line 123)
+
+## `tools/measure_fix_impact.py`
+- `tools.measure_fix_impact.main` (function, line 29)
+
+## `tools/measure_generic_family.py`
+- `tools.measure_generic_family.prod_correct` (function, line 31)
+- `tools.measure_generic_family.main` (function, line 38)
+
+## `tools/spot_check_precision.py`
+- `tools.spot_check_precision._nd` (function, line 38)
+- `tools.spot_check_precision._overlap` (function, line 42)
+- `tools.spot_check_precision._ok` (function, line 50)
+- `tools.spot_check_precision.check_vn` (function, line 59)
+- `tools.spot_check_precision._market_xlsx` (function, line 92)
+- `tools.spot_check_precision.check_market` (function, line 102)
+- `tools.spot_check_precision.main` (function, line 138)
+
+## `tools/validate_hs6_transfer.py`
+- `tools.validate_hs6_transfer.main` (function, line 22)
+
+## Edges
+- `config.settings` --calls--> `reference.loader.load_alias_map`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_set`
+- `config.settings` --calls--> `reference.loader.load_str_map`
+- `config.settings` --calls--> `reference.loader.load_str_map`
+- `config.settings` --calls--> `reference.loader.load_tuple`
+- `config.settings` --calls--> `reference.loader.load_tuple`
+- `qc_check` --calls--> `tools.validate_hs6_transfer.main`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `qc_check.main` --calls--> `qc_check._fail`
+- `reference.build_reference_db` --calls--> `reference.build_reference_db.build`
+- `reference.build_reference_db.build` --calls--> `reference.loader.list_names`
+- `reference.loader._rows` --calls--> `reference.loader._load`
+- `reference.loader.list_names` --calls--> `reference.loader._load`
+- `reference.loader.load_alias_map` --calls--> `reference.loader._rows`
+- `reference.loader.load_set` --calls--> `reference.loader._rows`
+- `reference.loader.load_str_map` --calls--> `reference.loader._rows`
+- `reference.loader.load_tuple` --calls--> `reference.loader._rows`
+- `run_pipeline` --calls--> `tools.validate_hs6_transfer.main`
+- `run_pipeline.main` --calls--> `run_pipeline._check_inputs`
+- `run_pipeline.main` --calls--> `src.step1_extract.build_category_lexicon`
+- `run_pipeline.main` --calls--> `src.step1_extract.build_keyword_lookup`
+- `run_pipeline.main` --calls--> `src.step1_extract.build_manufacturer_lexicon`
+- `run_pipeline.main` --calls--> `src.step1_extract.build_product_canonical_map`
+- `run_pipeline.main` --calls--> `src.step1_extract.extract_vn_to_tsv`
+- `run_pipeline.main` --calls--> `src.step2_match.run_matching`
+- `run_pipeline.main` --calls--> `src.step3_map.run_mapping`
+- `run_pipeline.main` --calls--> `src.step3b_hs_prior.run`
+- `run_pipeline.main` --calls--> `src.step4_export.run_export`
+- `src.codegraph.CodeGraph._add_call_edges` --calls--> `src.codegraph._CallVisitor`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeEdge`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeEdge`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeEdge`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeEdge`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeEdge`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeNode`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeNode`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeNode`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph.CodeNode`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph._import_names`
+- `src.codegraph.CodeGraph._add_file` --calls--> `src.codegraph._module_id`
+- `src.codegraph._CallVisitor.visit_Call` --calls--> `src.codegraph.CodeEdge`
+- `src.codegraph._CallVisitor.visit_Call` --calls--> `src.codegraph._call_name`
+- `src.codegraph._call_name` --calls--> `src.codegraph._call_name`
+- `src.step1_extract` --calls--> `src.step1_extract.build_category_lexicon`
+- `src.step1_extract` --calls--> `src.step1_extract.build_keyword_lookup`
+- `src.step1_extract` --calls--> `src.step1_extract.build_manufacturer_lexicon`
+- `src.step1_extract` --calls--> `src.step1_extract.build_product_canonical_map`
+- `src.step1_extract` --calls--> `src.step1_extract.extract_vn_to_tsv`
+- `src.step1_extract._choose_canonical` --calls--> `src.step1_extract._canon_sep`
+- `src.step1_extract._extract_csv_to_tsv` --calls--> `src.step1_extract._require_columns`
+- `src.step1_extract._extract_xlsx_to_tsv` --calls--> `src.step1_extract._require_columns`
+- `src.step1_extract._load_v0_reference` --calls--> `src.step1_extract._require`
+- `src.step1_extract._load_v0_reference` --calls--> `src.step1_extract._require_columns`
+- `src.step1_extract._load_v0_reference` --calls--> `src.step1_extract._require_columns`
+- `src.step1_extract._merge_harvested_keywords` --calls--> `tools.eval_benchmark.load`
+- `src.step1_extract.build_category_lexicon` --calls--> `src.step1_extract._load_v0_reference`
+- `src.step1_extract.build_category_lexicon` --calls--> `src.step1_extract.norm_phrase`
+- `src.step1_extract.build_category_lexicon` --calls--> `src.step1_extract.norm_phrase`
+- `src.step1_extract.build_keyword_lookup` --calls--> `src.step1_extract._load_v0_reference`
+- `src.step1_extract.build_keyword_lookup` --calls--> `src.step1_extract._merge_harvested_keywords`
+- `src.step1_extract.build_manufacturer_lexicon` --calls--> `src.step1_extract.norm_party`
+- `src.step1_extract.build_manufacturer_lexicon` --calls--> `src.step1_extract.norm_party`
+- `src.step1_extract.build_manufacturer_lexicon` --calls--> `tools.eval_benchmark.load`
+- `src.step1_extract.build_product_canonical_map` --calls--> `src.step1_extract._canon_tokens`
+- `src.step1_extract.build_product_canonical_map` --calls--> `src.step1_extract._choose_canonical`
+- `src.step1_extract.build_product_canonical_map` --calls--> `src.step1_extract._load_v0_reference`
+- `src.step1_extract.canonicalize_products` --calls--> `tools.eval_benchmark.load`
+- `src.step1_extract.extract_vn_to_tsv` --calls--> `src.step1_extract._extract_csv_to_tsv`
+- `src.step1_extract.extract_vn_to_tsv` --calls--> `src.step1_extract._extract_xlsx_to_tsv`
+- `src.step1_extract.extract_vn_to_tsv` --calls--> `src.step1_extract._require`
+- `src.step2_match` --calls--> `src.step2_match.run_matching`
+- `src.step2_match._load_consistency` --calls--> `tools.eval_benchmark.load`
+- `src.step2_match._load_trie` --calls--> `tools.eval_benchmark.load`
+- `src.step2_match._load_trie` --calls--> `tools.eval_benchmark.load`
+- `src.step2_match._match_allowed` --calls--> `src.step2_match._in_scope`
+- `src.step2_match.make_category_matcher` --calls--> `src.step1_extract.norm_phrase`
+- `src.step2_match.make_category_matcher` --calls--> `src.step2_match._match_allowed`
+- `src.step2_match.make_manufacturer_matcher` --calls--> `src.step1_extract.norm_party`
+- `src.step2_match.make_manufacturer_matcher` --calls--> `src.step1_extract.norm_party`
+- `src.step2_match.make_manufacturer_matcher` --calls--> `src.step2_match._match_allowed`
+- `src.step2_match.make_matcher` --calls--> `src.step2_match._match_allowed`
+- `src.step2_match.run_matching` --calls--> `src.step2_match._load_consistency`
+- `src.step2_match.run_matching` --calls--> `src.step2_match._load_trie`
+- `src.step2_match.run_matching` --calls--> `src.step2_match.build_hs8_segment`
+- `src.step2_match.run_matching` --calls--> `src.step2_match.make_category_matcher`
+- `src.step2_match.run_matching` --calls--> `src.step2_match.make_manufacturer_matcher`
+- `src.step2_match.run_matching` --calls--> `src.step2_match.make_matcher`
+- `src.step2_match.run_matching` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step2_match.run_matching` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step2_match.run_matching` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step2_match.run_matching` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step2_match.run_matching` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step2_match.run_matching` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step2_match.run_matching` --calls--> `tools.eval_benchmark.load`
+- `src.step2_match.run_matching` --calls--> `tools.eval_benchmark.load`
+- `src.step3_map` --calls--> `src.step3_map.run_mapping`
+- `src.step3_map._derive_manufacturers` --calls--> `src.step1_extract.norm_party`
+- `src.step3_map._derive_manufacturers` --calls--> `tools.eval_benchmark.load`
+- `src.step3_map.run_mapping` --calls--> `src.step1_extract.canonicalize_products`
+- `src.step3_map.run_mapping` --calls--> `src.step3_map.standardize_for_dashboard`
+- `src.step3_map.run_mapping` --calls--> `tools.eval_benchmark.load`
+- `src.step3_map.run_mapping` --calls--> `tools.eval_benchmark.load`
+- `src.step3_map.run_mapping` --calls--> `tools.eval_benchmark.load`
+- `src.step3_map.run_mapping` --calls--> `tools.eval_benchmark.load`
+- `src.step3_map.standardize_for_dashboard` --calls--> `src.step3_map._derive_manufacturers`
+- `src.step3b_hs_prior` --calls--> `src.step3b_hs_prior.run`
+- `src.step3b_hs_prior._build_family_model` --calls--> `src.step3b_hs_prior._fam_feats`
+- `src.step3b_hs_prior._cue_tokens` --calls--> `src.step3b_hs_prior._sing`
+- `src.step3b_hs_prior._device_vocab` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior._device_vocab` --calls--> `tools.eval_benchmark.load`
+- `src.step3b_hs_prior._norm` --calls--> `src.step1_extract.norm_party`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._fam_feats`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._hs6_of`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._hs6_of`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._hs8`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._score_family`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._sing`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.apply_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.apply_prior` --calls--> `tools.eval_benchmark.load`
+- `src.step3b_hs_prior.build_consistency` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step3b_hs_prior.build_consistency` --calls--> `src.step3b_hs_prior._sing`
+- `src.step3b_hs_prior.build_consistency` --calls--> `tools.eval_benchmark.load`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._build_family_model`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._device_vocab`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._dominant`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._dominant`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._dominant`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._hs6_of`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._hs6_of`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._hs8`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._sing`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior.build_prior` --calls--> `src.step3b_hs_prior.build_consistency`
+- `src.step3b_hs_prior.build_prior` --calls--> `tools.eval_benchmark.load`
+- `src.step3b_hs_prior.run` --calls--> `src.step3b_hs_prior.apply_prior`
+- `src.step3b_hs_prior.run` --calls--> `src.step3b_hs_prior.build_prior`
+- `src.step4_export` --calls--> `src.step4_export.run_export`
+- `src.step4_export._combine_dashboards` --calls--> `src.step4_export._slug`
+- `src.step4_export._formula_dashboard_dims` --calls--> `src.step4_export._surgical_bound`
+- `src.step4_export._mirror_country_folder` --calls--> `src.step4_export._slug`
+- `src.step4_export._mirror_outputs` --calls--> `src.step4_export._mirror_country_folder`
+- `src.step4_export._output_path` --calls--> `src.step4_export._slug`
+- `src.step4_export._rollup_frame` --calls--> `src.step4_export._surgical_bound`
+- `src.step4_export._write_workbook` --calls--> `src.step4_export._write_rollup_outline_sheet`
+- `src.step4_export._write_workbook` --calls--> `src.step4_export._write_scope_sheet`
+- `src.step4_export.run_export` --calls--> `src.dashboard_html.build_dashboard_html`
+- `src.step4_export.run_export` --calls--> `src.step4_export._build_dashboard`
+- `src.step4_export.run_export` --calls--> `src.step4_export._combine_dashboards`
+- `src.step4_export.run_export` --calls--> `src.step4_export._formula_dashboard_dims`
+- `src.step4_export.run_export` --calls--> `src.step4_export._mirror_outputs`
+- `src.step4_export.run_export` --calls--> `src.step4_export._numeric_rawdata`
+- `src.step4_export.run_export` --calls--> `src.step4_export._output_path`
+- `src.step4_export.run_export` --calls--> `src.step4_export._rollup_frame`
+- `src.step4_export.run_export` --calls--> `src.step4_export._surgical_bound`
+- `src.step4_export.run_export` --calls--> `src.step4_export._write_workbook`
+- `tools.build_benchmark` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.codegraph` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.diag_corrob_path` --calls--> `src.step3b_hs_prior._cue_tokens`
+- `tools.diag_corrob_path` --calls--> `src.step3b_hs_prior._sing`
+- `tools.diag_corrob_path` --calls--> `src.step3b_hs_prior._tokens`
+- `tools.diag_corrob_path` --calls--> `tools.diag_corrob_path.best_token`
+- `tools.diag_corrob_path` --calls--> `tools.eval_benchmark.load`
+- `tools.diag_corrob_path.best_token` --calls--> `src.step3b_hs_prior._hs6_of`
+- `tools.diagnose_ceiling` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.diagnose_ceiling.main` --calls--> `tools.diagnose_ceiling.dominant`
+- `tools.diagnose_ceiling.main` --calls--> `tools.diagnose_ceiling.dominant`
+- `tools.diagnose_ceiling.main` --calls--> `tools.eval_benchmark.load`
+- `tools.diagnose_ceiling.main` --calls--> `tools.eval_benchmark.test_jk`
+- `tools.diagnose_ceiling.main` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.diagnose_ceiling.main` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.diagnose_wrong` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.diagnose_wrong.main` --calls--> `src.step3_map.run_mapping`
+- `tools.diagnose_wrong.main` --calls--> `src.step3b_hs_prior.run`
+- `tools.diagnose_wrong.main` --calls--> `tools.eval_benchmark.load`
+- `tools.diagnose_wrong.main` --calls--> `tools.eval_benchmark.nd`
+- `tools.diagnose_wrong.main` --calls--> `tools.eval_benchmark.test_jk`
+- `tools.diagnose_wrong.prod_ok` --calls--> `tools.eval_benchmark.nd`
+- `tools.diagnose_wrong.prod_ok` --calls--> `tools.eval_benchmark.nd`
+- `tools.diagnose_wrong.prod_ok` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_benchmark` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.eval_benchmark.evaluate` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_benchmark.evaluate` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_benchmark.evaluate` --calls--> `tools.eval_benchmark.test_jk`
+- `tools.eval_benchmark.evaluate` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_benchmark.main` --calls--> `tools.eval_benchmark.evaluate`
+- `tools.eval_benchmark.main` --calls--> `tools.eval_benchmark.load`
+- `tools.eval_benchmark.tok_overlap` --calls--> `tools.eval_benchmark.toks`
+- `tools.eval_benchmark.tok_overlap` --calls--> `tools.eval_benchmark.toks`
+- `tools.eval_benchmark.toks` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.eval_breakdown.agree` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown.agree` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown.agree` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_benchmark.load`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_benchmark.test_jk`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.agree`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.agree`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.agree`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.pr`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.pr`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.pr`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.pr`
+- `tools.eval_breakdown.main` --calls--> `tools.eval_breakdown.pr`
+- `tools.harvest_from_benchmark` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.harvest_from_benchmark.harvest_keywords` --calls--> `tools.harvest_from_benchmark._viable_kw`
+- `tools.harvest_from_benchmark.main` --calls--> `tools.harvest_from_benchmark.harvest_keywords`
+- `tools.harvest_from_benchmark.main` --calls--> `tools.harvest_from_benchmark.harvest_manufacturers`
+- `tools.harvest_from_benchmark.main` --calls--> `tools.harvest_from_benchmark.load_gt`
+- `tools.measure_fix_impact` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.measure_generic_family` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.measure_generic_family.main` --calls--> `tools.eval_benchmark.load`
+- `tools.measure_generic_family.main` --calls--> `tools.eval_benchmark.load`
+- `tools.measure_generic_family.main` --calls--> `tools.measure_generic_family.prod_correct`
+- `tools.measure_generic_family.prod_correct` --calls--> `tools.eval_benchmark.nd`
+- `tools.measure_generic_family.prod_correct` --calls--> `tools.eval_benchmark.nd`
+- `tools.measure_generic_family.prod_correct` --calls--> `tools.eval_benchmark.tok_overlap`
+- `tools.spot_check_precision` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.spot_check_precision._ok` --calls--> `tools.spot_check_precision._nd`
+- `tools.spot_check_precision._ok` --calls--> `tools.spot_check_precision._nd`
+- `tools.spot_check_precision._ok` --calls--> `tools.spot_check_precision._overlap`
+- `tools.spot_check_precision._overlap` --calls--> `tools.spot_check_precision._nd`
+- `tools.spot_check_precision._overlap` --calls--> `tools.spot_check_precision._nd`
+- `tools.spot_check_precision.check_vn` --calls--> `tools.eval_benchmark.load`
+- `tools.spot_check_precision.check_vn` --calls--> `tools.spot_check_precision._ok`
+- `tools.spot_check_precision.main` --calls--> `tools.spot_check_precision._market_xlsx`
+- `tools.spot_check_precision.main` --calls--> `tools.spot_check_precision.check_market`
+- `tools.spot_check_precision.main` --calls--> `tools.spot_check_precision.check_vn`
+- `tools.validate_hs6_transfer` --calls--> `tools.validate_hs6_transfer.main`
+- `tools.validate_hs6_transfer.main` --calls--> `src.step3b_hs_prior._hs6_of`
+- `tools.validate_hs6_transfer.main` --calls--> `src.step3b_hs_prior._hs8`
+- `tools.validate_hs6_transfer.main` --calls--> `src.step3b_hs_prior._tokens`
+- `tools.validate_hs6_transfer.main` --calls--> `tools.eval_benchmark.load`
+- `qc_check` --defines--> `qc_check._fail`
+- `qc_check` --defines--> `qc_check.main`
+- `reference.build_reference_db` --defines--> `reference.build_reference_db.build`
+- `reference.loader` --defines--> `reference.loader._load`
+- `reference.loader` --defines--> `reference.loader._rows`
+- `reference.loader` --defines--> `reference.loader.list_names`
+- `reference.loader` --defines--> `reference.loader.load_alias_map`
+- `reference.loader` --defines--> `reference.loader.load_set`
+- `reference.loader` --defines--> `reference.loader.load_str_map`
+- `reference.loader` --defines--> `reference.loader.load_tuple`
+- `run_pipeline` --defines--> `run_pipeline._check_inputs`
+- `run_pipeline` --defines--> `run_pipeline.main`
+- `src.codegraph` --defines--> `src.codegraph.CodeEdge`
+- `src.codegraph` --defines--> `src.codegraph.CodeGraph`
+- `src.codegraph` --defines--> `src.codegraph.CodeNode`
+- `src.codegraph` --defines--> `src.codegraph._CallVisitor`
+- `src.codegraph` --defines--> `src.codegraph._call_name`
+- `src.codegraph` --defines--> `src.codegraph._import_names`
+- `src.codegraph` --defines--> `src.codegraph._module_id`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph._add_call_edges`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph._add_file`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph.from_repo`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph.to_dict`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph.to_dot`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph.to_json`
+- `src.codegraph.CodeGraph` --defines--> `src.codegraph.CodeGraph.to_markdown`
+- `src.codegraph._CallVisitor` --defines--> `src.codegraph._CallVisitor.__init__`
+- `src.codegraph._CallVisitor` --defines--> `src.codegraph._CallVisitor._with_scope`
+- `src.codegraph._CallVisitor` --defines--> `src.codegraph._CallVisitor.visit_AsyncFunctionDef`
+- `src.codegraph._CallVisitor` --defines--> `src.codegraph._CallVisitor.visit_Call`
+- `src.codegraph._CallVisitor` --defines--> `src.codegraph._CallVisitor.visit_ClassDef`
+- `src.codegraph._CallVisitor` --defines--> `src.codegraph._CallVisitor.visit_FunctionDef`
+- `src.dashboard_html` --defines--> `src.dashboard_html.build_dashboard_html`
+- `src.step1_extract` --defines--> `src.step1_extract._canon_sep`
+- `src.step1_extract` --defines--> `src.step1_extract._canon_tokens`
+- `src.step1_extract` --defines--> `src.step1_extract._choose_canonical`
+- `src.step1_extract` --defines--> `src.step1_extract._extract_csv_to_tsv`
+- `src.step1_extract` --defines--> `src.step1_extract._extract_xlsx_to_tsv`
+- `src.step1_extract` --defines--> `src.step1_extract._load_v0_reference`
+- `src.step1_extract` --defines--> `src.step1_extract._merge_harvested_keywords`
+- `src.step1_extract` --defines--> `src.step1_extract._require`
+- `src.step1_extract` --defines--> `src.step1_extract._require_columns`
+- `src.step1_extract` --defines--> `src.step1_extract.build_category_lexicon`
+- `src.step1_extract` --defines--> `src.step1_extract.build_keyword_lookup`
+- `src.step1_extract` --defines--> `src.step1_extract.build_manufacturer_lexicon`
+- `src.step1_extract` --defines--> `src.step1_extract.build_product_canonical_map`
+- `src.step1_extract` --defines--> `src.step1_extract.canonicalize_products`
+- `src.step1_extract` --defines--> `src.step1_extract.extract_vn_to_tsv`
+- `src.step1_extract` --defines--> `src.step1_extract.norm_party`
+- `src.step1_extract` --defines--> `src.step1_extract.norm_phrase`
+- `src.step2_match` --defines--> `src.step2_match._in_scope`
+- `src.step2_match` --defines--> `src.step2_match._load_consistency`
+- `src.step2_match` --defines--> `src.step2_match._load_trie`
+- `src.step2_match` --defines--> `src.step2_match._match_allowed`
+- `src.step2_match` --defines--> `src.step2_match.build_hs8_segment`
+- `src.step2_match` --defines--> `src.step2_match.make_category_matcher`
+- `src.step2_match` --defines--> `src.step2_match.make_manufacturer_matcher`
+- `src.step2_match` --defines--> `src.step2_match.make_matcher`
+- `src.step2_match` --defines--> `src.step2_match.run_matching`
+- `src.step3_map` --defines--> `src.step3_map._derive_manufacturers`
+- `src.step3_map` --defines--> `src.step3_map.run_mapping`
+- `src.step3_map` --defines--> `src.step3_map.standardize_for_dashboard`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._blank`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._build_family_model`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._cue_tokens`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._device_vocab`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._dominant`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._fam_feats`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._hs6_of`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._hs8`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._norm`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._score_family`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._sing`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior._tokens`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior.apply_prior`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior.build_consistency`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior.build_prior`
+- `src.step3b_hs_prior` --defines--> `src.step3b_hs_prior.run`
+- `src.step4_export` --defines--> `src.step4_export._build_dashboard`
+- `src.step4_export` --defines--> `src.step4_export._combine_dashboards`
+- `src.step4_export` --defines--> `src.step4_export._formula_dashboard_dims`
+- `src.step4_export` --defines--> `src.step4_export._mirror_country_folder`
+- `src.step4_export` --defines--> `src.step4_export._mirror_outputs`
+- `src.step4_export` --defines--> `src.step4_export._numeric_rawdata`
+- `src.step4_export` --defines--> `src.step4_export._output_path`
+- `src.step4_export` --defines--> `src.step4_export._rollup_frame`
+- `src.step4_export` --defines--> `src.step4_export._slug`
+- `src.step4_export` --defines--> `src.step4_export._surgical_bound`
+- `src.step4_export` --defines--> `src.step4_export._write_rollup_outline_sheet`
+- `src.step4_export` --defines--> `src.step4_export._write_scope_sheet`
+- `src.step4_export` --defines--> `src.step4_export._write_workbook`
+- `src.step4_export` --defines--> `src.step4_export.run_export`
+- `tools.build_benchmark` --defines--> `tools.build_benchmark.main`
+- `tools.build_benchmark` --defines--> `tools.build_benchmark.norm_desc`
+- `tools.codegraph` --defines--> `tools.codegraph.main`
+- `tools.diag_corrob_path` --defines--> `tools.diag_corrob_path.best_token`
+- `tools.diagnose_ceiling` --defines--> `tools.diagnose_ceiling.dominant`
+- `tools.diagnose_ceiling` --defines--> `tools.diagnose_ceiling.main`
+- `tools.diagnose_wrong` --defines--> `tools.diagnose_wrong.main`
+- `tools.diagnose_wrong` --defines--> `tools.diagnose_wrong.prod_ok`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.evaluate`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.load`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.main`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.nd`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.test_jk`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_benchmark` --defines--> `tools.eval_benchmark.toks`
+- `tools.eval_breakdown` --defines--> `tools.eval_breakdown.agree`
+- `tools.eval_breakdown` --defines--> `tools.eval_breakdown.main`
+- `tools.eval_breakdown` --defines--> `tools.eval_breakdown.pr`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark._viable_kw`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark.harvest_keywords`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark.harvest_manufacturers`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark.is_test`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark.load_gt`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark.main`
+- `tools.harvest_from_benchmark` --defines--> `tools.harvest_from_benchmark.norm`
+- `tools.measure_fix_impact` --defines--> `tools.measure_fix_impact.main`
+- `tools.measure_generic_family` --defines--> `tools.measure_generic_family.main`
+- `tools.measure_generic_family` --defines--> `tools.measure_generic_family.prod_correct`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision._market_xlsx`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision._nd`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision._ok`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision._overlap`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision.check_market`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision.check_vn`
+- `tools.spot_check_precision` --defines--> `tools.spot_check_precision.main`
+- `tools.validate_hs6_transfer` --defines--> `tools.validate_hs6_transfer.main`
+- `config.settings` --imports--> `pathlib.Path`
+- `config.settings` --imports--> `reference.loader.load_alias_map`
+- `config.settings` --imports--> `reference.loader.load_set`
+- `config.settings` --imports--> `reference.loader.load_str_map`
+- `config.settings` --imports--> `reference.loader.load_tuple`
+- `config.settings` --imports--> `sys`
+- `qc_check` --imports--> `config.settings`
+- `qc_check` --imports--> `pandas`
+- `qc_check` --imports--> `pathlib.Path`
+- `qc_check` --imports--> `sys`
+- `reference.build_reference_db` --imports--> `__future__.annotations`
+- `reference.build_reference_db` --imports--> `config.settings`
+- `reference.build_reference_db` --imports--> `csv`
+- `reference.build_reference_db` --imports--> `pathlib.Path`
+- `reference.build_reference_db` --imports--> `reference.loader.LISTS_CSV`
+- `reference.build_reference_db` --imports--> `reference.loader.list_names`
+- `reference.build_reference_db` --imports--> `sqlite3`
+- `reference.build_reference_db` --imports--> `sys`
+- `reference.loader` --imports--> `__future__.annotations`
+- `reference.loader` --imports--> `csv`
+- `reference.loader` --imports--> `pathlib.Path`
+- `run_pipeline` --imports--> `argparse`
+- `run_pipeline` --imports--> `config.settings`
+- `run_pipeline` --imports--> `pathlib.Path`
+- `run_pipeline` --imports--> `src.step1_extract`
+- `run_pipeline` --imports--> `src.step2_match`
+- `run_pipeline` --imports--> `src.step3_map`
+- `run_pipeline` --imports--> `src.step3b_hs_prior`
+- `run_pipeline` --imports--> `src.step4_export`
+- `run_pipeline` --imports--> `sys`
+- `run_pipeline` --imports--> `time`
+- `src.codegraph` --imports--> `__future__.annotations`
+- `src.codegraph` --imports--> `ast`
+- `src.codegraph` --imports--> `dataclasses.asdict`
+- `src.codegraph` --imports--> `dataclasses.dataclass`
+- `src.codegraph` --imports--> `dataclasses.field`
+- `src.codegraph` --imports--> `json`
+- `src.codegraph` --imports--> `pathlib.Path`
+- `src.codegraph` --imports--> `typing.Iterable`
+- `src.dashboard_html` --imports--> `config.settings`
+- `src.dashboard_html` --imports--> `datetime`
+- `src.dashboard_html` --imports--> `json`
+- `src.dashboard_html` --imports--> `pathlib.Path`
+- `src.dashboard_html` --imports--> `sys`
+- `src.step1_extract` --imports--> `collections.defaultdict`
+- `src.step1_extract` --imports--> `config.settings`
+- `src.step1_extract` --imports--> `csv`
+- `src.step1_extract` --imports--> `openpyxl.load_workbook`
+- `src.step1_extract` --imports--> `pandas`
+- `src.step1_extract` --imports--> `pathlib.Path`
+- `src.step1_extract` --imports--> `pickle`
+- `src.step1_extract` --imports--> `re`
+- `src.step1_extract` --imports--> `sys`
+- `src.step2_match` --imports--> `collections.defaultdict`
+- `src.step2_match` --imports--> `config.settings`
+- `src.step2_match` --imports--> `json`
+- `src.step2_match` --imports--> `pandas`
+- `src.step2_match` --imports--> `pathlib.Path`
+- `src.step2_match` --imports--> `pickle`
+- `src.step2_match` --imports--> `src.step1_extract.norm_party`
+- `src.step2_match` --imports--> `src.step1_extract.norm_phrase`
+- `src.step2_match` --imports--> `sys`
+- `src.step3_map` --imports--> `config.settings`
+- `src.step3_map` --imports--> `json`
+- `src.step3_map` --imports--> `pandas`
+- `src.step3_map` --imports--> `pathlib.Path`
+- `src.step3_map` --imports--> `pickle`
+- `src.step3_map` --imports--> `src.step1_extract.canonicalize_products`
+- `src.step3_map` --imports--> `src.step1_extract.norm_party`
+- `src.step3_map` --imports--> `sys`
+- `src.step3b_hs_prior` --imports--> `collections.Counter`
+- `src.step3b_hs_prior` --imports--> `collections.defaultdict`
+- `src.step3b_hs_prior` --imports--> `config.settings`
+- `src.step3b_hs_prior` --imports--> `math`
+- `src.step3b_hs_prior` --imports--> `pandas`
+- `src.step3b_hs_prior` --imports--> `pathlib.Path`
+- `src.step3b_hs_prior` --imports--> `pickle`
+- `src.step3b_hs_prior` --imports--> `re`
+- `src.step3b_hs_prior` --imports--> `src.step1_extract.norm_party`
+- `src.step3b_hs_prior` --imports--> `sys`
+- `src.step4_export` --imports--> `config.settings`
+- `src.step4_export` --imports--> `pandas`
+- `src.step4_export` --imports--> `pathlib.Path`
+- `src.step4_export` --imports--> `re`
+- `src.step4_export` --imports--> `shutil`
+- `src.step4_export` --imports--> `sys`
+- `src.step4_export` --imports--> `xlsxwriter.utility.xl_col_to_name`
+- `src.step4_export` --imports--> `xlsxwriter.utility.xl_range`
+- `tools.build_benchmark` --imports--> `config.settings`
+- `tools.build_benchmark` --imports--> `os`
+- `tools.build_benchmark` --imports--> `pandas`
+- `tools.build_benchmark` --imports--> `pathlib.Path`
+- `tools.build_benchmark` --imports--> `re`
+- `tools.build_benchmark` --imports--> `sys`
+- `tools.codegraph` --imports--> `argparse`
+- `tools.codegraph` --imports--> `pathlib.Path`
+- `tools.codegraph` --imports--> `src.codegraph.CodeGraph`
+- `tools.codegraph` --imports--> `sys`
+- `tools.diag_corrob_path` --imports--> `config.settings`
+- `tools.diag_corrob_path` --imports--> `pathlib.Path`
+- `tools.diag_corrob_path` --imports--> `pickle`
+- `tools.diag_corrob_path` --imports--> `re`
+- `tools.diag_corrob_path` --imports--> `src.step3b_hs_prior._cue_tokens`
+- `tools.diag_corrob_path` --imports--> `src.step3b_hs_prior._hs6_of`
+- `tools.diag_corrob_path` --imports--> `src.step3b_hs_prior._sing`
+- `tools.diag_corrob_path` --imports--> `src.step3b_hs_prior._tokens`
+- `tools.diag_corrob_path` --imports--> `sys`
+- `tools.diag_pk_errors` --imports--> `collections.Counter`
+- `tools.diag_pk_errors` --imports--> `config.settings`
+- `tools.diag_pk_errors` --imports--> `pandas`
+- `tools.diag_pk_errors` --imports--> `pathlib.Path`
+- `tools.diag_pk_errors` --imports--> `re`
+- `tools.diag_pk_errors` --imports--> `sys`
+- `tools.diagnose_ceiling` --imports--> `collections.Counter`
+- `tools.diagnose_ceiling` --imports--> `collections.defaultdict`
+- `tools.diagnose_ceiling` --imports--> `config.settings`
+- `tools.diagnose_ceiling` --imports--> `pandas`
+- `tools.diagnose_ceiling` --imports--> `pathlib.Path`
+- `tools.diagnose_ceiling` --imports--> `sys`
+- `tools.diagnose_ceiling` --imports--> `tools.eval_benchmark.load`
+- `tools.diagnose_ceiling` --imports--> `tools.eval_benchmark.nd`
+- `tools.diagnose_ceiling` --imports--> `tools.eval_benchmark.test_jk`
+- `tools.diagnose_ceiling` --imports--> `tools.eval_benchmark.tok_overlap`
+- `tools.diagnose_wrong` --imports--> `config.settings`
+- `tools.diagnose_wrong` --imports--> `pandas`
+- `tools.diagnose_wrong` --imports--> `pathlib.Path`
+- `tools.diagnose_wrong` --imports--> `src.step3_map`
+- `tools.diagnose_wrong` --imports--> `src.step3b_hs_prior`
+- `tools.diagnose_wrong` --imports--> `sys`
+- `tools.diagnose_wrong` --imports--> `tools.eval_benchmark.load`
+- `tools.diagnose_wrong` --imports--> `tools.eval_benchmark.nd`
+- `tools.diagnose_wrong` --imports--> `tools.eval_benchmark.test_jk`
+- `tools.diagnose_wrong` --imports--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_benchmark` --imports--> `config.settings`
+- `tools.eval_benchmark` --imports--> `pandas`
+- `tools.eval_benchmark` --imports--> `pathlib.Path`
+- `tools.eval_benchmark` --imports--> `re`
+- `tools.eval_benchmark` --imports--> `sys`
+- `tools.eval_breakdown` --imports--> `pandas`
+- `tools.eval_breakdown` --imports--> `pathlib.Path`
+- `tools.eval_breakdown` --imports--> `sys`
+- `tools.eval_breakdown` --imports--> `tools.eval_benchmark.load`
+- `tools.eval_breakdown` --imports--> `tools.eval_benchmark.nd`
+- `tools.eval_breakdown` --imports--> `tools.eval_benchmark.test_jk`
+- `tools.eval_breakdown` --imports--> `tools.eval_benchmark.tok_overlap`
+- `tools.eval_breakdown` --imports--> `tools.eval_benchmark.toks`
+- `tools.harvest_from_benchmark` --imports--> `collections.Counter`
+- `tools.harvest_from_benchmark` --imports--> `config.settings`
+- `tools.harvest_from_benchmark` --imports--> `hashlib`
+- `tools.harvest_from_benchmark` --imports--> `pandas`
+- `tools.harvest_from_benchmark` --imports--> `pathlib.Path`
+- `tools.harvest_from_benchmark` --imports--> `pickle`
+- `tools.harvest_from_benchmark` --imports--> `re`
+- `tools.harvest_from_benchmark` --imports--> `sys`
+- `tools.harvest_from_benchmark` --imports--> `tools.eval_benchmark.STOP`
+- `tools.measure_fix_impact` --imports--> `openpyxl`
+- `tools.measure_fix_impact` --imports--> `pathlib.Path`
+- `tools.measure_fix_impact` --imports--> `sys`
+- `tools.measure_generic_family` --imports--> `config.settings`
+- `tools.measure_generic_family` --imports--> `json`
+- `tools.measure_generic_family` --imports--> `pandas`
+- `tools.measure_generic_family` --imports--> `pathlib.Path`
+- `tools.measure_generic_family` --imports--> `sys`
+- `tools.measure_generic_family` --imports--> `tools.eval_benchmark.load`
+- `tools.measure_generic_family` --imports--> `tools.eval_benchmark.nd`
+- `tools.measure_generic_family` --imports--> `tools.eval_benchmark.tok_overlap`
+- `tools.spot_check_precision` --imports--> `config.settings`
+- `tools.spot_check_precision` --imports--> `pandas`
+- `tools.spot_check_precision` --imports--> `pathlib.Path`
+- `tools.spot_check_precision` --imports--> `random`
+- `tools.spot_check_precision` --imports--> `re`
+- `tools.spot_check_precision` --imports--> `sys`
+- `tools.validate_hs6_transfer` --imports--> `config.settings`
+- `tools.validate_hs6_transfer` --imports--> `pandas`
+- `tools.validate_hs6_transfer` --imports--> `pathlib.Path`
+- `tools.validate_hs6_transfer` --imports--> `pickle`
+- `tools.validate_hs6_transfer` --imports--> `re`
+- `tools.validate_hs6_transfer` --imports--> `src.step3b_hs_prior._hs6_of`
+- `tools.validate_hs6_transfer` --imports--> `src.step3b_hs_prior._hs8`
+- `tools.validate_hs6_transfer` --imports--> `src.step3b_hs_prior._tokens`
+- `tools.validate_hs6_transfer` --imports--> `sys`
