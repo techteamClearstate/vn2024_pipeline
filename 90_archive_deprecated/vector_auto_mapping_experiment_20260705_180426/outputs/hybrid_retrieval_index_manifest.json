@@ -1,0 +1,16 @@
+{
+  "status": "built",
+  "index_mode": "local_in_memory_proxy",
+  "note": "The experiment uses auditable local lexical indexes and a deterministic hashed n-gram vector proxy at run time. No production vector store is created by this command.",
+  "config": "configs\\hybrid_retrieval_experiment.yaml",
+  "retrieval_objects": "outputs\\retrieval_objects.csv",
+  "object_rows": 11257,
+  "object_type_counts": {
+    "canonical_tuple": 11101,
+    "hard_exclusion_term": 86,
+    "manufacturer_alias": 26,
+    "product_family_alias": 21,
+    "negative_vector_example": 18,
+    "ambiguous_scope_example": 5
+  }
+}

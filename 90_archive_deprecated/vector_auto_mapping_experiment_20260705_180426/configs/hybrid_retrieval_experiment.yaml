@@ -1,0 +1,93 @@
+enable_experiment_mode: true
+enable_exact_lookup: true
+enable_alias_lookup: true
+enable_bm25_retrieval: true
+enable_fuzzy_retrieval: true
+enable_char_ngram_retrieval: true
+enable_vector_retrieval: true
+enable_negative_retrieval: true
+enable_prior_example_retrieval: true
+enable_new_target_discovery: true
+enable_llm_adjudication: false
+
+top_k_exact: 5
+top_k_bm25: 10
+top_k_fuzzy: 10
+top_k_vector: 10
+top_k_negative: 8
+top_k_final: 10
+
+auto_map_threshold: 0.46
+review_threshold: 0.42
+auto_exclude_threshold: 0.78
+positive_negative_margin_threshold: 0.18
+generic_token_penalty: 0.18
+manufacturer_only_penalty: 0.24
+exclusion_conflict_penalty: 0.38
+stale_reference_penalty: 0.45
+
+embedding_model: local_hashed_ngram_proxy_v1
+vector_db_path: outputs/indexes/hybrid_vector_proxy
+lexical_index_path: outputs/indexes/hybrid_lexical_proxy.sqlite
+cache_path: outputs/cache/hybrid_retrieval
+reference_version: Surg_Brand_model_list_Master_03July26 Updated
+min_cluster_size_for_new_target: 3
+min_value_for_new_target: 25000
+require_human_approval_for_new_targets: true
+
+scoring_weights:
+  exact_or_alias_score: 0.25
+  bm25_score: 0.20
+  fuzzy_score: 0.15
+  char_ngram_score: 0.10
+  vector_score: 0.20
+  prior_approved_example_score: 0.10
+
+decision_guardrails:
+  latest_master_required_for_auto_map: true
+  vector_only_auto_map_allowed: false
+  manufacturer_only_auto_map_allowed: false
+  generic_token_only_auto_map_allowed: false
+  negative_vectors_blacklist_mode: false
+  hard_exclusion_without_positive_evidence_auto_exclude: true
+  positive_negative_conflict_routes_to_review: true
+  new_targets_require_human_approval: true
+
+llm:
+  enabled: false
+  resolver_enabled: false
+  recall_hunter_enabled: false
+  conflict_qc_enabled: false
+  max_rows_per_run: 0
+  estimated_cost_per_1k_input_tokens: 0.0
+  estimated_cost_per_1k_output_tokens: 0.0
+
+experiment_variants:
+  A:
+    label: Baseline current workbook routing
+    exact_alias: false
+    lexical: false
+    positive_vector: false
+    negative_vector: false
+    new_target_discovery: false
+  B:
+    label: Lexical hybrid only
+    exact_alias: true
+    lexical: true
+    positive_vector: false
+    negative_vector: false
+    new_target_discovery: true
+  C:
+    label: Positive hybrid with vector retrieval
+    exact_alias: true
+    lexical: true
+    positive_vector: true
+    negative_vector: false
+    new_target_discovery: true
+  D:
+    label: Positive plus negative hybrid
+    exact_alias: true
+    lexical: true
+    positive_vector: true
+    negative_vector: true
+    new_target_discovery: true

@@ -205,6 +205,33 @@ def _rollup_frame(df: pd.DataFrame) -> pd.DataFrame:
                             ascending=[True, False]).reset_index(drop=True)
 
 
+def _write_tab_guidance(wb, ws, start_col: int, instruction: str,
+                        total_rows: int, mapped_rows: int, hdr) -> None:
+    """Add visible workbook guidance and high-level mapped-file statistics.
+
+    The guidance block is written to columns outside each tab's data table so it
+    does not change the exported data layout, formulas, filters or downstream
+    copy/paste workflows.
+    """
+    note_fmt = wb.add_format({"font_name": "Arial", "font_size": 9,
+                              "text_wrap": True, "valign": "top"})
+    num_fmt = wb.add_format({"font_name": "Arial", "font_size": 9,
+                             "num_format": "#,##0"})
+    pct_fmt = wb.add_format({"font_name": "Arial", "font_size": 9,
+                             "num_format": "0.0%"})
+    ws.set_column(start_col, start_col, 18)
+    ws.set_column(start_col + 1, start_col + 1, 44)
+    ws.write(0, start_col, "Tab Instructions", hdr)
+    ws.write(0, start_col + 1, instruction, note_fmt)
+    ws.write(1, start_col, "Total Rows", hdr)
+    ws.write_number(1, start_col + 1, int(total_rows), num_fmt)
+    ws.write(2, start_col, "Mapped Rows", hdr)
+    ws.write_number(2, start_col + 1, int(mapped_rows), num_fmt)
+    ws.write(3, start_col, "Mapped %", hdr)
+    mapped_pct = (mapped_rows / total_rows) if total_rows else 0
+    ws.write_number(3, start_col + 1, mapped_pct, pct_fmt)
+
+
 def _write_scope_sheet(wb, ws, cols: list, last_raw: int, hdr) -> None:
     """Formula-driven trusted-surgical vs Extended-review breakdown.
 
@@ -473,7 +500,8 @@ def _write_qa_sheet(wb, ws, frames: list, hdr) -> None:
 
 def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
                     dims: pd.DataFrame, rollup: pd.DataFrame,
-                    qa_frames: list) -> None:
+                    qa_frames: list, total_source_rows: int,
+                    mapped_source_rows: int) -> None:
     """Write RawData, Summary and the formula-driven Dashboard sheet.
 
     `df` must already carry standardized dimension columns and numeric
@@ -524,6 +552,11 @@ def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
     ws1.autofilter(0, 0, n_raw, len(cols) - 1)
     for ci, col in enumerate(cols):
         ws1.write(0, ci, col, hdr)
+    _write_tab_guidance(
+        wb, ws1, len(cols) + 2,
+        "Row-level mapped output. Use filters to inspect Match_Status, Match_Tier, "
+        "confidence and standardized Segment/Sub-segment/Product/Family/Manufacturer fields.",
+        total_source_rows, mapped_source_rows, hdr)
 
     # Tier-aware highlighting: green = family (Tier-1), yellow = category (Tier-2)
     tier_col = xl_col_to_name(cols.index(cfg.TIER_COL))
@@ -539,6 +572,11 @@ def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
     ws2.autofilter(0, 0, len(summary), len(summary.columns) - 1)
     for ci, col in enumerate(summary.columns):
         ws2.write(0, ci, col, hdr)
+    _write_tab_guidance(
+        wb, ws2, len(summary.columns) + 2,
+        "Grouped count of mapped rows by tier and standardized dimensions. Blank "
+        "dimensions are shown as Unspecified for easier filtering.",
+        total_source_rows, mapped_source_rows, hdr)
 
     # ── Dashboard (formula-driven, single country, product-banded) ─────────
     dcols = ["Country", "OU", "Sub_OU", "Product", "Family", "Manufacturer",
@@ -626,14 +664,29 @@ def _write_workbook(out_xlsx: Path, df: pd.DataFrame, summary: pd.DataFrame,
 
     ws3.freeze_panes(1, 0)
     ws3.autofilter(0, 0, len(dims), len(dcols) - 1)
+    _write_tab_guidance(
+        wb, ws3, len(dcols) + 2,
+        "Formula-driven surgical-scope dashboard. Revenue, volume and ASP metrics "
+        "recalculate from RawData when mapped rows are edited or filtered.",
+        total_source_rows, mapped_source_rows, hdr)
 
     # ── Scope (Surgical vs Extended vs Total, formula-driven) ──────────────
     ws4 = wb.add_worksheet("Scope")
     _write_scope_sheet(wb, ws4, cols, last_raw, hdr)
+    _write_tab_guidance(
+        wb, ws4, 7,
+        "Formula-driven scope split showing Surgical, Extended and Total mapped "
+        "bounds. Dashboard and rollups intentionally use Surgical rows only.",
+        total_source_rows, mapped_source_rows, hdr)
 
     # ── Roll-up tab (Category → Manufacturer → Family, collapsible outline) ─
     ws5 = wb.add_worksheet("Rollup")
     _write_rollup_outline_sheet(wb, ws5, rollup, hdr)
+    _write_tab_guidance(
+        wb, ws5, 7,
+        "Collapsible Product Category → Manufacturer → Family roll-up for "
+        "surgical-scope mapped rows. Use Excel outline controls to expand detail.",
+        total_source_rows, mapped_source_rows, hdr)
 
     # ── QA tab (reference alignment, scope flags, non-reference labels) ─────
     ws6 = wb.add_worksheet("QA")
@@ -672,6 +725,8 @@ def run_export() -> Path:
     # Workbook sheets: single-country, formula-driven ASP view + roll-up tabs.
     # Dimensions are already standardized in the mapping stage; here we only
     # coerce the numeric measure columns so the SUMIFS/MINIFS/MAXIFS evaluate.
+    total_source_rows = len(df)
+    mapped_source_rows = int((df["Match_Status"] == "Matched").sum())
     df_raw = _numeric_rawdata(df)
     # Excel caps a worksheet at 1,048,576 rows (incl. header). Very large markets
     # (e.g. India ~2.0M rows) overflow the RawData sheet, so for those we write
@@ -701,7 +756,8 @@ def run_export() -> Path:
     # QA tables computed from the FULL matched set (not the row-capped df_raw) so
     # the reference-alignment / scope-flag figures are complete for large markets.
     qa = _qa_frames(matched)
-    _write_workbook(out_xlsx, df_raw, summary, dims, rollup, qa)
+    _write_workbook(out_xlsx, df_raw, summary, dims, rollup, qa,
+                    total_source_rows, mapped_source_rows)
 
     # Interactive, cross-country dashboard site (client-side filtering) that
     # links back to the methodology page. Rebuilt every export from the same
