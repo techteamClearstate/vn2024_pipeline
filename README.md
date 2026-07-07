@@ -53,6 +53,9 @@ vn2024_pipeline/
 
 ```bash
 pip install -r requirements.txt
+
+# Optional: install the project itself so the console script is available
+pip install -e .
 ```
 
 Place the **market source** workbook/CSV in `data/uploads/`:

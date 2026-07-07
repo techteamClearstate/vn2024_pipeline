@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vn2024-pipeline"
+version = "0.1.0"
+description = "Vietnam 2024 medical-device import enrichment pipeline"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+    "xlsxwriter>=3.1",
+]
+
+[project.scripts]
+vn2024-pipeline = "run_pipeline:main"
+
+[tool.setuptools]
+py-modules = ["run_pipeline", "qc_check"]
+packages = ["config", "reference", "src"]
