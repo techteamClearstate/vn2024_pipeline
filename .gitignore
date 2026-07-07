@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 .claude/
+
+# Raw sources and regenerable caches stay on disk but out of git
+# (untracked in "Refresh surgical remap workflow outputs", a1bd832)
+data/uploads/
+data/intermediate/
