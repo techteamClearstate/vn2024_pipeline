@@ -201,6 +201,12 @@ def build_keyword_lookup() -> int:
     # harvested entries only ADD families the curated reference lacked.
     n_harvest = _merge_harvested_keywords(lookup)
 
+    # Adjudicated family aliases (reference/term_mappings.csv family_aliases):
+    # alias keyword → existing master family record. Reference and harvest win
+    # on conflicts; each alias resolves to master labels so the downstream
+    # reference gate validates it exactly like a native keyword.
+    n_alias = _merge_family_aliases(lookup)
+
     prefix_map = defaultdict(list)
     for kw in sorted(lookup.keys(), key=len, reverse=True):
         if len(kw) >= cfg.PREFIX_LEN:
@@ -212,6 +218,8 @@ def build_keyword_lookup() -> int:
         pickle.dump(dict(prefix_map), fh)
 
     extra = f" (+{n_harvest:,} benchmark-harvested)" if n_harvest else ""
+    if n_alias:
+        extra += f" (+{n_alias:,} adjudicated aliases)"
     print(f"  [lookup] {len(lookup):,} active keywords "
           f"({len(prefix_map):,} prefix buckets) after blacklist{extra}")
     return len(lookup)
@@ -234,6 +242,28 @@ def _merge_harvested_keywords(lookup: dict) -> int:
         if kw in lookup or kw in cfg.BLACKLIST or len(kw) < cfg.MIN_KEYWORD_LEN:
             continue
         lookup[kw] = rec
+        added += 1
+    return added
+
+
+def _merge_family_aliases(lookup: dict) -> int:
+    """Add adjudicated alias keywords (cfg.FAMILY_ALIASES: alias → pipe-joined
+    master 5-key) into `lookup` in place. Reference/harvest keywords win on
+    conflict; malformed values are skipped loudly. Returns net-new count."""
+    added = 0
+    for kw, key5 in getattr(cfg, "FAMILY_ALIASES", {}).items():
+        kw_l = str(kw).strip().lower()
+        parts = [p.strip() for p in str(key5).split("|")]
+        if len(parts) != 5:
+            print(f"  [lookup] WARNING family alias {kw!r} has malformed "
+                  f"5-key {key5!r}; skipped")
+            continue
+        if kw_l in lookup or kw_l in cfg.BLACKLIST \
+                or len(kw_l) < cfg.MIN_KEYWORD_LEN:
+            continue
+        seg, sub, prod, player, fam = parts
+        lookup[kw_l] = {"Segment": seg, "Sub-segment": sub, "Product": prod,
+                        "Player": player, "Family_Name": fam}
         added += 1
     return added
 

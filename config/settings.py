@@ -21,7 +21,7 @@ REFERENCE_DIR = ROOT / "reference"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from reference.loader import (            # noqa: E402
-    load_set, load_tuple, load_str_map, load_alias_map,
+    load_set, load_tuple, load_str_map, load_alias_map, catalog,
 )
 
 # Optional final-artifact mirror. Export writes local outputs first, then copies
@@ -423,6 +423,16 @@ CONFIDENCE_COL = "Match_Confidence"  # high | med | low | ""
 # core order preserved for longest-first matching downstream).
 MANUFACTURER_ALIASES = load_alias_map("manufacturer_aliases")
 
+# Curated family-keyword aliases from adjudicated review clusters: alias term →
+# pipe-joined master 5-key "Segment|Sub-segment|Product|Player|Family". Written
+# only by tools/apply_review_adjudications.py from human-Approved proposals;
+# merged into the Tier-1 lookup by step1 (reference always wins on conflicts).
+# The map does not exist until the first approved ingestion.
+try:
+    FAMILY_ALIASES = load_str_map("family_aliases")
+except KeyError:
+    FAMILY_ALIASES = {}
+
 # Rows whose trade-party text contains any of these are excluded from Tier-3:
 # veterinary / animal-health shipments are out of human-surgical scope and were
 # a visible false-positive source (e.g. "mindray animal medical").
@@ -435,11 +445,9 @@ MANUFACTURER_EXCLUDE_CUES = load_set("manufacturer_exclude_cues")
 # RawData, excluded from the trusted Dashboard/Rollup). These are regex terms from
 # the final reference-compliance adjudication, governed in reference/term_lists.csv.
 SCOPE_EXCLUDE_CUES = {
-    "veterinary": load_tuple("scope_keyword_veterinary"),
-    "dental":     load_tuple("scope_keyword_dental"),
-    "cosmetic":   load_tuple("scope_keyword_cosmetic"),
-    "lab_ivd":    load_tuple("scope_keyword_lab_ivd"),
-    "imaging":    load_tuple("scope_keyword_imaging"),
+    name.removeprefix("scope_keyword_"): load_tuple(name)
+    for name in sorted(r["list_name"] for r in catalog()
+                       if r["list_name"].startswith("scope_keyword_"))
 }
 SURGICAL_CONTEXT_WHITELIST = load_tuple("surgical_context_whitelist")
 GENERIC_TOKENS = load_set("generic_token_families")

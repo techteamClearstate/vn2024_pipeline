@@ -167,6 +167,42 @@ def main() -> int:
     else:
         print("  [QC] SKIP: no dashboard slices found")
 
+    # 6. Remap-output anchors: the batch remap's trusted counts per market-year,
+    #    pinned from the 2026-07-06 six-market regeneration (A1 remap). Checked
+    #    against the combined QA report so no 400-700MB workbook is re-read.
+    #    Update DELIBERATELY after an intended mapping change (e.g. approved
+    #    adjudication ingestion + rerun), never to paper over a regression.
+    report = (Path(__file__).resolve().parent / "outputs" / "remapped_current"
+              / "reports" / "All_Countries_Surgical_Mapping_QA_Report.xlsx")
+    if report.exists():
+        anchors = {  # (country, year): (trusted rows, trusted value $)
+            ("Pakistan", 2024): (2_920, 46_288_144.38),
+            ("Pakistan", 2025): (3_084, 57_973_239.81),
+            ("India", 2024): (163_817, 684_089_815.49),
+            ("India", 2025): (215_687, 984_545_321.87),
+            ("Vietnam", 2024): (52_367, 260_457_276.41),
+            ("Vietnam", 2025): (55_179, 250_763_141.76),
+        }
+        m = pd.read_excel(report, sheet_name="Metrics_By_File")
+        m = m[m["Run"].astype(str).str.startswith("A1")]
+        bad = 0
+        for (country, year), (rows_pin, value_pin) in anchors.items():
+            cur = m[(m["Country"] == country) & (m["Year"] == year)]
+            if cur.empty:
+                print(f"  [QC] SKIP: no remap metrics for {country} {year}")
+                continue
+            rows_now = int(cur["Trusted rows"].iloc[0])
+            value_now = float(cur["Trusted value"].iloc[0])
+            if rows_now != rows_pin or abs(value_now - value_pin) > 0.005 * value_pin:
+                bad += 1
+                ok = _fail(f"remap anchor {country} {year}: trusted "
+                           f"{rows_now:,}/${value_now:,.0f} vs pinned "
+                           f"{rows_pin:,}/${value_pin:,.0f}")
+        if not bad:
+            print(f"  [QC] PASS: remap trusted anchors ({len(anchors)} market-years)")
+    else:
+        print("  [QC] SKIP: no remap QA report found")
+
     print("  [QC] ALL CHECKS PASSED" if ok else "  [QC] SOME CHECKS FAILED")
     return 0 if ok else 1
 

@@ -354,6 +354,112 @@ def build_master_keys(master_path: Path) -> dict[str, object]:
     }
 
 
+try:
+    from rapidfuzz import process as rf_process
+    from rapidfuzz.distance import Levenshtein as rf_levenshtein
+    HAVE_RAPIDFUZZ = True
+except ImportError:
+    HAVE_RAPIDFUZZ = False
+
+# Fuzzy family matching is CANDIDATE EVIDENCE ONLY (routes to Review_Queue,
+# never Trusted): customs-OCR misspellings of master family names within a
+# length-scaled edit distance, on rows with no other product evidence, gated
+# to core/extended HS scope.
+ENABLE_FUZZY_FAMILY = True
+FUZZY_MIN_TOKEN_LEN = 6          # short brands collide too easily
+FUZZY_MAX_TOKEN_LEN = 18
+FUZZY_MAX_TOKENS = 250_000       # safety cap on unique tokens per run
+# A genuine OCR misspelling is RARE; a token on >0.2% of eligible rows is
+# customs vocabulary ("surgical", "proforma") and must not fuzzy-match.
+FUZZY_MAX_DF_FRACTION = 0.002
+FUZZY_MIN_DF_CAP = 25
+_FUZZY_TOKEN_RE = re.compile(r"^[a-z]+$")
+
+
+def _fuzzy_family_choices(master_keys: dict[str, object]) -> list[str]:
+    """Single-word, non-generic strict-master family names eligible as fuzzy
+    targets (normalized like row text)."""
+    generic = {norm_text(t) for t in GENERIC_TOKENS}
+    out = set()
+    for key in master_keys["strict_full"]:
+        fam = key[4]
+        if (" " not in fam and _FUZZY_TOKEN_RE.match(fam)
+                and FUZZY_MIN_TOKEN_LEN <= len(fam) <= FUZZY_MAX_TOKEN_LEN
+                and fam not in generic):
+            out.add(fam)
+    return sorted(out)
+
+
+def fuzzy_family_evidence(text_norm: pd.Series, eligible: pd.Series,
+                          master_keys: dict[str, object]) -> pd.DataFrame:
+    """Levenshtein-match description tokens against master family names.
+
+    Returns a frame indexed like text_norm with fuzzy_family_match /
+    fuzzy_family_token / fuzzy_similarity columns (blank/0 where no hit).
+    Acceptance is length-scaled: distance 1 for tokens < 8 chars, up to 2 for
+    longer ones; distance 0 (exact) is excluded — exact hits belong to the
+    deterministic lexicon, not the fuzzy channel.
+    """
+    result = pd.DataFrame({"fuzzy_family_match": "", "fuzzy_family_token": "",
+                           "fuzzy_similarity": 0.0}, index=text_norm.index)
+    if not (HAVE_RAPIDFUZZ and ENABLE_FUZZY_FAMILY):
+        return result
+    choices = _fuzzy_family_choices(master_keys)
+    if not choices:
+        return result
+
+    blacklist = {norm_text(t) for t in getattr(rc.cfg, "BLACKLIST", set())}
+    token_rows: dict[str, list] = {}
+    for idx, txt in text_norm[eligible].items():
+        for tok in set(txt.split()):
+            if (FUZZY_MIN_TOKEN_LEN <= len(tok) <= FUZZY_MAX_TOKEN_LEN
+                    and _FUZZY_TOKEN_RE.match(tok) and tok not in blacklist):
+                token_rows.setdefault(tok, []).append(idx)
+    max_df = max(FUZZY_MIN_DF_CAP,
+                 int(int(eligible.sum()) * FUZZY_MAX_DF_FRACTION))
+    tokens = sorted(t for t, rows in token_rows.items()
+                    if len(rows) <= max_df)[:FUZZY_MAX_TOKENS]
+    if not tokens:
+        return result
+
+    # Bucket both sides by first letter: an edit at position 0 is rare in
+    # customs OCR, and this cuts the comparison matrix ~26x.
+    by_first: dict[str, list[str]] = {}
+    for fam in choices:
+        by_first.setdefault(fam[0], []).append(fam)
+
+    matches: dict[str, tuple[str, int]] = {}
+    for first, fams in by_first.items():
+        bucket = [t for t in tokens if t[0] == first]
+        if not bucket:
+            continue
+        dists = rf_process.cdist(bucket, fams, scorer=rf_levenshtein.distance,
+                                 score_cutoff=2, workers=-1)
+        for i, tok in enumerate(bucket):
+            best_j, best_d = -1, 99
+            for j, fam in enumerate(fams):
+                d = dists[i][j]
+                # score_cutoff makes misses read as cutoff+1
+                if d <= 2 and d < best_d and tok != fam:
+                    # distance 2 only for long, distinctive names
+                    max_d = 1 if len(fam) < 10 else 2
+                    if d <= max_d and abs(len(tok) - len(fam)) <= max_d:
+                        best_j, best_d = j, d
+            if best_j >= 0:
+                prev = matches.get(tok)
+                if prev is None or best_d < prev[1]:
+                    matches[tok] = (fams[best_j], best_d)
+
+    for tok, (fam, dist) in matches.items():
+        sim = 1.0 - dist / max(len(fam), 1)
+        for idx in token_rows[tok]:
+            if sim > result.at[idx, "fuzzy_similarity"]:
+                result.at[idx, "fuzzy_family_match"] = fam
+                result.at[idx, "fuzzy_family_token"] = tok
+                result.at[idx, "fuzzy_similarity"] = round(sim, 3)
+    return result
+
+
 def build_evidence(df: pd.DataFrame, master_keys: dict[str, object]) -> pd.DataFrame:
     text_raw = row_text(
         df,
@@ -474,6 +580,18 @@ def build_evidence(df: pd.DataFrame, master_keys: dict[str, object]) -> pd.DataF
     ev["semantic_score"] = 0.0
     ev["fuzzy_score"] = 0.0
     ev.loc[ev["product_score"].gt(0), "fuzzy_score"] = 0.72
+
+    # Real fuzzy channel (rapidfuzz, Review-only evidence): misspelled master
+    # family names on rows with no other product/family evidence, in HS scope.
+    fuzzy_eligible = (ev["product_score"].eq(0) & ~ev["family_evidence"]
+                      & ev["hs_scope"].isin(["core", "extended"]))
+    fz = fuzzy_family_evidence(text_norm, fuzzy_eligible, master_keys)
+    ev["fuzzy_family_match"] = fz["fuzzy_family_match"]
+    ev["fuzzy_family_token"] = fz["fuzzy_family_token"]
+    fuzzy_hit = fz["fuzzy_similarity"].gt(0)
+    ev.loc[fuzzy_hit, "fuzzy_score"] = fz.loc[fuzzy_hit, "fuzzy_similarity"]
+    ev.loc[fuzzy_hit & ev["candidate_source_method"].eq(""),
+           "candidate_source_method"] = "fuzzy_lexical"
     ev["final_candidate_score"] = (
         ev["product_score"]
         + ev["family_score"]
@@ -750,7 +868,7 @@ def build_candidate_table(df: pd.DataFrame, ev: pd.DataFrame) -> pd.DataFrame:
             "candidate_subsegment": choose(base.get("Sub-segment", pd.Series("", index=base.index)), e["candidate_subsegment"]).values,
             "candidate_product": choose(base.get("Product_V0", pd.Series("", index=base.index)), e["candidate_product"]).values,
             "candidate_player": base.get("Manufacturer", pd.Series("", index=base.index)).fillna("").astype(str).values,
-            "candidate_family": base.get("Family", pd.Series("", index=base.index)).fillna("").astype(str).values,
+            "candidate_family": choose(base.get("Family", pd.Series("", index=base.index)), e.get("fuzzy_family_match", pd.Series("", index=base.index))).values,
             "candidate_source_method": e["candidate_source_method"].where(e["candidate_source_method"].ne(""), "existing_mapping_or_reference").values,
             "product_score": e["product_score"].values,
             "family_score": e["family_score"].values,
@@ -1150,7 +1268,11 @@ def build_experiment_matrix(before_m: OrderedDict[str, object], after_m: Ordered
     rows = [
         ("A0", "Current baseline", 0, 0.0, 0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0, "Baseline retained for comparison", "adopt as benchmark"),
         ("A1", "Alias dictionary expansion", 0, 0.0, new_review_rows, new_review_value, 0, int(after_m["Surgicalish excluded rows"]), precision_delta, 0.0, capture_row_delta, manual_review_delta, high_value_delta, runtime, 0, "Captured surgical-looking unmapped rows to Review; no auto-trusted promotion", "adopt"),
-        ("A2", "Fuzzy lexical matching", 0, 0.0, 0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0, "Not executed as rapidfuzz is not installed; misspelling aliases covered deterministically", "test further"),
+        ("A2", "Fuzzy lexical matching", 0, 0.0, 0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0,
+         ("rapidfuzz Levenshtein channel active: misspelled master family names surface as "
+          "fuzzy_lexical candidates (Review-only, never Trusted)" if HAVE_RAPIDFUZZ and ENABLE_FUZZY_FAMILY
+          else "Not executed as rapidfuzz is not installed; misspelling aliases covered deterministically"),
+         "adopt" if HAVE_RAPIDFUZZ and ENABLE_FUZZY_FAMILY else "test further"),
         ("A3", "Character n-gram retrieval", 0, 0.0, new_review_rows, new_review_value, 0, int(after_m["Surgicalish excluded rows"]), 0.0, 0.0, capture_row_delta, manual_review_delta, high_value_delta, runtime, 0, "Implemented lightweight char n-gram evidence proxy in Candidate_Table; not full sklearn TF-IDF", "test further"),
         ("A4", "Word n-gram/product phrase retrieval", 0, 0.0, new_review_rows, new_review_value, 0, int(after_m["Surgicalish excluded rows"]), 0.0, 0.0, capture_row_delta, manual_review_delta, high_value_delta, runtime, 0, "Product phrase aliases capture stents, catheters, sutures, mesh, endoscopy, valves, ortho, autotransfusion", "adopt"),
         ("A5", "Semantic retrieval", 0, 0.0, 0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0, "Not run; recommended only for recall hunting and review candidates", "test further"),

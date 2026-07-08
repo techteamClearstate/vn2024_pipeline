@@ -43,7 +43,18 @@ market-years have never had the stricter pass.
 
 ---
 
-## 1. Phase 1 — Fold the compliance rules into the pipeline 🔲
+## 1. Phase 1 — Fold the compliance rules into the pipeline ✅
+
+> **Done (2026-07-04/05).** `src/step3_map.py::apply_reference_gate` now runs
+> the full compliance decision tree (strict full-key validation with canonical
+> relabelling, generic parking, category-conflict detection, Extended parking,
+> scope keywords with family-token whitelist, generic-token anomaly, and a
+> hard self-check). `src/step1_extract.py::build_reference_tuples` pickles the
+> full/loose/generic key sets; the keyword lists are governed in `reference/`.
+> A six-market batch remap on 2026-07-06 (see
+> `10_runs_logs_lineage/agent_runs/20260706_012149_…final.md`) regenerated and
+> published all current outputs. The original steps are kept below for the
+> record.
 
 **Goal:** every pipeline run produces compliant output by construction; the
 post-process tool becomes a verification/audit step, not a correction step.
@@ -126,22 +137,53 @@ These need stakeholder input; the data is already prepared in
 
 ---
 
-## 3. Phase 3 — Recall recovery & roll-out to other markets 🔲
+## 3. Phase 3 — Recall recovery (the adjudication loop) 🔄 in progress
 
-1. **Unmatched surgical backlog (PK FY2024)** — sheet
-   `Unmatched_Surgical_Candidates`: 1,544 rows / $22.5M of unmatched shipments
-   whose descriptions contain surgical terms, sorted by revenue. Harvest new
-   brand/model aliases into the master + `reference/term_mappings.csv`
-   (manufacturer aliases), following the held-out eval protocol used in
-   iters 1–12 (see `tools/eval_benchmark.py`, `tools/harvest_from_benchmark.py`).
-2. **Apply compliance to the other five market-years** — after Phase 1 this is
-   just a re-run; if Phase 1 is delayed, run
-   `tools/reference_compliance.py` per workbook (it is market-agnostic) and
-   publish workbook + report pairs the same way as Pakistan FY2024.
-   Expect the same label-drift and generic-token classes.
-3. **Further matching improvements** — ranked backlog in
-   [IMPROVEMENT_METHODS.md](IMPROVEMENT_METHODS.md) (multi-candidate re-ranker,
-   LLM re-rank of ambiguous high-$ collisions, embedding similarity, …).
+The 2026-07-06 remap quantified the recall gap: only 14–31% of rows reach
+Trusted; ~13,300 high-value (≥$50k) rows / ~$1.8B sit in Review_Queue across
+the six market-years. The loop that works this down is now built (2026-07-08):
+
+1. **Propose** — `tools/build_adjudication_proposals.py --market <M> --fy <yr>`
+   encodes LLM-adjudicated decisions over the top review clusters into
+   `outputs/remapped_current/reports/Adjudication_Proposals_<M>_FY<yr>.xlsx`
+   (decision vocabulary: add_alias / add_rule / confirm_out_of_scope /
+   propose_master_addition / needs_human; every alias is validated against the
+   master at build time; `Approved` is left blank).
+   - ✅ Pakistan FY2024 adjudicated: 32 proposals covering $120.8M (75.8%) of
+     its review value.
+   - ✅ Vietnam FY2024 round 1: 16 proposals covering $151.9M (27.0%) — VN is
+     fragmented (5,186 clusters; 145 needed for 60%), and its top clusters
+     are mostly false positives correctly parked (the APT-March date-token
+     vaccine noise alone is ~$51M), so round 1 mainly shrinks the review
+     queue; further rounds needed.
+   - 🔲 Vietnam FY2025, India FY2024/25, Pakistan FY2025 + VN FY2024 round 2
+     — same procedure (`tools/build_adjudication_proposals.py` holds the
+     per-market decision registries).
+2. **Approve** — a human marks `Approved = Y` per proposal row. 🅑
+3. **Ingest** — `tools/apply_review_adjudications.py` routes approved rows:
+   family aliases → `reference/term_mappings.csv` `family_aliases` (merged
+   into the Tier-1 lookup by step1); category aliases →
+   `category_qualifier_map`; scope terms → `term_lists.csv` (new
+   `scope_keyword_*` lists are picked up by settings automatically); rule
+   specs → `Rule_Spec_Backlog.xlsx`; master gaps →
+   `Master_Addition_Proposals.xlsx` (analyst-owned master is never edited).
+   Idempotent; rebuilds `reference.sqlite`.
+4. **Rerun & verify** — affected markets end-to-end (PK → India → VN last),
+   batch remap, `qc_check.py` (the §6 remap anchors must be updated
+   deliberately with the intended new trusted counts), held-out eval ≥90/90,
+   then publish per §2.3 of the AGENT_GUIDE.
+
+Supporting channels:
+
+- **Fuzzy family evidence** (2026-07-08): rapidfuzz Levenshtein over master
+  family names in `tools/vietnam_fy2024_workflow_improvement.py` — Review-only
+  candidates (`fuzzy_lexical`), guarded by the generic-word blacklist, a
+  document-frequency cap, and length-scaled distance. Promote its hits only
+  through the adjudication loop.
+- **Further matching improvements** — ranked backlog in
+  [IMPROVEMENT_METHODS.md](IMPROVEMENT_METHODS.md) (multi-candidate re-ranker,
+  embedding similarity as candidate source, market-native GT for PK/India via
+  the Gold_Label_Template samples).
 
 ---
 
