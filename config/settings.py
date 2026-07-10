@@ -492,6 +492,7 @@ REF_VALID_COL   = "Ref_Valid"      # "Y" if the (Seg,Sub,Product) tuple is in re
 DASH_INCLUDE_COL = "Dash_Include"  # "Y" if the row feeds the trusted Dashboard
 QA_STATUS_COL   = "QA_Status"      # human-readable final disposition (see below)
 SCOPE_FLAG_COL  = "Scope_Flag"     # which negative-scope cue matched (if any)
+MATCH_STATUS_COL = "Match_Status"  # prediction match status emitted by step 3
 # QA_Status vocabulary (one per row):
 QA_MAPPED        = "Mapped - reference-valid"
 QA_REVIEW_EXT    = "Review - surgical product in Extended HS scope"

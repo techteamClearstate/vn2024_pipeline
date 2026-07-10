@@ -53,6 +53,9 @@ def main():
     ap = argparse.ArgumentParser(description="VN 2024 ML Map pipeline")
     ap.add_argument("--from", dest="start", choices=STAGES, default="extract",
                     help="stage to start from (default: extract)")
+    ap.add_argument("--to", dest="end", choices=STAGES, default="export",
+                    help="last stage to run (default: export). Use --to map for "
+                         "complete CSV/SQLite handoffs without an Excel export.")
     ap.add_argument("--skip-extract", action="store_true",
                     help="reuse cached TSV + lookup (equivalent to --from match)")
     ap.add_argument("--country", default=None,
@@ -72,6 +75,9 @@ def main():
 
     start = "match" if args.skip_extract else args.start
     start_idx = STAGES.index(start)
+    end_idx = STAGES.index(args.end)
+    if end_idx < start_idx:
+        ap.error("--to must be the same as or later than --from")
 
     if start_idx == 0:
         _check_inputs()
@@ -83,7 +89,9 @@ def main():
     print(f"  source workbook  : {cfg.VN_SOURCE_XLSX.name}")
     print("=" * 60)
 
-    if start_idx <= 0:
+    out = None
+
+    if start_idx <= 0 <= end_idx:
         print("\n[1/4] Extraction")
         step1_extract.extract_vn_to_tsv()
         step1_extract.build_keyword_lookup()
@@ -92,11 +100,11 @@ def main():
         step1_extract.build_product_canonical_map()
         step1_extract.build_reference_tuples()
 
-    if start_idx <= 1:
+    if start_idx <= 1 <= end_idx:
         print("\n[2/4] Matching")
         step2_match.run_matching()
 
-    if start_idx <= 2:
+    if start_idx <= 2 <= end_idx:
         print("\n[3/4] Mapping")
         step3_map.run_mapping()
         # Re-rank: HS8×maker product prior fills product-less rows (needs GT
@@ -109,13 +117,13 @@ def main():
             mapped.to_csv(cfg.MAPPED_CSV, index=False)
             print("  [map] re-applied reference gate after hs_prior rerank")
 
-    if start_idx <= 3:
+    if start_idx <= 3 <= end_idx:
         print("\n[4/4] Export")
         out = step4_export.run_export()
 
     print("\n" + "=" * 60)
     print(f"DONE in {time.time() - t0:.1f}s")
-    print(f"Output: {out}")
+    print(f"Output: {out or cfg.MAPPED_CSV}")
     print("=" * 60)
 
 
