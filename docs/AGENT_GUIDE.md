@@ -354,3 +354,12 @@ commands, six-file row/value/volume reconciliation, deterministic rebuild
 results, artifact hashes, independent-QC findings and owner responses, fixes,
 and final retest evidence. Publication is complete only when all actionable
 independent-QC findings are closed.
+
+After any governed production rerun, quantify realized recall against the prior
+audit authority with `tools/compare_prediction_audits.py --baseline <old.sqlite>
+--candidate <new.sqlite> --out <comparison.json>`. The comparator joins exact
+`output_file_id + source_row_id` identities, reports tier transitions, newly and
+lost Trusted rows/value/volume, and attributes each newly Trusted row to its
+baseline blocking stage/reason. It fails closed if populations differ unless the
+change is explicitly acknowledged with `--allow-population-change`. Verify its
+recovery/regression arithmetic with `python tools/verify_prediction_audit_comparison.py`.
