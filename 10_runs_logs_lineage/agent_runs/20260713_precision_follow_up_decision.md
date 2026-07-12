@@ -31,3 +31,12 @@ The governed workbook still contains 0/150 analyst labels. Therefore the
 dashboard correctly shows `Awaiting analyst labels`, no precision estimate, and
 no numeric follow-up recommendation. This change does not alter production
 mapping or realized recall.
+
+## Publish
+
+The verified dashboard was republished under the stable shared-drive filename
+`2. Interactive Dashboard/Recall_Funnel_Dashboard.html`; its SHA-256 matched the
+local verified build (`7DA1EC7D...55BA26`). The replaced dashboard was retained
+as `9. Archive/Recall_Funnel_Dashboard_pre-follow-up-sampling_20260713.html`, and
+`5. Documentation/DATA_UPDATES_LOG.md` was updated. No production artifact was
+replaced.
