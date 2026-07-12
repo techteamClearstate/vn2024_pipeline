@@ -25,7 +25,7 @@ from build_funnel_dashboard import GATES, _gate_bit_case, _gate_case, _secondary
 from precision_measurement import RANDOM_SAMPLE, TARGETED_SAMPLE, build_measured_accuracy
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_RUN = "20260710_recall_audit_v2"
+DEFAULT_RUN = "20260712_recall_audit_v3"
 TOL_VAL = 1.0      # USD tolerance (rounding to cents in the payload)
 TOL_VOL = 1.0
 EXAMPLE_BUDGET = 600 * 1024
@@ -104,6 +104,11 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         check(False, f"Embedded DATA payload parses: {e}")
         return report()
+
+    check(data.get("attribution", {}).get("india_reference_status") is True,
+          "Dashboard declares the governed India FY2025 reference attribution fix")
+    check("India FY2025 attribution fixed:" in html,
+          "Dashboard template includes the corrected India FY2025 attribution explanation")
 
     con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
     cur = con.cursor()

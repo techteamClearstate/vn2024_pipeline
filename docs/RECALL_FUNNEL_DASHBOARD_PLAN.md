@@ -3,7 +3,8 @@
 > **Status doc for a long-running improvement loop.** Goal: make the prediction-audit
 > output easy to understand, add a funnel dashboard, and surface where recall is lost
 > and where it can (carefully) be recovered. **Review-only** — no production routing,
-> reference, or workbook changes. Authority = `outputs/20260710_recall_audit_v2/prediction_audit.sqlite`.
+> reference, or workbook changes. Current authority = `outputs/20260712_recall_audit_v3/prediction_audit.sqlite`;
+> recovery sizing below remains explicitly the `20260710_recall_audit_v2` historical baseline.
 > Last updated: 2026-07-12.
 
 ## What the user asked for
@@ -38,11 +39,11 @@ double counting). Cross-file, the recall drains rank:
 S12 (ophthalmic/imaging guard).** S07 dominates by a wide margin. "Unmapped" and
 "manufacturer only" are *never-matched* populations (a coverage problem, not a filter).
 
-**Data nuance to surface, not hide:** IN_2025 is ingested from `data/intermediate/vn_v0_mapped.csv`
-(complete CSV remap) and attributes its losses at S13 (`Unmapped` / `manufacturer only`) rather
-than S07, because it lacks the reference-status columns the workbook files carry. So a naive
-cross-file sum of stage attribution mixes two attribution granularities — present per-file, and
-label IN_2025 clearly. (Candidate QC finding.)
+**India FY2025 attribution fix:** IN_2025 is still ingested from the complete
+`data/intermediate/vn_v0_mapped.csv`, but v3 derives master-validation and binary
+reference status from the governed surgical master during audit ingestion. Reference
+failures now route to S07 while genuine never-matched coverage gaps stay at S13. This
+does not change production mappings, QA status, or Trusted/Review/Excluded totals.
 
 Recovery levers (review-only surfacing, then normal adjudication loop):
 - **S07**: rows whose mapped triple is a *loose* match to the master (spacing/punctuation) or a
@@ -157,6 +158,13 @@ Recovery levers (review-only surfacing, then normal adjudication loop):
       rows remain separate and unweighted. Acceptance checks reconcile the payload to
       `review_label`. Current state is honestly `Awaiting analyst labels` (0/150); this work does
       not change production routing or realized recall.
+
+- [x] **D15 — India FY2025 audit attribution repair (Track D3)** (2026-07-12): the complete
+      CSV source is enriched in-memory from the governed surgical master. Detailed master
+      validation remains traceable while the rule registry receives its expected binary
+      reference status. S07 now captures reference failures and S13 retains genuine coverage
+      gaps. Production source files, mapped fields, QA status, and final tiers are unchanged;
+      exact v2-v3 reconciliation and artifact verification are recorded in the run log.
 
 ## Status: EXPLAINABILITY PLAYGROUND COMPLETE; ANALYST ADJUDICATION NEXT
 All six original user asks are delivered, reconciled to the row-level authority, self-contained, and

@@ -25,7 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_RUN = "20260710_recall_audit_v2"
+DEFAULT_RUN = "20260712_recall_audit_v3"
 REF_DB = REPO / "reference" / "reference.sqlite"
 
 # Same objective "clean vs ambiguous" signal used by the dashboard.

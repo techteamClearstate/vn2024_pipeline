@@ -40,7 +40,7 @@ from pathlib import Path
 from precision_measurement import build_measured_accuracy
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_RUN = "20260710_recall_audit_v2"
+DEFAULT_RUN = "20260712_recall_audit_v3"
 
 # ---------------------------------------------------------------------------
 # Dimension definitions (SQL expression + display label). Domain vocabulary:
@@ -663,12 +663,12 @@ def build_data(con: sqlite3.Connection) -> dict:
 
     files = []
     for r in cur.execute(
-        "SELECT output_file_id, output_label, country, fiscal_year, observed_rows, ingestion_mode "
+        "SELECT output_file_id, output_label, country, fiscal_year, observed_rows, ingestion_mode, completeness_basis "
         "FROM source_file ORDER BY country, fiscal_year"
     ):
         files.append({
             "id": r[0], "label": r[1], "country": r[2], "fy": r[3],
-            "rows": r[4], "ingestion": r[5],
+            "rows": r[4], "ingestion": r[5], "completeness_basis": r[6],
         })
     file_ids = [f["id"] for f in files]
 
@@ -797,6 +797,12 @@ def build_data(con: sqlite3.Connection) -> dict:
         "registry_version": registry_version,
         "code_commit": code_commit,
         "completed_at": completed_at,
+        "attribution": {
+            "india_reference_status": any(
+                f["id"] == "IN_2025" and "governed master validation v1" in f["completeness_basis"].lower()
+                for f in files
+            )
+        },
         "files": files,
         "tiers": TIERS,
         "tier_plain": {t: {"short": TIER_PLAIN[t][0], "text": TIER_PLAIN[t][1]} for t in TIERS},

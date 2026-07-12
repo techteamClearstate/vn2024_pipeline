@@ -30,6 +30,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config import settings as cfg  # noqa: E402
+from tools.vietnam_fy2024_workflow_improvement import build_master_keys, norm_tuple  # noqa: E402
 
 EXCEL_MAX_DATA_ROWS = 1_048_575
 CHUNK_ROWS = 40_000
@@ -37,6 +38,14 @@ VALUE_TOLERANCE = 0.01
 VOLUME_TOLERANCE = 1e-6
 DIMENSION_UNMAPPED = "<Unmapped>"
 DIMENSION_ALL = "<All>"
+MASTER_VALIDATION_STATUSES = {
+    "not_applicable",
+    "pass_full_strict",
+    "pass_full_latest_generic_risk",
+    "reference_update_needed",
+    "pass_category",
+    "category_reference_update_needed",
+}
 
 MRI_COMPATIBLE_RE = re.compile(r"\bmri[\s-]*(?:compatible|compatibility|conditional|safe)\b", re.I)
 MRI_IMAGING_RE = re.compile(r"\b(?:mri|magnetic\s+resonance)\b.*\b(?:scanner|imaging|coil|magnet|tesla)\b|\b(?:scanner|imaging|coil|magnet|tesla)\b.*\b(?:mri|magnetic\s+resonance)\b", re.I)
@@ -94,6 +103,61 @@ def source_text(row: dict[str, object]) -> str:
 
 def reference_is_valid(value: object) -> bool:
     return text(value).lower() in {"valid", "y", "yes", "true", "1", "reference-valid"}
+
+
+class GovernedMasterStatusEnricher:
+    """Carry the governed remap master-validation evidence into an audit source.
+
+    This class derives evidence fields only. It deliberately does not change the
+    mapped dimensions, QA status, terminal tier, or any production artifact.
+    """
+
+    def __init__(self, master_path: Path) -> None:
+        keys = build_master_keys(master_path)
+        self.strict_full = keys["strict_full"]
+        self.full_latest = keys["full_latest"]
+        self.categories = keys["categories"]
+        self.counts: Counter[str] = Counter()
+        self.processed = 0
+
+    def apply(self, batch: list[dict[str, object]]) -> list[dict[str, object]]:
+        for row in batch:
+            if text(row.get("Reference_Key_Status")) or text(row.get("Master_Validation_Status")):
+                raise RuntimeError(
+                    "FAIL CLOSED: audit-only master enrichment cannot overwrite existing evidence fields"
+                )
+            tier = text(row.get("Match_Tier")).lower()
+            status = "not_applicable"
+            if tier == "family":
+                key = norm_tuple(
+                    row.get(column)
+                    for column in ("Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family")
+                )
+                if key in self.strict_full:
+                    status = "pass_full_strict"
+                elif key in self.full_latest:
+                    status = "pass_full_latest_generic_risk"
+                else:
+                    status = "reference_update_needed"
+            elif tier == "category":
+                key = norm_tuple(row.get(column) for column in ("Segment", "Sub-segment", "Product_V0"))
+                status = "pass_category" if key in self.categories else "category_reference_update_needed"
+            if status not in MASTER_VALIDATION_STATUSES:
+                raise RuntimeError(f"FAIL CLOSED: unsupported master-validation status: {status}")
+            row["Master_Validation_Status"] = status
+            # Keep the rule-registry contract for Reference_Key_Status: it is
+            # binary gate evidence, while Master_Validation_Status carries the
+            # more detailed audit explanation.  Generic-family-only matches
+            # deliberately remain invalid under the strict reference policy.
+            if status in {"pass_full_strict", "pass_category"}:
+                row["Reference_Key_Status"] = "Valid"
+            elif status == "not_applicable":
+                row["Reference_Key_Status"] = ""
+            else:
+                row["Reference_Key_Status"] = "Invalid"
+            self.counts[status] += 1
+            self.processed += 1
+        return batch
 
 
 def terminal_tier(row: dict[str, object]) -> str:
@@ -838,9 +902,25 @@ def ingest_output(
     if observed != expected:
         raise RuntimeError(f"FAIL CLOSED: {spec['output_label']} observed {observed:,} != expected {expected:,}")
 
+    output_id = str(spec["output_file_id"])
+    enricher: GovernedMasterStatusEnricher | None = None
+    enrichment = spec.get("reference_status_enrichment")
+    if enrichment:
+        if output_id != "IN_2025":
+            raise RuntimeError("FAIL CLOSED: governed master-status enrichment is scoped only to IN_2025")
+        if enrichment.get("mode") != "governed_master_validation_v1":
+            raise RuntimeError(f"Unsupported reference_status_enrichment mode: {enrichment.get('mode')}")
+        master_path = ROOT / str(enrichment["master_path"])
+        if not master_path.exists():
+            raise RuntimeError(f"FAIL CLOSED: governed master missing: {master_path}")
+        enricher = GovernedMasterStatusEnricher(master_path)
+        chunks = (enricher.apply(batch) for batch in chunks)
+        completeness_basis += (
+            "; audit-only reference status enriched using governed master validation v1"
+        )
+
     source_hash = sha256_file(path)
     complete_hash = sha256_file(complete_path) if complete_path else None
-    output_id = str(spec["output_file_id"])
     connection.execute(
         """INSERT INTO source_file (
           run_id,output_file_id,output_label,country,fiscal_year,source_path,complete_source_path,
@@ -930,6 +1010,16 @@ def ingest_output(
         print(f"  [{spec['output_label']}] {processed:,}/{observed:,}", flush=True)
     if processed != observed:
         raise RuntimeError(f"FAIL CLOSED: processed {processed:,} != observed {observed:,} for {spec['output_label']}")
+    if enricher is not None:
+        if enricher.processed != observed or sum(enricher.counts.values()) != observed:
+            raise RuntimeError(
+                f"FAIL CLOSED: master enrichment covered {enricher.processed:,}/{observed:,} rows"
+            )
+        print(
+            "  [India 2025] governed master statuses: "
+            + ", ".join(f"{key}={enricher.counts[key]:,}" for key in sorted(enricher.counts)),
+            flush=True,
+        )
     metrics = connection.execute(
         f"SELECT {metrics_sql()} FROM row_fact WHERE run_id=? AND output_file_id=?",
         (run_id, output_id),

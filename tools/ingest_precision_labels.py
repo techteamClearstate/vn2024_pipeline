@@ -22,7 +22,7 @@ from typing import Any
 from openpyxl import load_workbook
 
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_RUN = "20260710_recall_audit_v2"
+DEFAULT_RUN = "20260712_recall_audit_v3"
 DEFAULT_DB = REPO / "outputs" / DEFAULT_RUN / "prediction_audit.sqlite"
 DEFAULT_WORKBOOK = REPO / "outputs" / DEFAULT_RUN / "Prediction_Funnel_and_Review.xlsx"
 SHEET = "Review Samples"

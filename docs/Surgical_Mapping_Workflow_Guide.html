@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Surgical Mapping Workflow Guide · 20260710_recall_audit_v2</title>
+<title>Surgical Mapping Workflow Guide · 20260712_recall_audit_v3</title>
 <style>
 :root{--ink:#0e0e0e;--blue:#0047ab;--muted:#777;--paper:#f5f7fa;--line:#d8dee8;--white:#fff;--pale:#eaf1fb;--green:#147a42;--amber:#9a5b00}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Arial,Helvetica,sans-serif}
@@ -24,10 +24,10 @@ footer{background:#fff;border-top:1px solid var(--line);padding:24px;text-align:
 <div class="metrics"><div class="metric"><b>3,573,729</b><span>complete source rows</span></div><div class="metric"><b>$14,506,512,044.56</b><span>valid parsed value</span></div><div class="metric"><b>28,192,890,445.020515</b><span>valid parsed volume</span></div></div></header>
 <nav><a href="#overview">Overview</a><a href="#sources">Sources</a><a href="#routing">Routing</a><a href="#recall">Recall risks</a><a href="#review">Review</a><a href="#S00_EXTRACTION">S00</a><a href="#S01_HS_ELIGIBILITY">S01</a><a href="#S02_DENTAL_SUPPRESSION">S02</a><a href="#S03_FAMILY_MATCH">S03</a><a href="#S04_CATEGORY_FALLBACK">S04</a><a href="#S05_MANUFACTURER_FALLBACK">S05</a><a href="#S06_STANDARDIZATION">S06</a><a href="#S07_REFERENCE_VALIDATION">S07</a><a href="#S08_SCOPE_WHITELIST">S08</a><a href="#S09_GENERIC_ANOMALY">S09</a><a href="#S10_EXTENDED_HS">S10</a><a href="#S11_HS_PRIOR">S11</a><a href="#S12_REMAP_GUARDS">S12</a><a href="#S13_TERMINAL_ROUTING">S13</a><a href="#S14_PRESENTATION_EXPORT">S14</a></nav>
 <main>
-<section id="overview"><h2>What is authoritative</h2><p class="lead">Run <code>20260710_recall_audit_v2</code> is governed by a versioned registry and fixed seed. SQLite holds the complete row-level data; the workbook and this page show summaries and samples generated from it.</p>
+<section id="overview"><h2>What is authoritative</h2><p class="lead">Run <code>20260712_recall_audit_v3</code> is governed by a versioned registry and fixed seed. SQLite holds the complete row-level data; the workbook and this page show summaries and samples generated from it.</p>
 <div class="grid"><div class="card"><h3>Row identity</h3><p><code>(run_id, output_file_id, source_row_id)</code> is stable and unique. Raw numeric strings, parsed values and explicit valid/missing/invalid statuses are retained.</p></div><div class="card"><h3>Reconciliation</h3><p>PASS: 54. Value tolerance is $0.01 and volume tolerance is 0.000001. Publication fails closed on any FAIL.</p></div></div>
 <div class="notice"><strong>Metrics.</strong> Transaction count is <code>COUNT(*)</code>. Value and volume sum valid parsed observations; missing and invalid counts remain visible. Weighted ASP (average selling price) is the average dollars per unit — valid value divided by valid volume — and is blank when volume is zero.</div>
-<p><a href="../outputs/20260710_recall_audit_v2/prediction_audit.sqlite">Open SQLite authority</a> · <a href="../outputs/20260710_recall_audit_v2/Prediction_Funnel_and_Review.xlsx">Open bounded review workbook</a></p></section>
+<p><a href="../outputs/20260712_recall_audit_v3/prediction_audit.sqlite">Open SQLite authority</a> · <a href="../outputs/20260712_recall_audit_v3/Prediction_Funnel_and_Review.xlsx">Open bounded review workbook</a></p></section>
 <section id="sources"><h2>Complete-source lineage</h2><p class="lead">All six declared populations passed independent physical-row checks. India FY2025 uses the complete uncapped CSV; its 1,048,575-data-row XLSX is rejected as Excel-limited. The other five governed legacy XLSX sources are below the cap, with the format limitation explicitly recorded.</p><div class="table-wrap"><table><thead><tr><th>Output</th><th>Country</th><th>FY</th><th>Rows</th><th>Value</th><th>Volume</th><th>Ingestion</th><th>Status</th></tr></thead><tbody><tr><td>India 2024</td><td>India</td><td>2024</td>
         <td class=num>631,630</td><td class=num>$2,084,057,825.66</td>
         <td class=num>5,363,594,791.298326</td><td>governed_uncapped_legacy_excel_migration</td>
@@ -267,5 +267,5 @@ footer{background:#fff;border-top:1px solid var(--line);padding:24px;text-align:
               <p><strong>Reason precedence.</strong> aggregate_presented → row_level_retained_in_sqlite → presentation_limit_failure</p>
             </div>
     </article></section>
-</main><footer>Generated from registry 2026.07.10.2 and SQLite run 20260710_recall_audit_v2. Review-only; no production mapping changed.</footer>
+</main><footer>Generated from registry 2026.07.10.2 and SQLite run 20260712_recall_audit_v3. Review-only; no production mapping changed.</footer>
 </body></html>

@@ -188,6 +188,14 @@ sample as a design-weighted estimate with 95% intervals and keeps targeted rows
 separate as diagnostics. The current workbook contains 0/150 labels, so no
 measured precision claim is made yet and no production route is changed.
 
+India FY2025 audit attribution was repaired on 2026-07-12. Because its complete
+CSV cannot carry the workbook-only reference columns, the audit builder now
+derives detailed governed-master validation plus the registry's binary reference
+status in memory. This moves reference failures from terminal S13 attribution to
+S07 while leaving genuine coverage gaps at S13. It is an audit-only explanation
+fix: the production source, mapped fields, QA status, and final output tiers are
+unchanged, so it does not count as realized recall improvement.
+
 Supporting channels:
 
 - **Fuzzy family evidence** (2026-07-08): rapidfuzz Levenshtein over master

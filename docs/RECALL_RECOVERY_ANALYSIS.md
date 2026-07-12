@@ -6,6 +6,10 @@
 > Guiding principle (per the request): **do not chase recall aggressively** — quantify the
 > *safe* levers and clearly separate them from losses the guards hold back for good reason.
 
+> **Historical sizing note:** this document remains the governed v2 proposal-sizing
+> snapshot. Audit v3 fixes India FY2025 stage attribution by deriving reference status
+> from the governed master, but does not apply any proposal or change realized recall.
+
 ## Where recall is lost (the two dominant gates)
 
 | Gate | Reason | Rows | Value |

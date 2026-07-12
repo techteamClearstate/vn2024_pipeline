@@ -296,9 +296,12 @@ Run outputs are written beneath `outputs/<run_id>/`:
   deterministic stratified-random sample as a design-weighted population estimate
   with 95% intervals and keeps purposeful targeted rows separate as unweighted
   diagnostics. Blank/Uncertain judgments are excluded from each denominator.
-  Note: India FY2025 attributes held-back rows at terminal routing (Unmapped /
-  manufacturer-only) rather than Reference validation because its CSV source lacks
-  reference-status columns; compare markets one at a time for the cleanest read.
+  India FY2025's complete CSV source does not carry workbook reference-status
+  columns. Audit run `20260712_recall_audit_v3` therefore derives a detailed
+  `Master_Validation_Status` from the governed surgical master and a compatible
+  binary `Reference_Key_Status` during audit ingestion. This is attribution-only:
+  it routes reference failures to S07 and leaves genuine S13 coverage gaps at S13,
+  without changing mapped fields, QA status, production tiers, or source files.
 
 Precision-label workflow (review-only):
 

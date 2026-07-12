@@ -2,7 +2,7 @@
 
 *A 2-minute orientation. For concrete row examples and the review-only gate
 playground, open
-[`Recall_Funnel_Dashboard.html`](../outputs/20260710_recall_audit_v2/Recall_Funnel_Dashboard.html)
+[`Recall_Funnel_Dashboard.html`](../outputs/20260712_recall_audit_v3/Recall_Funnel_Dashboard.html)
 in any browser.*
 
 ## What this does
@@ -29,6 +29,10 @@ product in the free-text description, and sort each row into one of three bucket
 
 ## Where recall (kept data) is lost
 
+The dollar figures below are the **20260710 v2 recovery-analysis baseline**. They
+remain the governed sizing basis for the pending analyst proposals; v3 improves
+India FY2025 attribution but does not itself recover or reroute any production row.
+
 Two steps cause most of the drop-off:
 
 - **Reference check (Step 4)** — **$6.23B** held back because the product isn't in the master yet.
@@ -49,7 +53,9 @@ description**. Ordered by how safe it is:
 
 **Leave alone:** ~$398M where the family match is spurious (not in the description — the pipeline
 correctly held these), ~$407M of ambiguous/generic/date-token matches (recovering them hurts
-accuracy), and the ~$2.37B "Unmapped" figure (an India-FY2025 data-source quirk, not a real gap).
+accuracy). The old v2 ~$2.37B India-FY2025 "Unmapped" figure mixed genuine
+coverage gaps with reference failures; v3 separates those populations instead of
+presenting the whole amount as a clean recovery opportunity.
 
 All recovery is **review-only**: adjudicate → update `reference/` → rerun → re-audit. Nothing is auto-applied.
 
@@ -70,8 +76,9 @@ Open **What-if playground** in the dashboard and uncheck one or more of the seve
 real gates. The page immediately recalculates the potential Trusted population,
 separating rows released directly from rows likely to be held by another enabled
 gate. Expand the examples to see descriptions, makers, families, mapped products,
-segments, values, and QA statuses. S13 coverage gaps and the India FY2025 audit-
-source artifact remain visible but cannot be toggled. Copy or download the proposed
+segments, values, and QA statuses. Genuine S13 coverage gaps remain visible but
+cannot be toggled; India FY2025 reference failures are now attributed at S07. Copy
+or download the proposed
 adjudication note when a pattern merits analyst review; the simulator never edits
 the pipeline, reference files, or published workbooks.
 
@@ -79,10 +86,10 @@ the pipeline, reference files, or published workbooks.
 
 | File | What it is |
 |---|---|
-| [`outputs/20260710_recall_audit_v2/Recall_Funnel_Dashboard.html`](../outputs/20260710_recall_audit_v2/Recall_Funnel_Dashboard.html) | Interactive dashboard: funnel, concrete row examples, breakdowns, hotspots, recovery, seven-gate what-if playground, steps, glossary. |
+| [`outputs/20260712_recall_audit_v3/Recall_Funnel_Dashboard.html`](../outputs/20260712_recall_audit_v3/Recall_Funnel_Dashboard.html) | Current interactive dashboard: funnel, concrete row examples, breakdowns, hotspots, recovery, seven-gate what-if playground, steps, glossary. |
 | [`outputs/20260710_recall_audit_v2/Recall_Recovery_Candidates.csv`](../outputs/20260710_recall_audit_v2/Recall_Recovery_Candidates.csv) | 180 ranked recovery candidates (safest first) with a master-check column. |
 | [`outputs/20260710_recall_audit_v2/Prediction_Funnel_and_Review.xlsx`](../outputs/20260710_recall_audit_v2/Prediction_Funnel_and_Review.xlsx) | Governed reviewer workbook; its 150-row `Review Samples` sheet is the business-team precision-label venue. |
-| [`RECALL_RECOVERY_ANALYSIS.md`](RECALL_RECOVERY_ANALYSIS.md) | The quantified recall-recovery write-up. |
+| [`RECALL_RECOVERY_ANALYSIS.md`](RECALL_RECOVERY_ANALYSIS.md) | The quantified 20260710 v2 recall-recovery snapshot; proposals remain pending approval. |
 | [`RECALL_FUNNEL_DASHBOARD_PLAN.md`](RECALL_FUNNEL_DASHBOARD_PLAN.md) | How it was built + progress log. |
 | `tools/ingest_precision_labels.py`, `tools/build_funnel_dashboard.py`, `tools/verify_funnel_dashboard.py`, `tools/verify_funnel_dashboard_render.py` | Validate/ingest analyst labels, rebuild the read-only dashboard, reconcile numbers/examples/masks/accuracy to SQLite, and exercise browser states. |
 

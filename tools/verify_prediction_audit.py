@@ -27,6 +27,14 @@ EXPECTED_SHEETS = [
     "Read Me", "Funnel", "Removal Cube", "Review Samples", "Recall Risks",
     "Reconciliation QC", "Source Lineage",
 ]
+MASTER_VALIDATION_STATUSES = {
+    "not_applicable",
+    "pass_full_strict",
+    "pass_full_latest_generic_risk",
+    "reference_update_needed",
+    "pass_category",
+    "category_reference_update_needed",
+}
 
 
 class VerificationError(AssertionError):
@@ -145,6 +153,57 @@ def verify(database: Path, workbook: Path | None, html_path: Path | None) -> dic
             Path(india["source_path"]).resolve() != Path(india["complete_source_path"]).resolve(),
             "India FY2025 must retain distinct mapped-current and immutable-complete lineage.",
         )
+        require(
+            "governed master validation v1" in india["completeness_basis"].lower(),
+            "India FY2025 must disclose its audit-only governed master enrichment.",
+        )
+        india_master_statuses = {
+            row[0] for row in connection.execute(
+                "SELECT DISTINCT master_validation_status FROM row_fact WHERE output_file_id='IN_2025'"
+            )
+        }
+        require(india_master_statuses <= MASTER_VALIDATION_STATUSES and india_master_statuses,
+                f"India FY2025 contains unsupported master statuses: {india_master_statuses}")
+        india_reference_statuses = {
+            row[0] for row in connection.execute(
+                "SELECT DISTINCT reference_status FROM row_fact WHERE output_file_id='IN_2025'"
+            )
+        }
+        require(india_reference_statuses <= {"", "Valid", "Invalid"},
+                f"India FY2025 contains unsupported binary reference statuses: {india_reference_statuses}")
+        require(connection.execute(
+            """SELECT COUNT(*) FROM row_fact WHERE output_file_id='IN_2025' AND (
+                 master_validation_status=''
+                 OR (master_validation_status IN ('pass_full_strict','pass_category')
+                     AND reference_status<>'Valid')
+                 OR (master_validation_status='not_applicable' AND reference_status<>'')
+                 OR (master_validation_status IN
+                       ('pass_full_latest_generic_risk','reference_update_needed',
+                        'category_reference_update_needed')
+                     AND reference_status<>'Invalid')
+               )"""
+        ).fetchone()[0] == 0, "India FY2025 detailed and binary reference evidence is inconsistent.")
+        require(connection.execute(
+            """SELECT COUNT(*) FROM row_fact WHERE output_file_id='IN_2025' AND (
+                 (LOWER(match_tier)='family' AND master_validation_status NOT IN
+                    ('pass_full_strict','pass_full_latest_generic_risk','reference_update_needed'))
+                 OR (LOWER(match_tier)='category' AND master_validation_status NOT IN
+                    ('pass_category','category_reference_update_needed'))
+                 OR (LOWER(match_tier) NOT IN ('family','category') AND master_validation_status<>'not_applicable')
+               )"""
+        ).fetchone()[0] == 0, "India FY2025 master statuses do not reconcile to Match_Tier.")
+        require(connection.execute(
+            """SELECT COUNT(*) FROM row_fact WHERE output_file_id='IN_2025'
+               AND output_tier<>'Trusted' AND primary_reason<>'ophthalmic_imaging_conflict'
+               AND reference_status='Invalid'
+               AND removal_stage_id<>'S07_REFERENCE_VALIDATION'"""
+        ).fetchone()[0] == 0, "India FY2025 invalid-reference losses are not attributed at S07.")
+        require(connection.execute(
+            """SELECT COUNT(*) FROM row_fact WHERE output_file_id='IN_2025'
+               AND output_tier<>'Trusted' AND primary_reason<>'ophthalmic_imaging_conflict'
+               AND reference_status=''
+               AND removal_stage_id<>'S13_TERMINAL_ROUTING'"""
+        ).fetchone()[0] == 0, "India FY2025 genuine coverage gaps are not retained at S13.")
         require(connection.execute(
             "SELECT COUNT(*) FROM row_fact WHERE output_file_id LIKE 'PK_%' AND nonstandard_tier=1 AND output_tier='Trusted'"
         ).fetchone()[0] == 0, "Pakistan nonstandard tiers must not be Trusted.")
@@ -209,13 +268,15 @@ def verify(database: Path, workbook: Path | None, html_path: Path | None) -> dic
         ).fetchone()[0] == 0, "Review recommendations changed production state.")
 
         baseline_rows = connection.execute("SELECT * FROM baseline_manifest ORDER BY manifest_id").fetchall()
-        require(len(baseline_rows) == 10, f"Baseline manifest must contain 10 governed inputs, found {len(baseline_rows)}.")
+        require(len(baseline_rows) == 11, f"Baseline manifest must contain 11 governed inputs, found {len(baseline_rows)}.")
         baseline_types = {row["artifact_type"] for row in baseline_rows}
         require(
-            {"code", "configuration", "rule_registry", "mapped_complete_source", "immutable_complete_input"}
+            {"code", "configuration", "rule_registry", "reference_source", "mapped_complete_source", "immutable_complete_input"}
             <= baseline_types,
             f"Baseline manifest types are incomplete: {baseline_types}",
         )
+        require(sum(row["artifact_type"] == "reference_source" for row in baseline_rows) == 1,
+                "Baseline manifest must fingerprint exactly one governed master source.")
         for row in baseline_rows:
             path = Path(row["path"])
             require(path.exists(), f"Baseline artifact missing: {path}")
@@ -254,6 +315,7 @@ def verify(database: Path, workbook: Path | None, html_path: Path | None) -> dic
             "review_sample": stable_query_hash(connection, "SELECT output_file_id,source_row_id,sample_type,sample_stratum,target_category,inclusion_probability,sample_weight,fixed_seed,sample_rank,evidence,shadow_recommendation FROM review_label ORDER BY output_file_id,sample_type,sample_rank,source_row_id"),
             "funnel_cube": stable_query_hash(connection, "SELECT * FROM funnel_cube ORDER BY output_file_id,stage_order,candidate_status,outcome"),
             "removal_cube": stable_query_hash(connection, "SELECT * FROM removal_cube ORDER BY output_file_id,reason_kind,stage_id,rule_id,grouping_level,grouping_id,outcome,reason"),
+            "india_reference_attribution": stable_query_hash(connection, "SELECT reference_status,output_tier,removal_stage_id,primary_reason,COUNT(*),SUM(value_usd),SUM(volume) FROM row_fact WHERE output_file_id='IN_2025' GROUP BY reference_status,output_tier,removal_stage_id,primary_reason ORDER BY reference_status,output_tier,removal_stage_id,primary_reason"),
         }
         return {
             "run_id": run_id,
