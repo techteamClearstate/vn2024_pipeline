@@ -166,6 +166,12 @@ Recovery levers (review-only surfacing, then normal adjudication loop):
       gaps. Production source files, mapped fields, QA status, and final tiers are unchanged;
       exact v2-v3 reconciliation and artifact verification are recorded in the run log.
 
+- [x] **D16 — Reviewer workbook synchronized to v3** (2026-07-12): check-only ingestion found
+      the shared reviewer workbook still carried the v2 deterministic sample (3 missing and 3
+      unexpected identities versus v3). Because it contained 0 reviewer labels, the prior file
+      was archived and the v3-generated workbook published in its place. Check-only validation
+      now passes with 150/150 identities and 0/150 labels; production routing is unchanged.
+
 ## Status: EXPLAINABILITY PLAYGROUND COMPLETE; ANALYST ADJUDICATION NEXT
 All six original user asks are delivered, reconciled to the row-level authority, self-contained, and
 independently QC'd. The business-explainability playground is also delivered. Next progress depends on

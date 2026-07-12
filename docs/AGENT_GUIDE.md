@@ -305,6 +305,10 @@ Run outputs are written beneath `outputs/<run_id>/`:
 
 Precision-label workflow (review-only):
 
+The shared workbook must match the current audit authority before analysts start. Audit v3's
+attribution repair changed 3 deterministic sample identities; the delivery copy was synchronized
+and validated at 150/150 on 2026-07-12, with its unlabeled v2 predecessor archived.
+
 ```bash
 # Validate the shared-drive workbook without changing SQLite.
 PYTHONIOENCODING=utf-8 python tools/ingest_precision_labels.py --check --workbook "<shared-drive>/4. Manual Mapped Files/Prediction_Funnel_and_Review.xlsx"
