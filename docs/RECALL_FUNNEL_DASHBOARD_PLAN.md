@@ -150,6 +150,14 @@ Recovery levers (review-only surfacing, then normal adjudication loop):
       sheet is now the single business-team labeling venue for Track C; no label is applied to
       production until it passes through the governed adjudication workflow.
 
+- [x] **D14 — Precision measurement scaffold (Track C2)** (2026-07-12): added a governed,
+      idempotent `tools/ingest_precision_labels.py` with check-only validation and workbook-hash
+      lineage. The dashboard Overview now reports design-weighted random-sample relevance,
+      mapping correctness, and end-to-end accuracy with 95% intervals, while purposeful targeted
+      rows remain separate and unweighted. Acceptance checks reconcile the payload to
+      `review_label`. Current state is honestly `Awaiting analyst labels` (0/150); this work does
+      not change production routing or realized recall.
+
 ## Status: EXPLAINABILITY PLAYGROUND COMPLETE; ANALYST ADJUDICATION NEXT
 All six original user asks are delivered, reconciled to the row-level authority, self-contained, and
 independently QC'd. The business-explainability playground is also delivered. Next progress depends on
@@ -192,3 +200,6 @@ sample; no simulated result is a production decision.
   (1,904 states, 0 JS errors). Republished the dashboard additively with review-only labeling.
 - 2026-07-12 it.9 (D13): published the governed reviewer workbook to shared-drive
   `4. Manual Mapped Files/`, linked it from the portal, and verified a byte-identical SHA-256 copy.
+- 2026-07-12 it.10 (D14): added governed precision-label validation/ingestion and the dashboard
+  measured-accuracy panel; random estimates are design-weighted, targeted rows are descriptive,
+  and the blank 150-row venue displays an explicit awaiting-labels state.

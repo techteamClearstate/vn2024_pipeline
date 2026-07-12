@@ -181,6 +181,13 @@ enabled gate, keeps S13 coverage gaps locked, and can copy/download an
 adjudication-request note. This is a discussion aid only: an insight becomes a
 production change only through Approve → Ingest → Rerun & verify above.
 
+Precision measurement was scaffolded on 2026-07-12. Business labels from the
+governed 150-row workbook are validated/ingested by
+`tools/ingest_precision_labels.py`; the dashboard reports the stratified-random
+sample as a design-weighted estimate with 95% intervals and keeps targeted rows
+separate as diagnostics. The current workbook contains 0/150 labels, so no
+measured precision claim is made yet and no production route is changed.
+
 Supporting channels:
 
 - **Fuzzy family evidence** (2026-07-08): rapidfuzz Levenshtein over master

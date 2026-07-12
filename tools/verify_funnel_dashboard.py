@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 from build_funnel_dashboard import GATES, _gate_bit_case, _gate_case, _secondary_bit_case
+from precision_measurement import RANDOM_SAMPLE, TARGETED_SAMPLE, build_measured_accuracy
 
 REPO = Path(__file__).resolve().parents[1]
 DEFAULT_RUN = "20260710_recall_audit_v2"
@@ -108,6 +109,33 @@ def main() -> int:
     cur = con.cursor()
 
     file_ids = [f["id"] for f in data["files"]]
+
+    # --- measured accuracy: sample design and labels -----------------------
+    accuracy = data.get("measured_accuracy", {})
+    check(accuracy == build_measured_accuracy(cur, file_ids),
+          "Measured-accuracy payload exactly matches the review-label authority")
+    sample_counts = q(
+        cur,
+        """SELECT COUNT(*),
+                  SUM(sample_type=?), SUM(sample_type=?),
+                  SUM(CASE WHEN surgical_relevance IS NOT NULL AND TRIM(surgical_relevance)<>'' THEN 1 ELSE 0 END)
+             FROM review_label""",
+        RANDOM_SAMPLE, TARGETED_SAMPLE,
+    )[0]
+    check(int(accuracy.get("sample_rows", -1)) == int(sample_counts[0]),
+          "Measured-accuracy sample count reconciles to review_label")
+    check(int(accuracy.get("random_rows", -1)) == int(sample_counts[1] or 0)
+          and int(accuracy.get("targeted_rows", -1)) == int(sample_counts[2] or 0),
+          "Random and targeted sample populations remain separated")
+    check(int(accuracy.get("labels_entered", -1)) == int(sample_counts[3] or 0),
+          "Entered-label count reconciles to review_label")
+    check(set(accuracy.get("by_scope", {})) == {"ALL", *file_ids},
+          "Measured accuracy covers combined and every file scope")
+    targeted_rows = [row for scope in accuracy.get("by_scope", {}).values()
+                     for row in scope.get("targeted", [])]
+    check(all(row[metric]["ci_low"] is None and row[metric]["ci_high"] is None
+              for row in targeted_rows for metric in ("relevance", "mapping", "end_to_end")),
+          "Targeted diagnostics are never presented with population confidence intervals")
 
     for scope in file_ids + ["ALL"]:
         where = "" if scope == "ALL" else " WHERE output_file_id=?"

@@ -208,6 +208,35 @@ function metricSeg(){
     `<button class="${m.i===state.metric?'active':''}" onclick="state.metric=${m.i};render()">${m.label}</button>`).join('')+'</div></div>';
 }
 
+// ---- measured accuracy ---------------------------------------------------
+function rateText(metric,weighted){
+  if(!metric||metric.rate==null)return '<span class="muted">Awaiting labels</span>';
+  const p=(100*metric.rate).toFixed(1)+'%';
+  const ci=weighted&&metric.ci_low!=null?` <span class="muted">(${(100*metric.ci_low).toFixed(1)}–${(100*metric.ci_high).toFixed(1)}% CI)</span>`:'';
+  return `<b>${p}</b>${ci}<br><span class="small muted">${fmtInt(metric.numerator)}/${fmtInt(metric.denominator)} reviewed rows</span>`;
+}
+function accuracyTable(rows,weighted){
+  return `<div class="scroll"><table><thead><tr><th>Output tier</th><th>Judgments entered</th><th>Surgical relevance</th><th>Mapping correct among surgical</th><th>End-to-end acceptable</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.tier)}</b><br><span class="small muted">${fmtInt(r.sample_rows)} sampled</span></td><td>${fmtInt(r.relevance_entered)}/${fmtInt(r.sample_rows)}</td><td>${rateText(r.relevance,weighted)}</td><td>${rateText(r.mapping,weighted)}</td><td>${rateText(r.end_to_end,weighted)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function accuracyPanel(){
+  const A=DATA.measured_accuracy;const S=A.by_scope[state.scope];
+  const headline=A.status==='awaiting_labels'?'Awaiting analyst labels':A.status==='complete'?'Analyst labeling complete':'Analyst labeling in progress';
+  const intro=A.status==='awaiting_labels'
+    ?`The governed workbook is ready, but none of its ${fmtInt(A.sample_rows)} review rows has a business judgment yet. No measured precision claim is shown until analysts enter labels and the governed importer validates them.`
+    :`${fmtInt(A.labels_entered)} of ${fmtInt(A.sample_rows)} rows have a surgical-relevance judgment. Estimates below update only after validated labels are ingested.`;
+  return `<div class="card">
+    <h2>Measured accuracy — ${esc(headline)}</h2>
+    <p>${intro}</p>
+    <div class="note"><b>Business action:</b> label the <code>Review Samples</code> sheet in <code>Prediction_Funnel_and_Review.xlsx</code>. The random sample supports a design-weighted population estimate; targeted examples remain a separate diagnostic and are never blended into it.</div>
+    <h3>Random sample — population estimate</h3>
+    ${accuracyTable(S.random,true)}
+    <details class="examples"><summary>Show targeted diagnostic rows separately</summary>
+      <p class="small muted">${esc(A.method.targeted)}</p>${accuracyTable(S.targeted,false)}
+    </details>
+    <p class="small muted">${esc(A.method.random)} ${esc(A.method.uncertain)}</p>
+  </div>`;
+}
+
 // ---- TAB: overview --------------------------------------------------------
 function renderOverview(){
   const F=DATA.funnel[state.scope]; const tot=F.total;
@@ -254,6 +283,8 @@ function renderOverview(){
     </div>
     <div class="controls" style="margin-top:14px">${scopeSelect()}${metricSeg()}</div>
   </div>
+
+  ${accuracyPanel()}
 
   <div class="card">
     <h2>How to use each bucket</h2>

@@ -56,7 +56,13 @@ All recovery is **review-only**: adjudicate → update `reference/` → rerun �
 For measured precision, business analysts label the 150 rows on the `Review Samples`
 sheet in the governed shared-drive workbook
 `4. Manual Mapped Files/Prediction_Funnel_and_Review.xlsx`. This is the single
-labeling venue; the workbook does not itself change production routing.
+labeling venue; the workbook does not itself change production routing. The current
+workbook has **0/150 labels entered**, so the dashboard says `Awaiting analyst
+labels` rather than inventing an accuracy number. Operators first run
+`python tools/ingest_precision_labels.py --check --workbook "<path>"`, then rerun
+without `--check` and rebuild/verify the dashboard. Random-sample results are
+design-weighted population estimates with 95% intervals; targeted rows stay
+separate as unweighted diagnostics.
 
 ## Explore the gates without changing production
 
@@ -78,7 +84,7 @@ the pipeline, reference files, or published workbooks.
 | [`outputs/20260710_recall_audit_v2/Prediction_Funnel_and_Review.xlsx`](../outputs/20260710_recall_audit_v2/Prediction_Funnel_and_Review.xlsx) | Governed reviewer workbook; its 150-row `Review Samples` sheet is the business-team precision-label venue. |
 | [`RECALL_RECOVERY_ANALYSIS.md`](RECALL_RECOVERY_ANALYSIS.md) | The quantified recall-recovery write-up. |
 | [`RECALL_FUNNEL_DASHBOARD_PLAN.md`](RECALL_FUNNEL_DASHBOARD_PLAN.md) | How it was built + progress log. |
-| `tools/build_funnel_dashboard.py`, `tools/verify_funnel_dashboard.py`, `tools/verify_funnel_dashboard_render.py` | Rebuild (read-only) + verify numbers/examples/masks against SQLite and exercise 1,904 browser states. |
+| `tools/ingest_precision_labels.py`, `tools/build_funnel_dashboard.py`, `tools/verify_funnel_dashboard.py`, `tools/verify_funnel_dashboard_render.py` | Validate/ingest analyst labels, rebuild the read-only dashboard, reconcile numbers/examples/masks/accuracy to SQLite, and exercise browser states. |
 
 **Vocabulary:** OU = Segment · Sub-OU = Sub-segment · Device = Product · ASP = value ÷ volume.
 Every number reconciles to the row-level authority `prediction_audit.sqlite`. This whole layer is

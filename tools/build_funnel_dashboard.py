@@ -37,6 +37,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+from precision_measurement import build_measured_accuracy
+
 REPO = Path(__file__).resolve().parents[1]
 DEFAULT_RUN = "20260710_recall_audit_v2"
 
@@ -787,6 +789,7 @@ def build_data(con: sqlite3.Connection) -> dict:
     cells = _collect_cell_examples(cur)
     _attach_recovery_examples(cur, recovery, file_ids)
     examples = _build_example_store(cur, cells, simulator, recovery)
+    measured_accuracy = build_measured_accuracy(cur, file_ids)
 
     return {
         "generated_at": utc_now(),
@@ -808,6 +811,7 @@ def build_data(con: sqlite3.Connection) -> dict:
         "recovery": recovery,
         "simulator": simulator,
         "examples": examples,
+        "measured_accuracy": measured_accuracy,
         "recovery_meta": {"buckets": RECOVERY_BUCKETS, "order": RECOVERY_ORDER,
                            "s07_classes": S07_CLASSES, "s07_class_order": S07_CLASS_ORDER,
                            "master_available": classify_fn is not None},

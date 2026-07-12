@@ -3,8 +3,8 @@
 > **Audience: AI agents** working in this repository. Read this file first, then
 > load only what the task needs. The improvement roadmap lives in
 > [REFERENCE_COMPLIANCE_PLAN.md](REFERENCE_COMPLIANCE_PLAN.md).
-> Last updated: 2026-07-08 (adjudication loop + fuzzy channel; after the
-> 2026-07-06 six-market batch remap).
+> Last updated: 2026-07-12 (explainability playground + governed precision
+> measurement; production outputs remain the 2026-07-06 six-market batch remap).
 
 ## 1. What this project is
 
@@ -50,6 +50,7 @@ Key vocabulary:
 | `tools/publish_surgical_current_outputs.py` | Publishes `remapped_current` workbooks to the shared delivery folder | yes |
 | `tools/build_adjudication_proposals.py` | **Recall loop step 1**: encodes LLM-adjudicated review-cluster decisions into `Adjudication_Proposals_<Market>_FY<yr>.xlsx` (master-validated; `Approved` column blank for humans) | yes |
 | `tools/apply_review_adjudications.py` | **Recall loop step 2**: ingests `Approved=Y` proposal rows into `reference/` (family_aliases / category_qualifier_map / scope lists), rebuilds reference.sqlite; idempotent | yes |
+| `tools/ingest_precision_labels.py` | Validates and ingests only analyst label fields from the governed 150-row `Review Samples` sheet into the audit SQLite; supports `--check` and idempotent workbook-hash lineage | yes |
 | `tools/*.py` (others) | Benchmarks, diagnostics, precision spot-checks | yes |
 | `10_runs_logs_lineage/agent_runs/` | Per-run agent execution logs (lineage) | append |
 | `90_archive_deprecated/` | Archived experiments (e.g. vector auto-mapping) + input snapshots | move, never delete |
@@ -291,9 +292,31 @@ Run outputs are written beneath `outputs/<run_id>/`:
   review-only — use the playground's copy/download note to document a concern,
   review `Recall_Recovery_Proposals.xlsx`, then feed accepted decisions through
   the adjudication loop and rerun.
+  The Overview also contains a **Measured accuracy** panel. It reports the
+  deterministic stratified-random sample as a design-weighted population estimate
+  with 95% intervals and keeps purposeful targeted rows separate as unweighted
+  diagnostics. Blank/Uncertain judgments are excluded from each denominator.
   Note: India FY2025 attributes held-back rows at terminal routing (Unmapped /
   manufacturer-only) rather than Reference validation because its CSV source lacks
   reference-status columns; compare markets one at a time for the cleanest read.
+
+Precision-label workflow (review-only):
+
+```bash
+# Validate the shared-drive workbook without changing SQLite.
+PYTHONIOENCODING=utf-8 python tools/ingest_precision_labels.py --check --workbook "<shared-drive>/4. Manual Mapped Files/Prediction_Funnel_and_Review.xlsx"
+
+# After validation passes, ingest label fields; then rebuild and verify the panel.
+PYTHONIOENCODING=utf-8 python tools/ingest_precision_labels.py --workbook "<shared-drive>/4. Manual Mapped Files/Prediction_Funnel_and_Review.xlsx"
+PYTHONIOENCODING=utf-8 python tools/build_funnel_dashboard.py
+PYTHONIOENCODING=utf-8 python tools/verify_funnel_dashboard.py
+```
+
+The importer never edits production workbooks, routing, references, reviewer
+disposition, proposed outcomes, or adjudication fields. An active label row must
+have reviewer/date; surgical rows need a mapping judgment, and an Incorrect
+mapping needs a correction plus rationale. The current published workbook starts
+with 0/150 labels entered, so the panel honestly shows `Awaiting analyst labels`.
 
 Never edit a generated report to alter pipeline truth. Preserve source-row IDs,
 keep `<Unmapped>` distinct from a genuine `Unspecified` mapping, keep Review
