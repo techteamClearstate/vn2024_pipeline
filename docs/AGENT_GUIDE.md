@@ -49,7 +49,8 @@ Key vocabulary:
 | `tools/vietnam_fy2024_workflow_improvement.py` | Evidence builder + routing library the batch remap imports (product rules, negative rules, fuzzy family channel) | yes |
 | `tools/publish_surgical_current_outputs.py` | Publishes `remapped_current` workbooks to the shared delivery folder | yes |
 | `tools/build_adjudication_proposals.py` | **Recall loop step 1**: encodes LLM-adjudicated review-cluster decisions into `Adjudication_Proposals_<Market>_FY<yr>.xlsx` (master-validated; `Approved` column blank for humans) | yes |
-| `tools/apply_review_adjudications.py` | **Recall loop step 2**: ingests `Approved=Y` proposal rows into `reference/` (family_aliases / category_qualifier_map / scope lists), rebuilds reference.sqlite; idempotent | yes |
+| `tools/apply_review_adjudications.py` | **Recall loop step 2**: ingests `Approved=Y` rows from either `Adjudication_Proposals` or `Recovery_Proposals`; `--check-pending` validates every unapproved row without writes; application is atomic/fail-closed | yes |
+| `tools/verify_recall_recovery_proposals.py` | Verifies recovery-workbook schema, blank approvals, full master-key resolution, and all-row ingestion preflight without writes | yes |
 | `tools/ingest_precision_labels.py` | Validates and ingests only analyst label fields from the governed 150-row `Review Samples` sheet into the audit SQLite; supports `--check` and idempotent workbook-hash lineage | yes |
 | `tools/*.py` (others) | Benchmarks, diagnostics, precision spot-checks | yes |
 | `10_runs_logs_lineage/agent_runs/` | Per-run agent execution logs (lineage) | append |
@@ -111,6 +112,11 @@ PYTHONIOENCODING=utf-8 python tools/build_adjudication_proposals.py --market Pak
 #   ... human sets Approved=Y in outputs/remapped_current/reports/Adjudication_Proposals_*.xlsx ...
 PYTHONIOENCODING=utf-8 python tools/apply_review_adjudications.py          # writes reference/, rebuilds sqlite
 #   then rerun affected markets end-to-end + remap + qc_check
+
+# recovery-workbook publication/readiness check (checks blank and pending rows; never writes)
+PYTHONIOENCODING=utf-8 python tools/verify_recall_recovery_proposals.py "<path>/Recall_Recovery_Proposals.xlsx"
+# equivalent generic preflight for either supported proposal-sheet schema
+PYTHONIOENCODING=utf-8 python tools/apply_review_adjudications.py --proposals "<path>/Recall_Recovery_Proposals.xlsx" --check-pending --no-shared-log
 ```
 
 - **Market order matters: PK → India → VN LAST** (the VN run rebuilds
@@ -292,6 +298,10 @@ Run outputs are written beneath `outputs/<run_id>/`:
   review-only — use the playground's copy/download note to document a concern,
   review `Recall_Recovery_Proposals.xlsx`, then feed accepted decisions through
   the adjudication loop and rerun.
+  Audit-v3 recovery proposals require each recognised family to resolve to one
+  unique canonical master 5-key (not merely one category). The 2026-07-12 v3
+  workbook contains 240 review clusters / about $178M, all approvals blank; its
+  all-row ingestion preflight resolves 133 unique aliases with zero errors.
   The Overview also contains a **Measured accuracy** panel. It reports the
   deterministic stratified-random sample as a design-weighted population estimate
   with 95% intervals and keeps purposeful targeted rows separate as unweighted

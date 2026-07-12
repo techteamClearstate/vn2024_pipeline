@@ -106,6 +106,7 @@ Published the corrected review-only artifacts to
 `G:\...\6. Workflow\Surgicals\Claude code\` (additive — nothing overwritten or archived):
 `2. Interactive Dashboard/` gained `Recall_Funnel_Dashboard.html`, `Recall_Recovery_Candidates.csv`,
 `Recall_Recovery_Proposals.xlsx`, `Surgical_Mapping_Workflow_Guide.html`; `5. Documentation/` gained
+
 `RECALL_FUNNEL_README.md`, `RECALL_RECOVERY_ANALYSIS.md`. Updated `DATA_UPDATES_LOG.md` (2026-07-12
 review-only entry), `index.html` (new review-only section + links), `README.md`, and `OUTPUT_TRACKER.md`.
 All labeled clearly as a read-only analysis layer that changes no mapped workbook, trusted dashboard, or
@@ -122,3 +123,15 @@ QC PASS/WARN/FAIL conditional formatting, atomic replace, and the 100 MB ceiling
 144,478-row Removal Cube. **FULL `verify_prediction_audit.py` = PASS** (db + workbook + html); workbook
 sheet names/order match `EXPECTED_SHEETS` exactly. The old `.mjs` is retired/unused. Not auto-published to
 the shared drive (separate decision — it is the governed reviewer workbook, ~20 MB).
+
+## Addendum 6 — recovery ingestion contract and v3 preflight
+
+The published recovery workbook originally used `Recovery_Proposals`, while the
+governed importer only opened `Adjudication_Proposals`. The importer now supports
+both schemas, exposes `--check-pending` to validate every unapproved row without
+writes, and rejects an entire approved batch if any row fails validation. The
+builder now labels a proposal master-validated only when its family resolves to
+one unique full canonical 5-key. Rebuilding against audit v3 produced 240 blank-
+approval clusters across six market-years (~$178M): 133 unique alias additions,
+107 repeated cluster occurrences, and zero preflight errors. This remains a
+review-only opportunity pool; production totals and realized recall are unchanged.

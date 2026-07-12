@@ -167,7 +167,12 @@ the six market-years. The loop that works this down is now built (2026-07-08):
    `scope_keyword_*` lists are picked up by settings automatically); rule
    specs → `Rule_Spec_Backlog.xlsx`; master gaps →
    `Master_Addition_Proposals.xlsx` (analyst-owned master is never edited).
-   Idempotent; rebuilds `reference.sqlite`.
+   Idempotent; rebuilds `reference.sqlite`. It accepts both the standard
+   `Adjudication_Proposals` sheet and the evidence-gated `Recovery_Proposals`
+   sheet. Before review/publish, run `--check-pending` (or
+   `tools/verify_recall_recovery_proposals.py`) to validate every blank pending
+   row without writes. Approved batches are fail-closed: any invalid row aborts
+   all writes rather than partially applying a batch.
 4. **Rerun & verify** — affected markets end-to-end (PK → India → VN last),
    batch remap, `qc_check.py` (the §6 remap anchors must be updated
    deliberately with the intended new trusted counts), held-out eval ≥90/90,
@@ -195,6 +200,14 @@ status in memory. This moves reference failures from terminal S13 attribution to
 S07 while leaving genuine coverage gaps at S13. It is an audit-only explanation
 fix: the production source, mapped fields, QA status, and final output tiers are
 unchanged, so it does not count as realized recall improvement.
+
+The audit-v3 S07 recovery worklist was tightened on 2026-07-12 so
+`Master_Validated=Y` requires exactly one full canonical master 5-key. The rebuilt
+workbook covers 240 top review clusters / about $178M across all six market-years;
+all approvals remain blank and its governed all-row ingestion preflight reports
+133 unique aliases, 107 repeated cluster occurrences, and zero resolution errors.
+This is an expanded, executable opportunity set—not realized recall—until analysts
+approve rows and the governed rerun/re-audit measures actual tier movement.
 
 Supporting channels:
 

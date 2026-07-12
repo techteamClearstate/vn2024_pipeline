@@ -4,7 +4,7 @@
 REVIEW-ONLY. This reads the prediction-audit authority + the governed brand master
 and emits a proposals workbook of the safest recall-recovery candidates — rows the
 pipeline held back at Reference validation (S07) whose recognised family maps to
-exactly ONE specific master category. Each proposal names the master category that
+exactly ONE full master 5-key. Each proposal names the canonical master key that
 would let the row become reference-valid, with the ``Approved`` column left blank
 for a human reviewer. Nothing is applied: accepted rows still flow through the normal
 ``apply_review_adjudications.py`` -> reference/ -> governed rerun loop.
@@ -69,29 +69,29 @@ def _family_in_desc(family: str, desc_normed: str) -> bool:
 
 
 def load_clean_family_map(ref_db: Path):
-    """family(norm) -> (segment, sub, product, player) when the family maps to exactly
-    one specific master category and is not a generic/date token."""
+    """Return families that resolve to exactly one canonical master 5-key.
+
+    A unique category is not sufficient for a global family alias: the governed
+    mapping value also contains player and family. Requiring one complete key keeps
+    every generated ``Master_Validated=Y`` proposal ingestible and unambiguous.
+    """
     con = sqlite3.connect(f"file:{ref_db}?mode=ro", uri=True)
-    cats: dict[str, set] = {}
-    players: dict[str, set] = {}
+    keys: dict[str, set] = {}
     try:
         for seg, sub, prod, player, fam in con.execute(
             "SELECT segment, sub_segment, product, player, family_name FROM brand_model_master"
         ):
             nf = _norm(fam)
             if nf:
-                cats.setdefault(nf, set()).add((seg, sub, prod))
-                players.setdefault(nf, set()).add(player)
+                keys.setdefault(nf, set()).add((seg, sub, prod, player, fam))
     finally:
         con.close()
     clean = {}
-    for nf, cs in cats.items():
+    for nf, full_keys in keys.items():
         if nf in GENERIC_TOKENS or nf in MONTHS or len(nf) <= 3:
             continue
-        if len(cs) == 1:
-            seg, sub, prod = next(iter(cs))
-            player = next(iter(players[nf])) if len(players[nf]) == 1 else ""
-            clean[nf] = (seg, sub, prod, player)
+        if len(full_keys) == 1:
+            clean[nf] = next(iter(full_keys))
     return clean
 
 
@@ -155,7 +155,7 @@ def main() -> None:
         items.sort(key=lambda t: -t[2]["ev"][1])
         for mfr, fam, d in items[:args.top]:
             nf = _norm(fam)
-            seg, sub, prod, player = clean[nf]
+            seg, sub, prod, player, canonical_family = clean[nf]
             cov = round(100 * d["ev"][1] / d["tot"][1], 0) if d["tot"][1] else 0
             rows.append({
                 "Market": key[0], "FY": key[1],
@@ -169,11 +169,11 @@ def main() -> None:
                 "Alias_Term": fam,
                 "Target_Table": "family_aliases",
                 "Proposed_Segment": seg, "Proposed_Subsegment": sub,
-                "Proposed_Product": prod, "Proposed_Player": player or mfr,
-                "Proposed_Family": fam,
+                "Proposed_Product": prod, "Proposed_Player": player,
+                "Proposed_Family": canonical_family,
                 "Master_Validated": "Y",
                 "Rationale": ("Held back at Reference validation (S07). The recognised family maps to "
-                              "exactly one specific master category AND appears in the product "
+                              "exactly one full master 5-key AND appears in the product "
                               "description for these %d rows (%.0f%% of the raw cluster), so it is a "
                               "genuine candidate. Verify per row before approving." % (int(d["ev"][0]), cov)),
                 "Evidence_Quote": d["quote"],
@@ -197,7 +197,7 @@ def main() -> None:
     readme = pd.DataFrame({
         "Recall-Recovery Proposals — REVIEW ONLY": [
             "Source: prediction_audit.sqlite (run %s) cross-checked against reference/reference.sqlite." % db.parent.name,
-            "Scope: the safest S07 recall-recovery candidates — recognised family maps to ONE specific master category",
+            "Scope: the safest S07 recall-recovery candidates — recognised family maps to ONE full master 5-key",
             "  AND the family actually appears in the product description (Family_In_Evidence=Y).",
             "Rows whose family is NOT in the description are EXCLUDED: on failed rows the family match is often spurious",
             "  (e.g. a cataract lens tagged 'Trauma Plates And Screws'), which is why S07 correctly held them back.",
