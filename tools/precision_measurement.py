@@ -18,6 +18,8 @@ TARGETED_SAMPLE = "Targeted"
 TIERS = ("Trusted", "Review", "Excluded")
 RELEVANCE_DETERMINATE = {"Surgical", "Not surgical"}
 MAPPING_DETERMINATE = {"Correct", "Incorrect"}
+FOLLOW_UP_TARGET_HALF_WIDTH = 0.05
+FOLLOW_UP_CONFIDENCE = 0.95
 
 
 def _rounded(value: float | None) -> float | None:
@@ -37,6 +39,50 @@ def wilson_interval(successes: float, denominator: float, effective_n: float,
     return max(0.0, centre - spread), min(1.0, centre + spread)
 
 
+def follow_up_sample_decision(rate: float | None, effective_n: float, raw_n: int,
+                              target_half_width: float = FOLLOW_UP_TARGET_HALF_WIDTH
+                              ) -> dict[str, Any]:
+    """Plan follow-up random judgments using a conservative p=0.5 Wilson interval.
+
+    The estimate translates the additional effective sample into actual labels using
+    the observed design effect. It is deliberately withheld until a metric has at
+    least one determinate judgment.
+    """
+    base = {
+        "confidence": FOLLOW_UP_CONFIDENCE,
+        "target_half_width": target_half_width,
+        "current_half_width": None,
+        "required_effective_n": None,
+        "additional_effective_n": None,
+        "estimated_additional_labels": None,
+    }
+    if rate is None or effective_n <= 0 or raw_n <= 0:
+        return {"status": "awaiting_labels", **base}
+
+    low, high = wilson_interval(rate * effective_n, effective_n, effective_n)
+    current_half_width = (high - low) / 2 if low is not None and high is not None else None
+
+    # p=0.5 produces the widest interval and therefore avoids an optimistic plan
+    # when an early observed rate happens to be close to zero or one.
+    required = 1
+    while True:
+        req_low, req_high = wilson_interval(0.5 * required, required, required)
+        if req_low is not None and (req_high - req_low) / 2 <= target_half_width:
+            break
+        required += 1
+    additional_effective = max(0.0, required - effective_n)
+    design_effect = max(1.0, raw_n / effective_n)
+    estimated_labels = math.ceil(additional_effective * design_effect)
+    return {
+        "status": "sufficient" if estimated_labels == 0 else "more_labels_needed",
+        **base,
+        "current_half_width": _rounded(current_half_width),
+        "required_effective_n": required,
+        "additional_effective_n": _rounded(additional_effective),
+        "estimated_additional_labels": estimated_labels,
+    }
+
+
 def _metric(records: Iterable[dict[str, Any]],
             denominator: Callable[[dict[str, Any]], bool],
             success: Callable[[dict[str, Any]], bool], *, weighted: bool) -> dict[str, Any]:
@@ -50,7 +96,7 @@ def _metric(records: Iterable[dict[str, Any]],
     sum_w2 = sum(w * w for w in weights)
     effective_n = (weighted_n * weighted_n / sum_w2) if sum_w2 > 0 else 0.0
     low, high = wilson_interval(weighted_success, weighted_n, effective_n) if weighted else (None, None)
-    return {
+    result = {
         "denominator": raw_n,
         "numerator": raw_success,
         "weighted_denominator": _rounded(weighted_n),
@@ -60,6 +106,10 @@ def _metric(records: Iterable[dict[str, Any]],
         "ci_low": _rounded(low),
         "ci_high": _rounded(high),
     }
+    result["follow_up"] = (
+        follow_up_sample_decision(rate, effective_n, raw_n) if weighted else None
+    )
+    return result
 
 
 def _summary(records: list[dict[str, Any]], *, weighted: bool, tier: str) -> dict[str, Any]:
@@ -152,5 +202,6 @@ def build_measured_accuracy(cur: sqlite3.Cursor, file_ids: list[str]) -> dict[st
             "random": "Design-weighted estimates from the deterministic stratified-random sample; 95% Wilson intervals use the effective sample size.",
             "targeted": "Purposeful diagnostic rows reported separately and unweighted; they are not population estimates.",
             "uncertain": "Blank and Uncertain judgments are excluded from each metric's denominator.",
+            "follow_up": "After labels are entered, each random-sample metric shows a conservative estimate of additional determinate judgments needed for a 95% confidence interval within +/-5 percentage points. It assumes future sampling has the current design effect; targeted rows never drive this decision.",
         },
     }

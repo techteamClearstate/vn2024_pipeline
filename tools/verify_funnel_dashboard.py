@@ -141,6 +141,19 @@ def main() -> int:
     check(all(row[metric]["ci_low"] is None and row[metric]["ci_high"] is None
               for row in targeted_rows for metric in ("relevance", "mapping", "end_to_end")),
           "Targeted diagnostics are never presented with population confidence intervals")
+    check(all(row[metric]["follow_up"] is None
+              for row in targeted_rows for metric in ("relevance", "mapping", "end_to_end")),
+          "Targeted diagnostics never drive follow-up sample-size decisions")
+    random_metrics = [row[metric]
+                      for scope in accuracy.get("by_scope", {}).values()
+                      for row in scope.get("random", [])
+                      for metric in ("relevance", "mapping", "end_to_end")]
+    check(all(metric.get("follow_up", {}).get("status") == "awaiting_labels"
+              for metric in random_metrics if metric.get("rate") is None),
+          "Unlabelled random metrics keep follow-up sampling in awaiting-labels state")
+    check(all(metric.get("follow_up", {}).get("estimated_additional_labels", 0) >= 0
+              for metric in random_metrics if metric.get("rate") is not None),
+          "Labelled random metrics have a non-negative follow-up recommendation")
 
     for scope in file_ids + ["ALL"]:
         where = "" if scope == "ALL" else " WHERE output_file_id=?"

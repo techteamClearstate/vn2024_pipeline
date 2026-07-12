@@ -3,7 +3,7 @@
 > **Audience: AI agents** working in this repository. Read this file first, then
 > load only what the task needs. The improvement roadmap lives in
 > [REFERENCE_COMPLIANCE_PLAN.md](REFERENCE_COMPLIANCE_PLAN.md).
-> Last updated: 2026-07-12 (explainability playground + governed precision
+> Last updated: 2026-07-13 (explainability playground + governed precision
 > measurement; production outputs remain the 2026-07-06 six-market batch remap).
 
 ## 1. What this project is
@@ -312,6 +312,10 @@ Run outputs are written beneath `outputs/<run_id>/`:
   deterministic stratified-random sample as a design-weighted population estimate
   with 95% intervals and keeps purposeful targeted rows separate as unweighted
   diagnostics. Blank/Uncertain judgments are excluded from each denominator.
+  Once determinate random judgments exist, each metric also estimates the
+  additional determinate labels needed for a conservative 95% interval within
+  ±5 percentage points, translating effective sample size through the observed
+  design effect. Targeted rows never drive that recommendation.
   India FY2025's complete CSV source does not carry workbook reference-status
   columns. Audit run `20260712_recall_audit_v3` therefore derives a detailed
   `Master_Validation_Status` from the governed surgical master and a compatible
@@ -340,6 +344,9 @@ disposition, proposed outcomes, or adjudication fields. An active label row must
 have reviewer/date; surgical rows need a mapping judgment, and an Incorrect
 mapping needs a correction plus rationale. The current published workbook starts
 with 0/150 labels entered, so the panel honestly shows `Awaiting analyst labels`.
+The follow-up sample-size decision likewise remains unavailable until valid
+labels exist. Its focused acceptance check is
+`PYTHONIOENCODING=utf-8 python tools/verify_precision_measurement.py`.
 
 Never edit a generated report to alter pipeline truth. Preserve source-row IDs,
 keep `<Unmapped>` distinct from a genuine `Unspecified` mapping, keep Review

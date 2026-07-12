@@ -192,6 +192,11 @@ governed 150-row workbook are validated/ingested by
 sample as a design-weighted estimate with 95% intervals and keeps targeted rows
 separate as diagnostics. The current workbook contains 0/150 labels, so no
 measured precision claim is made yet and no production route is changed.
+On 2026-07-13 the panel gained an automatic, conservative follow-up decision:
+after determinate random labels exist, each metric estimates additional eligible
+judgments required for a 95% interval within ±5 percentage points, adjusted by
+the observed sample design effect. It remains `awaiting_labels` today and never
+uses targeted diagnostic rows for population sample planning.
 
 India FY2025 audit attribution was repaired on 2026-07-12. Because its complete
 CSV cannot carry the workbook-only reference columns, the audit builder now

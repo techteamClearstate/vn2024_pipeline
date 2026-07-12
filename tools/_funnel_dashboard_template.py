@@ -213,7 +213,9 @@ function rateText(metric,weighted){
   if(!metric||metric.rate==null)return '<span class="muted">Awaiting labels</span>';
   const p=(100*metric.rate).toFixed(1)+'%';
   const ci=weighted&&metric.ci_low!=null?` <span class="muted">(${(100*metric.ci_low).toFixed(1)}–${(100*metric.ci_high).toFixed(1)}% CI)</span>`:'';
-  return `<b>${p}</b>${ci}<br><span class="small muted">${fmtInt(metric.numerator)}/${fmtInt(metric.denominator)} reviewed rows</span>`;
+  const f=weighted&&metric.follow_up;
+  const follow=f&&f.status==='more_labels_needed'?`<br><span class="small warn">~${fmtInt(f.estimated_additional_labels)} more determinate random judgments for ±${(100*f.target_half_width).toFixed(0)} pp</span>`:f&&f.status==='sufficient'?`<br><span class="small good">Precision target met</span>`:'';
+  return `<b>${p}</b>${ci}<br><span class="small muted">${fmtInt(metric.numerator)}/${fmtInt(metric.denominator)} reviewed rows</span>${follow}`;
 }
 function accuracyTable(rows,weighted){
   return `<div class="scroll"><table><thead><tr><th>Output tier</th><th>Judgments entered</th><th>Surgical relevance</th><th>Mapping correct among surgical</th><th>End-to-end acceptable</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.tier)}</b><br><span class="small muted">${fmtInt(r.sample_rows)} sampled</span></td><td>${fmtInt(r.relevance_entered)}/${fmtInt(r.sample_rows)}</td><td>${rateText(r.relevance,weighted)}</td><td>${rateText(r.mapping,weighted)}</td><td>${rateText(r.end_to_end,weighted)}</td></tr>`).join('')}</tbody></table></div>`;
@@ -233,7 +235,7 @@ function accuracyPanel(){
     <details class="examples"><summary>Show targeted diagnostic rows separately</summary>
       <p class="small muted">${esc(A.method.targeted)}</p>${accuracyTable(S.targeted,false)}
     </details>
-    <p class="small muted">${esc(A.method.random)} ${esc(A.method.uncertain)}</p>
+    <p class="small muted">${esc(A.method.random)} ${esc(A.method.uncertain)} ${esc(A.method.follow_up)}</p>
   </div>`;
 }
 
