@@ -328,11 +328,25 @@ def verify(database: Path, workbook: Path | None, html_path: Path | None) -> dic
         connection.close()
 
 
+def default_artifact_paths() -> tuple[Path, Path, Path]:
+    """Resolve the current governed run exactly as the report builder does."""
+    config_path = ROOT / "config" / "audit_sources.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    run_id = str(config["run_id"])
+    run_dir = ROOT / "outputs" / run_id
+    return (
+        run_dir / "prediction_audit.sqlite",
+        run_dir / "Prediction_Funnel_and_Review.xlsx",
+        ROOT / "docs" / "Surgical_Mapping_Workflow_Guide.html",
+    )
+
+
 def parse_args() -> argparse.Namespace:
+    default_db, default_workbook, default_html = default_artifact_paths()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--db", type=Path, required=True)
-    parser.add_argument("--workbook", type=Path)
-    parser.add_argument("--html", type=Path)
+    parser.add_argument("--db", type=Path, default=default_db)
+    parser.add_argument("--workbook", type=Path, default=default_workbook)
+    parser.add_argument("--html", type=Path, default=default_html)
     parser.add_argument("--compare-db", type=Path, help="Second full rebuild; logical hashes must match.")
     parser.add_argument("--json", type=Path, help="Optional path for the verification result.")
     return parser.parse_args()

@@ -178,6 +178,11 @@ independently QC'd. The business-explainability playground is also delivered. Ne
 business analysts reviewing `Recall_Recovery_Proposals.xlsx`/S12 candidates and the 150-row precision
 sample; no simulated result is a production decision.
 
+`Recall_Recovery_Candidates.csv` is intentionally ranked rather than exhaustive: the combined S12
+section contains the top 15 families (~$45.3M), while the dashboard quantifies and explains the full
+reference-valid S12 opportunity (~$60M). Analysts should treat the CSV as a prioritization queue, not
+as proof that every candidate has been reviewed.
+
 ## Design notes
 
 - Self-contained HTML: all data embedded as JSON, vanilla JS, no external fetches (works from the

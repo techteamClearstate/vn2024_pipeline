@@ -51,3 +51,19 @@ The governed `Prediction_Funnel_and_Review.xlsx` was also published additively t
 `4. Manual Mapped Files/` as the business-team venue for the 150-row Track C precision sample.
 Its 20,689,362-byte shared-drive copy matches the local artifact exactly at SHA-256
 `A40D3CC1E8AA205542D930EC796C6EF3E32DF1FFD7FAE7CC8093BD11E473A5CB`.
+
+## Completion audit addendum (2026-07-12)
+
+- Rebuilt and verified the current v3 dashboard authority: **107/107 checks passed**; the headless
+  harness passed **1,904/1,904 states** across all tabs, scopes, gate masks, desktop, and mobile with
+  zero JavaScript errors. The examples payload is 529,110 bytes, below the 600 KB budget.
+- Verified the published shared-drive dashboard independently with the same acceptance harness; all
+  checks and render states passed. The shared reviewer workbook also passes check-only ingestion with
+  150/150 expected sample identities and 0/150 analyst labels.
+- Corrected a runbook/CLI mismatch in `tools/verify_prediction_audit.py`: the documented no-argument
+  command now resolves the active audit database, workbook, and guide from `config/audit_sources.json`.
+  `python tools/verify_prediction_audit.py` now passes for `20260712_recall_audit_v3`.
+- Clarified the S12 review boundary: `Recall_Recovery_Candidates.csv` is a ranked prioritization list,
+  not a row-complete export. Its all-market S12 section contains the top 15 families (~$45.3M); the
+  dashboard reports the complete reference-valid S12 pool (~$60M). Any expansion or approval remains
+  governed analyst work and does not change production recall by itself.
