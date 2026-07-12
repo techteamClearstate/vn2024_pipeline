@@ -173,6 +173,14 @@ the six market-years. The loop that works this down is now built (2026-07-08):
    deliberately with the intended new trusted counts), held-out eval ≥90/90,
    then publish per §2.3 of the AGENT_GUIDE.
 
+The analyst-facing explainability layer was upgraded on 2026-07-12. The
+self-contained `Recall_Funnel_Dashboard.html` now exposes concrete examples at
+each blocking step/reason and a review-only seven-gate what-if playground. It
+shows direct simulated releases separately from rows likely held by another
+enabled gate, keeps S13 coverage gaps locked, and can copy/download an
+adjudication-request note. This is a discussion aid only: an insight becomes a
+production change only through Approve → Ingest → Rerun & verify above.
+
 Supporting channels:
 
 - **Fuzzy family evidence** (2026-07-08): rapidfuzz Levenshtein over master

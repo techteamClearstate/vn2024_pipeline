@@ -6,3 +6,6 @@ __pycache__/
 # (untracked in "Refresh surgical remap workflow outputs", a1bd832)
 data/uploads/
 data/intermediate/
+
+# Row-grain audit authorities and their review artifacts are regenerable and can be multi-GB.
+outputs/20260710_recall_audit_v2/

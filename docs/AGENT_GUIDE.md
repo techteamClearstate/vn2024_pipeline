@@ -73,15 +73,16 @@ Key vocabulary:
 
 ### 2.3 Stakeholder delivery folder (shared drive — publish here, not just the repo)
 
-`G:\Shared drives\New EIU Gateway\0. Gateway Ops & Databases\Import Data Master\6. Workflow\Surgicals\Claude code\`
-(bash: `/g/共享云端硬盘/New EIU Gateway/0. Gateway Ops & Databases/Import Data Master/6. Workflow/Surgicals/Claude code/`)
+`G:\共享云端硬盘\New EIU Gateway\0. Gateway Ops & Databases\Import Data Master\6. Workflow\Surgicals\Claude code\`
+(Google Drive may display the first folder as `Shared drives` on an English-localized mount;
+bash: `/g/共享云端硬盘/New EIU Gateway/0. Gateway Ops & Databases/Import Data Master/6. Workflow/Surgicals/Claude code/`)
 
 | Subfolder | Contents |
 |---|---|
 | `1. Mapped Results/` | The 6 deliverable workbooks (`<Market>_FY<yr>_ML_Map_Mapped.xlsx`) + `Pakistan_FY2024_DQ_Compliance_Report.xlsx` |
-| `2. Interactive Dashboard/` | `Dashboard.html` + methodology (keep together) |
+| `2. Interactive Dashboard/` | Production `Dashboard.html` + methodology; review-only recall funnel, workflow guide and recovery worklists (keep each linked set together) |
 | `3. Reference Brand Lists/` | Master brand list copies |
-| `4. Manual Mapped Files/` | Analyst-built comparison workbooks |
+| `4. Manual Mapped Files/` | Analyst-built comparison workbooks + the governed `Prediction_Funnel_and_Review.xlsx` labeling venue |
 | `5. Documentation/` | `DATA_UPDATES_LOG.md` (changelog — UPDATE ON EVERY PUBLISH), `OUTPUT_TRACKER.md` (per-market bounds), `DATA_LINEAGE.md`, `FOLDER_GUIDE.md` |
 | `9. Archive/` | Superseded files — move, never delete |
 | root | `index.html` (nav portal — update its table/bars on publish) + `README.md` |
@@ -221,3 +222,89 @@ FY2024's top clusters (75.8% of its review value) are already adjudicated in
    `index.html`/`README.md` tables on every publish.
 7. Keep this guide and the plan document current when the workflow changes —
    they are the durable knowledge base for future agents.
+
+## 7. Recall audit and reporting layer (review-only)
+
+The prediction audit is a governed, read-only reporting layer over the six
+current mapped outputs. It does **not** change production mappings, routing,
+trusted-status logic, reference lists, or published workbooks. Its authority is
+the row-grain SQLite database; the Excel workbook and HTML guide are generated
+views for reviewers and operators.
+
+```bash
+# 1. Build the complete row/stage authority atomically.
+PYTHONIOENCODING=utf-8 python tools/build_prediction_audit.py
+
+# 2. Generate the reviewer workbook and canonical HTML from that authority.
+PYTHONIOENCODING=utf-8 python tools/build_prediction_audit_reports.py
+
+# 3. Run all acceptance checks. Add --compare-db after a second full build.
+PYTHONIOENCODING=utf-8 python tools/verify_prediction_audit.py
+```
+
+Governance inputs are `config/audit_sources.json` and
+`config/prediction_rule_registry.json`. The registry is the sole definition of
+ordered stages, rule IDs, primary/additive reasons, secondary/non-additive
+reasons, terminal decisions, and presentation-only logic. The audit builder
+rejects partial source inputs and any configured row cap. India FY2025 must use
+the complete CSV source because its complete population cannot fit in one Excel
+worksheet.
+
+Run outputs are written beneath `outputs/<run_id>/`:
+
+- `prediction_audit.sqlite` — complete authority at stable key
+  `(run_id, output_file_id, source_row_id)`, including raw/parsed value and
+  volume, every applicable stage state, rule hits, review sample, recall-risk
+  inventory, reconciliation, lineage, and artifact hashes.
+- `Prediction_Funnel_and_Review.xlsx` — bounded reviewer view with exactly
+  seven governed tabs. Reviewer labels are independent of pipeline decisions;
+  proposed outcomes are shadow recommendations only. Built by a pure-Python
+  openpyxl builder (`tools/_prediction_audit_workbook.py`) — no external Node/Excel
+  runtime (the old `tools/build_prediction_audit_workbook.mjs` is retired/unused).
+  Publish the verified workbook to shared-drive `4. Manual Mapped Files/` so the
+  business team has one governed venue for the 150-row precision-label sample;
+  analyst labels must still be ingested through the governed review tooling.
+- The canonical operator narrative is rebuilt at
+  `docs/Surgical_Mapping_Workflow_Guide.html` from the same registry and SQLite
+  authority.
+- `Recall_Funnel_Dashboard.html` — a **self-contained** plain-language funnel &
+  recall dashboard (Overview, step-by-step kept-vs-lost funnel, breakdown explorer
+  by File/OU=Segment/Sub-OU=Sub-segment/Device=Product/Family/Manufacturer and
+  Value/Volume/ASP bands, recall-hotspot "which steps hurt most" analysis, a
+  confidence-rated recovery-options view, per-step plain-language cards, glossary,
+  and a review-only **What-if playground**). Every removal step, hotspot reason,
+  and recovery cluster can expand concrete authority-row examples. The playground
+  toggles seven real gates in-browser and uses exact pre-aggregated primary-gate ×
+  secondary-gate-mask groups to show direct releases versus rows likely still held
+  by another enabled gate. S13 coverage gaps are shown but deliberately cannot be
+  toggled; no toggle changes production or models downstream recovery dynamics.
+  Built by `tools/build_funnel_dashboard.py` (+ `tools/_funnel_dashboard_template.py`),
+  a **read-only** reader of the SQLite authority — it never writes the sqlite or
+  changes production. The additive funnel groups `row_fact` by
+  `removal_stage_id` + `primary_reason` (each row attributed once). Verify with
+  `tools/verify_funnel_dashboard.py` (reconciles every scope, simulator group, and
+  example to the authority; asserts no external network references; then invokes
+  `tools/verify_funnel_dashboard_render.py` across all tabs, scopes, 128 toggle
+  masks, desktop, and mobile). Rebuild + verify:
+  `python tools/build_funnel_dashboard.py && python tools/verify_funnel_dashboard.py`.
+  Plan/roadmap: `docs/RECALL_FUNNEL_DASHBOARD_PLAN.md`. Recovery guidance is
+  review-only — use the playground's copy/download note to document a concern,
+  review `Recall_Recovery_Proposals.xlsx`, then feed accepted decisions through
+  the adjudication loop and rerun.
+  Note: India FY2025 attributes held-back rows at terminal routing (Unmapped /
+  manufacturer-only) rather than Reference validation because its CSV source lacks
+  reference-status columns; compare markets one at a time for the cleanest read.
+
+Never edit a generated report to alter pipeline truth. Preserve source-row IDs,
+keep `<Unmapped>` distinct from a genuine `Unspecified` mapping, keep Review
+separate from Excluded, and use primary reasons for additive reconciliation.
+Secondary reasons may overlap and must never be summed as removals. Any accepted
+review decision belongs in the normal adjudication/reference workflow above,
+followed by a governed production rerun; the audit itself remains review-only.
+
+Each published audit run must have a record under
+`10_runs_logs_lineage/agent_runs/` containing configuration and source hashes,
+commands, six-file row/value/volume reconciliation, deterministic rebuild
+results, artifact hashes, independent-QC findings and owner responses, fixes,
+and final retest evidence. Publication is complete only when all actionable
+independent-QC findings are closed.
