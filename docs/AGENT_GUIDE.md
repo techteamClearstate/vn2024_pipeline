@@ -302,6 +302,12 @@ Run outputs are written beneath `outputs/<run_id>/`:
   unique canonical master 5-key (not merely one category). The 2026-07-12 v3
   workbook contains 240 review clusters / about $178M, all approvals blank; its
   all-row ingestion preflight resolves 133 unique aliases with zero errors.
+  The same governed workbook now also carries 125 evidence-backed S12
+  `scope_whitelist` clusters / 7,302 rows / $54.3M. These are a conservative
+  subset of the $59.9M reference-valid S12 pool: the validated family must be
+  explicit in the source description. Approval can write only to
+  `surgical_context_whitelist`; the remap guard consumes that governed list and
+  otherwise remains unchanged.
   The Overview also contains a **Measured accuracy** panel. It reports the
   deterministic stratified-random sample as a design-weighted population estimate
   with 95% intervals and keeps purposeful targeted rows separate as unweighted

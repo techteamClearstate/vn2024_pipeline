@@ -183,6 +183,12 @@ section contains the top 15 families (~$45.3M), while the dashboard quantifies a
 reference-valid S12 opportunity (~$60M). Analysts should treat the CSV as a prioritization queue, not
 as proof that every candidate has been reviewed.
 
+The approval-ready recovery workbook now includes a conservative S12 subset:
+125 named-family clusters / 7,302 rows / $54.3M where the reference-valid family
+is explicit in the source description. The remaining reference-valid S12 rows
+stay held. Approved S12 rows feed only the governed surgical-context whitelist
+and require the normal end-to-end rerun before any production recall changes.
+
 ## Design notes
 
 - Self-contained HTML: all data embedded as JSON, vanilla JS, no external fetches (works from the

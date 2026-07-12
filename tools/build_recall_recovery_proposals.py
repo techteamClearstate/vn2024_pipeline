@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draft recall-recovery adjudication proposals for the top "Clean" S07 clusters.
+"""Draft governed S07 alias and evidence-backed S12 whitelist proposals.
 
 REVIEW-ONLY. This reads the prediction-audit authority + the governed brand master
 and emits a proposals workbook of the safest recall-recovery candidates — rows the
@@ -183,6 +183,51 @@ def main() -> None:
                 "Approved": "", "Reviewer_Notes": "",
             })
 
+    # S12: propose only reference-valid Review rows where the validated family
+    # is explicitly present in the source description.  The family is escaped
+    # into a phrase regex and approval adds it to the governed surgical-context
+    # whitelist; rows with blank/Unspecified or absent family evidence stay held.
+    s12 = defaultdict(lambda: {"rows": 0, "value": 0.0, "quote": "", "quote_v": -1.0})
+    for country, fy, mfr, fam, desc, val in cur.execute(
+        """
+        SELECT country, fiscal_year, manufacturer, family, detailed_product, value_usd
+        FROM row_fact
+        WHERE removal_stage_id='S12_REMAP_GUARDS'
+          AND output_tier='Review' AND LOWER(reference_status)='valid'
+        """
+    ):
+        nf = _norm(fam)
+        if not nf or nf in {"unspecified", "(unspecified)"} or not _family_in_desc(fam, _desc_norm(desc)):
+            continue
+        d = s12[(country, fy, mfr, fam)]
+        v = float(val or 0.0)
+        d["rows"] += 1; d["value"] += v
+        if v > d["quote_v"]:
+            d["quote_v"], d["quote"] = v, (desc or "")[:180]
+    for (country, fy, mfr, fam), d in sorted(s12.items(), key=lambda kv: -kv[1]["value"]):
+        phrase_rx = r"\\b" + r"\\s+".join(re.escape(w) for w in _norm(fam).split()) + r"\\b"
+        rows.append({
+            "Market": country, "FY": fy,
+            "Cluster_QA_Status": "Review - ophthalmic/imaging guard",
+            "Cluster_HS4": "", "Cluster_Manufacturer": mfr,
+            "Cluster_Family": fam, "Cluster_Rows": d["rows"],
+            "Cluster_Value_USD": round(d["value"], 2),
+            "Family_In_Evidence": "Y", "Evidence_Coverage_Pct": 100,
+            "Decision": "PROPOSE governed S12 scope-whitelist exception",
+            "Proposal_Type": "scope_whitelist", "Alias_Term": phrase_rx,
+            "Target_Table": "surgical_context_whitelist",
+            "Proposed_Segment": "", "Proposed_Subsegment": "",
+            "Proposed_Product": "", "Proposed_Player": mfr,
+            "Proposed_Family": fam, "Master_Validated": "Y",
+            "Rationale": ("Reference-valid product held at S12; its validated family appears "
+                          "in every proposed source description. Approval suppresses only the "
+                          "final ophthalmic/imaging guard when this phrase is present."),
+            "Evidence_Quote": d["quote"],
+            "Reviewer_Guidance": ("Approve only if this named family is genuinely surgical in "
+                                  "the shown context. Production changes only after governed rerun."),
+            "Approved": "", "Reviewer_Notes": "",
+        })
+
     props = pd.DataFrame(rows, columns=PROPOSAL_COLUMNS)
     # Summary per market
     if len(props):
@@ -204,6 +249,7 @@ def main() -> None:
             "Cluster_Rows / Cluster_Value_USD count only the evidenced rows; Evidence_Coverage_Pct is their share of the raw cluster.",
             "NOTHING is applied. The Approved column is blank; a human reviewer sets Approved=Y only after checking each in context.",
             "Accepted rows flow through the normal apply_review_adjudications.py -> reference/ -> governed rerun loop.",
+            "S12 proposals include only reference-valid Review rows whose family is explicit in the source description; the remainder stays held.",
         ]
     })
 

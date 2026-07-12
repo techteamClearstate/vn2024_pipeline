@@ -475,9 +475,16 @@ def detect_march_rule_violation(df: pd.DataFrame, ev: pd.DataFrame) -> pd.Series
 def detect_ophthalmic_imaging_conflict(df: pd.DataFrame, ev: pd.DataFrame) -> pd.Series:
     text = source_text_norm(df, ev)
     negative_group = ev.get("negative_conflict_group", pd.Series("", index=df.index)).astype(str)
-    return regex_contains(text, OPHTHALMIC_IMAGING_RE) | negative_group.str.contains(
+    conflict = regex_contains(text, OPHTHALMIC_IMAGING_RE) | negative_group.str.contains(
         r"ophthalmic|imaging|camera|tomography|diagnostic", case=False, na=False
     )
+    # Approved exceptions live in the governed reference list.  Suppress the
+    # final guard only when the source description itself contains an approved
+    # surgical context; mapped Family/Manufacturer fields are never sufficient.
+    whitelist = pd.Series(False, index=df.index)
+    for pattern in wf.rc.SURGICAL_CONTEXT_WHITELIST:
+        whitelist |= regex_contains(text, pattern)
+    return conflict & ~whitelist
 
 
 def detect_independent_surgical_signal(df: pd.DataFrame, ev: pd.DataFrame) -> pd.Series:

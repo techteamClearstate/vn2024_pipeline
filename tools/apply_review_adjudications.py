@@ -13,6 +13,8 @@ governed destination:
   scope_term             -> reference/term_lists.csv     (list from Target_Table;
                             a new scope_keyword_* list also gets a list_catalog
                             row and is picked up by settings automatically)
+  scope_whitelist        -> reference/term_lists.csv     list must be exactly
+                            surgical_context_whitelist (fail-closed)
   disambiguation_rule    -> outputs/remapped_current/reports/Rule_Spec_Backlog.xlsx
                             (documented spec backlog; rules are implemented in
                             code/config deliberately, never auto-applied)
@@ -173,7 +175,8 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
     selected = props if check_pending else approved
     stats = {"approved": len(approved), "checked": len(selected),
              "family_alias": 0, "category_alias": 0,
-             "scope_term": 0, "rule_spec": 0, "master_proposal": 0,
+             "scope_term": 0, "scope_whitelist": 0,
+             "rule_spec": 0, "master_proposal": 0,
              "skipped_existing": 0, "errors": 0}
     if selected.empty:
         print("[ingest] no Approved=Y rows found — nothing to do "
@@ -243,11 +246,16 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
                 existing_maps.add(("category_qualifier_map", term))
                 stats["category_alias"] += 1
 
-        elif ptype == "scope_term":
+        elif ptype in ("scope_term", "scope_whitelist"):
             list_name = _target_list_name(row["Target_Table"])
             if not list_name:
                 print(f"[ingest] ERROR scope_term row without target list "
                       f"({row['Rationale'][:50]}...) — skipped")
+                stats["errors"] += 1
+                continue
+            if ptype == "scope_whitelist" and list_name != "surgical_context_whitelist":
+                print("[ingest] ERROR scope_whitelist target must be exactly "
+                      "surgical_context_whitelist — skipped")
                 stats["errors"] += 1
                 continue
             if list_name not in existing_lists:
@@ -270,7 +278,7 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
                                       "provider": PROVIDER, "status": "active",
                                       "notes": note})
                 existing_terms.add((list_name, term))
-                stats["scope_term"] += 1
+                stats[ptype] += 1
 
         elif ptype == "disambiguation_rule":
             rule_specs.append({
@@ -303,6 +311,7 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
           f"family_alias={stats['family_alias']} "
           f"category_alias={stats['category_alias']} "
           f"scope_term={stats['scope_term']} rule_spec={stats['rule_spec']} "
+          f"scope_whitelist={stats['scope_whitelist']} "
           f"master_proposal={stats['master_proposal']} "
           f"skipped_existing={stats['skipped_existing']} "
           f"errors={stats['errors']}")
@@ -359,6 +368,7 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
                 f"{stats['family_alias']} family aliases, "
                 f"{stats['category_alias']} category aliases, "
                 f"{stats['scope_term']} scope terms, "
+                f"{stats['scope_whitelist']} scope whitelist terms, "
                 f"{stats['rule_spec']} rule specs, "
                 f"{stats['master_proposal']} master proposals."),
         }])
