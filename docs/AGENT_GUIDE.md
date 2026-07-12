@@ -50,7 +50,7 @@ Key vocabulary:
 | `tools/publish_surgical_current_outputs.py` | Publishes `remapped_current` workbooks to the shared delivery folder | yes |
 | `tools/build_adjudication_proposals.py` | **Recall loop step 1**: encodes LLM-adjudicated review-cluster decisions into `Adjudication_Proposals_<Market>_FY<yr>.xlsx` (master-validated; `Approved` column blank for humans) | yes |
 | `tools/apply_review_adjudications.py` | **Recall loop step 2**: ingests `Approved=Y` rows from either `Adjudication_Proposals` or `Recovery_Proposals`; `--check-pending` validates every unapproved row without writes; application is atomic/fail-closed | yes |
-| `tools/verify_recall_recovery_proposals.py` | Verifies recovery-workbook schema, blank approvals, full master-key resolution, and all-row ingestion preflight without writes | yes |
+| `tools/verify_recall_recovery_proposals.py` | Verifies recovery-workbook schema, blank approvals, full master-key resolution, all-row ingestion preflight, and exact S12 cluster/value/evidence/regex reconciliation to the audit authority without writes | yes |
 | `tools/ingest_precision_labels.py` | Validates and ingests only analyst label fields from the governed 150-row `Review Samples` sheet into the audit SQLite; supports `--check` and idempotent workbook-hash lineage | yes |
 | `tools/*.py` (others) | Benchmarks, diagnostics, precision spot-checks | yes |
 | `10_runs_logs_lineage/agent_runs/` | Per-run agent execution logs (lineage) | append |
@@ -114,7 +114,7 @@ PYTHONIOENCODING=utf-8 python tools/apply_review_adjudications.py          # wri
 #   then rerun affected markets end-to-end + remap + qc_check
 
 # recovery-workbook publication/readiness check (checks blank and pending rows; never writes)
-PYTHONIOENCODING=utf-8 python tools/verify_recall_recovery_proposals.py "<path>/Recall_Recovery_Proposals.xlsx"
+PYTHONIOENCODING=utf-8 python tools/verify_recall_recovery_proposals.py "<path>/Recall_Recovery_Proposals.xlsx" --db "<audit-run>/prediction_audit.sqlite"
 # equivalent generic preflight for either supported proposal-sheet schema
 PYTHONIOENCODING=utf-8 python tools/apply_review_adjudications.py --proposals "<path>/Recall_Recovery_Proposals.xlsx" --check-pending --no-shared-log
 ```
