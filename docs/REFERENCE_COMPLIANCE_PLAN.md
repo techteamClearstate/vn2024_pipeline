@@ -214,6 +214,14 @@ all approvals remain blank and its governed all-row ingestion preflight reports
 This is an expanded, executable opportunity set—not realized recall—until analysts
 approve rows and the governed rerun/re-audit measures actual tier movement.
 
+On 2026-07-13 a governed HTML results-navigation hub was added under
+`outputs/results_navigation/`. It gives business users a single clickable path through current
+totals, cross-market category comparisons, output tracking, workbook schemas, and a weekend
+quality scorecard. The scorecard explicitly records no realized audit-v2 → v3 recall movement
+(0 rows / $0 / 0 volume), separates the $232.3M pending proposal pool from production results,
+and leaves precision unscored until the 150 analyst labels exist. Its Vietnam benchmark uses
+2024 World Bank population and nominal-GDP data as a sense-check only, not a market forecast.
+
 Supporting channels:
 
 - **Fuzzy family evidence** (2026-07-08): rapidfuzz Levenshtein over master

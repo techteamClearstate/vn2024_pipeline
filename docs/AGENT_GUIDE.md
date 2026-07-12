@@ -370,3 +370,21 @@ lost Trusted rows/value/volume, and attributes each newly Trusted row to its
 baseline blocking stage/reason. It fails closed if populations differ unless the
 change is explicitly acknowledged with `--allow-population-change`. Verify its
 recovery/regression arithmetic with `python tools/verify_prediction_audit_comparison.py`.
+
+Results-navigation hub (read-only):
+
+`tools/build_results_navigation.py` builds `outputs/results_navigation/`, a five-page static
+site covering the current totals, a Vietnam/India/Pakistan macro sense-check, a plain-language
+weekend recall/precision scorecard, exact family/manufacturer/product comparisons, governed
+output links, and the six mapped-workbook schemas. Rebuild and validate it with:
+
+```bash
+python tools/build_results_navigation.py
+python tools/verify_results_navigation.py
+python tools/verify_results_navigation_render.py
+```
+
+The scorecard must keep realized results separate from review opportunities. Audit v2 → v3
+changed 0 Trusted rows / $0 value / 0 volume. The 365 pending proposals cover $232.3M of
+review candidates ($178.0M S07 plus $54.3M S12), but all approvals are blank. Precision and
+an mAP-like accuracy number remain unavailable while the business workbook has 0/150 labels.
