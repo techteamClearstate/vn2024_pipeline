@@ -159,7 +159,11 @@ the six market-years. The loop that works this down is now built (2026-07-08):
    - 🔲 Vietnam FY2025, India FY2024/25, Pakistan FY2025 + VN FY2024 round 2
      — same procedure (`tools/build_adjudication_proposals.py` holds the
      per-market decision registries).
-2. **Approve** — a human marks `Approved = Y` per proposal row. 🅑
+2. **Approve** — the 2026-07-13 governed batch used two independent LLM reviews,
+   a third cross-review for high-confidence candidates, and fail-closed consensus
+   (both primary reviewers `APPROVE` at ≥0.90) to mark 111 of 365 proposals `Y`.
+   Analysts retain ownership of future batches and may revise or reject these
+   decisions through the same workbook trail. ✅
 3. **Ingest** — `tools/apply_review_adjudications.py` routes approved rows:
    family aliases → `reference/term_mappings.csv` `family_aliases` (merged
    into the Tier-1 lookup by step1); category aliases →
@@ -167,11 +171,67 @@ the six market-years. The loop that works this down is now built (2026-07-08):
    `scope_keyword_*` lists are picked up by settings automatically); rule
    specs → `Rule_Spec_Backlog.xlsx`; master gaps →
    `Master_Addition_Proposals.xlsx` (analyst-owned master is never edited).
-   Idempotent; rebuilds `reference.sqlite`.
+   Idempotent; rebuilds `reference.sqlite`. It accepts both the standard
+   `Adjudication_Proposals` sheet and the evidence-gated `Recovery_Proposals`
+   sheet. Before review/publish, run `--check-pending` (or
+   `tools/verify_recall_recovery_proposals.py`) to validate every blank pending
+   row without writes. Approved batches are fail-closed: any invalid row aborts
+   all writes rather than partially applying a batch.
 4. **Rerun & verify** — affected markets end-to-end (PK → India → VN last),
    batch remap, `qc_check.py` (the §6 remap anchors must be updated
    deliberately with the intended new trusted counts), held-out eval ≥90/90,
    then publish per §2.3 of the AGENT_GUIDE.
+
+The analyst-facing explainability layer was upgraded on 2026-07-12. The
+self-contained `Recall_Funnel_Dashboard.html` now exposes concrete examples at
+each blocking step/reason and a review-only seven-gate what-if playground. It
+shows direct simulated releases separately from rows likely held by another
+enabled gate, keeps S13 coverage gaps locked, and can copy/download an
+adjudication-request note. This is a discussion aid only: an insight becomes a
+production change only through Approve → Ingest → Rerun & verify above.
+
+Precision measurement was scaffolded on 2026-07-12. Business labels from the
+governed 150-row workbook are validated/ingested by
+`tools/ingest_precision_labels.py`; the dashboard reports the stratified-random
+sample as a design-weighted estimate with 95% intervals and keeps targeted rows
+separate as diagnostics. The current workbook contains 0/150 labels, so no
+measured precision claim is made yet and no production route is changed.
+Independent LLM double-review is available as clearly labeled orientation only:
+on the 17-row random Trusted subset it estimates 99.77% precision by rows,
+99.971% by value, and 99.967% by volume, with 82.35% exact reviewer agreement.
+These are not human-verified ground-truth scores.
+On 2026-07-13 the panel gained an automatic, conservative follow-up decision:
+after determinate random labels exist, each metric estimates additional eligible
+judgments required for a 95% interval within ±5 percentage points, adjusted by
+the observed sample design effect. It remains `awaiting_labels` today and never
+uses targeted diagnostic rows for population sample planning.
+
+India FY2025 attribution is now carried by the 2026-07-13 production remap. The
+all-row final Excel output is partitioned across worksheets, reconciles exactly
+to the immutable complete CSV, and carries governed master evidence. Audit v4
+normalizes that evidence to a separate binary gate status, moving invalid tuples
+to S07 while leaving genuine coverage gaps at S13. SQLite remains the internal
+authority for processing and reconciliation; Excel is the final row-level output.
+
+The audit-v3 S07 recovery worklist was tightened on 2026-07-12 so
+`Master_Validated=Y` requires exactly one full canonical master 5-key. On
+2026-07-13, all 365 S07/S12 proposals were reviewed together: consensus approved
+111, held 65, and rejected 189. The approved proposal clusters represented
+$85.514M of candidate value; ingestion added 50 governed family aliases and 44
+scope-whitelist rules, while 17 already-existing entries were skipped safely.
+The six-market rerun and exact audit comparison then measured realized outcomes.
+
+On 2026-07-13 the governed aggregate-only HTML navigation hub moved to
+`outputs/20260713_llm_adjudication/dashboard/site/`. It gives business users a
+single clickable path through totals, cross-market category comparisons, output
+tracking, workbook schemas, and the weekend quality scorecard without exposing
+row-level records. Exact v3 → v4 comparison found 1,623 rows / $8.776M / 218,065
+volume newly Trusted, but a larger India safeguard correction moved 22,660 rows /
+$126.555M / 4.580M volume out of Trusted pending safer validation. Net Trusted
+changed by -21,037 rows / -$117.779M / -4.362M volume: gross recall improved,
+while net coverage fell because defensibility tightened. The Vietnam benchmark
+uses 2025 World Bank population and nominal GDP as a sense-check only, not a
+market forecast.
 
 Supporting channels:
 

@@ -13,6 +13,8 @@ governed destination:
   scope_term             -> reference/term_lists.csv     (list from Target_Table;
                             a new scope_keyword_* list also gets a list_catalog
                             row and is picked up by settings automatically)
+  scope_whitelist        -> reference/term_lists.csv     list must be exactly
+                            surgical_context_whitelist (fail-closed)
   disambiguation_rule    -> outputs/remapped_current/reports/Rule_Spec_Backlog.xlsx
                             (documented spec backlog; rules are implemented in
                             code/config deliberately, never auto-applied)
@@ -28,7 +30,12 @@ pipeline stages must re-run.
 Run:
   PYTHONIOENCODING=utf-8 python tools/apply_review_adjudications.py \
       [--proposals "outputs/remapped_current/reports/Adjudication_Proposals_*.xlsx"] \
-      [--dry-run]
+      [--dry-run] [--check-pending]
+
+Both ``Adjudication_Proposals`` and ``Recovery_Proposals`` workbook schemas are
+accepted. ``--check-pending`` validates every proposal row (including rows whose
+Approved cell is still blank) without writing anything. Application is fail-closed:
+if any Approved=Y row is invalid, the whole batch is rejected before any file write.
 """
 
 from __future__ import annotations
@@ -64,6 +71,31 @@ SHARED_DIR_CANDIDATES = [
 ]
 
 PROVIDER = "adjudication"
+PROPOSAL_SHEETS = ("Adjudication_Proposals", "Recovery_Proposals")
+REQUIRED_COLUMNS = {
+    "Market", "FY", "Cluster_Value_USD", "Proposal_Type", "Alias_Term",
+    "Target_Table", "Proposed_Segment", "Proposed_Subsegment",
+    "Proposed_Product", "Proposed_Player", "Proposed_Family", "Rationale",
+    "Evidence_Quote", "Reviewer_Guidance", "Approved",
+}
+
+
+def _load_proposal_workbook(path: Path) -> pd.DataFrame:
+    """Load either governed proposal-sheet variant and validate its contract."""
+    with pd.ExcelFile(path) as book:
+        sheet = next((name for name in PROPOSAL_SHEETS
+                      if name in book.sheet_names), None)
+        if sheet is None:
+            expected = " or ".join(PROPOSAL_SHEETS)
+            raise ValueError(f"{path.name}: missing {expected} sheet")
+        frame = pd.read_excel(book, sheet_name=sheet, dtype=str)
+    missing = sorted(REQUIRED_COLUMNS - set(frame.columns))
+    if missing:
+        raise ValueError(f"{path.name}/{sheet}: missing required columns: "
+                         + ", ".join(missing))
+    frame["_source"] = path.name
+    frame["_sheet"] = sheet
+    return frame
 
 
 def _read_csv_rows(path: Path) -> tuple[list[str], list[dict]]:
@@ -134,18 +166,19 @@ def _append_workbook(path: Path, sheet: str, frame: pd.DataFrame,
 
 
 def apply(proposal_paths: list[Path], dry_run: bool = False,
-          shared_log: bool = True) -> dict:
+          shared_log: bool = True, check_pending: bool = False) -> dict:
     frames = []
     for p in proposal_paths:
-        df = pd.read_excel(p, sheet_name="Adjudication_Proposals", dtype=str)
-        df["_source"] = p.name
-        frames.append(df)
+        frames.append(_load_proposal_workbook(p))
     props = pd.concat(frames, ignore_index=True).fillna("")
     approved = props[props["Approved"].str.strip().str.upper().eq("Y")]
-    stats = {"approved": len(approved), "family_alias": 0, "category_alias": 0,
-             "scope_term": 0, "rule_spec": 0, "master_proposal": 0,
+    selected = props if check_pending else approved
+    stats = {"approved": len(approved), "checked": len(selected),
+             "family_alias": 0, "category_alias": 0,
+             "scope_term": 0, "scope_whitelist": 0,
+             "rule_spec": 0, "master_proposal": 0,
              "skipped_existing": 0, "errors": 0}
-    if approved.empty:
+    if selected.empty:
         print("[ingest] no Approved=Y rows found — nothing to do "
               f"({len(props)} proposals pending review)")
         return stats
@@ -162,7 +195,7 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
     rule_specs, master_props = [], []
     today = datetime.now().strftime("%Y-%m-%d")
 
-    for _, row in approved.iterrows():
+    for _, row in selected.iterrows():
         note = (f"{row['Market']} FY{row['FY']} adjudication {today}; "
                 f"cluster ${float(row['Cluster_Value_USD'] or 0):,.0f}")
         ptype = row["Proposal_Type"].strip()
@@ -213,11 +246,16 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
                 existing_maps.add(("category_qualifier_map", term))
                 stats["category_alias"] += 1
 
-        elif ptype == "scope_term":
+        elif ptype in ("scope_term", "scope_whitelist"):
             list_name = _target_list_name(row["Target_Table"])
             if not list_name:
                 print(f"[ingest] ERROR scope_term row without target list "
                       f"({row['Rationale'][:50]}...) — skipped")
+                stats["errors"] += 1
+                continue
+            if ptype == "scope_whitelist" and list_name != "surgical_context_whitelist":
+                print("[ingest] ERROR scope_whitelist target must be exactly "
+                      "surgical_context_whitelist — skipped")
                 stats["errors"] += 1
                 continue
             if list_name not in existing_lists:
@@ -240,7 +278,7 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
                                       "provider": PROVIDER, "status": "active",
                                       "notes": note})
                 existing_terms.add((list_name, term))
-                stats["scope_term"] += 1
+                stats[ptype] += 1
 
         elif ptype == "disambiguation_rule":
             rule_specs.append({
@@ -268,15 +306,21 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
             })
             stats["master_proposal"] += 1
 
-    print(f"[ingest] approved={stats['approved']} -> "
+    mode = "checked" if check_pending else "approved"
+    print(f"[ingest] approved={stats['approved']} {mode}={stats['checked']} -> "
           f"family_alias={stats['family_alias']} "
           f"category_alias={stats['category_alias']} "
           f"scope_term={stats['scope_term']} rule_spec={stats['rule_spec']} "
+          f"scope_whitelist={stats['scope_whitelist']} "
           f"master_proposal={stats['master_proposal']} "
           f"skipped_existing={stats['skipped_existing']} "
           f"errors={stats['errors']}")
-    if dry_run:
+    if dry_run or check_pending:
         print("[ingest] dry-run: no files written")
+        return stats
+
+    if stats["errors"]:
+        print("[ingest] ABORTED: invalid approved rows detected; no files written")
         return stats
 
     if new_cat_rows:
@@ -324,6 +368,7 @@ def apply(proposal_paths: list[Path], dry_run: bool = False,
                 f"{stats['family_alias']} family aliases, "
                 f"{stats['category_alias']} category aliases, "
                 f"{stats['scope_term']} scope terms, "
+                f"{stats['scope_whitelist']} scope whitelist terms, "
                 f"{stats['rule_spec']} rule specs, "
                 f"{stats['master_proposal']} master proposals."),
         }])
@@ -344,6 +389,8 @@ def main() -> None:
     ap.add_argument("--proposals", default=DEFAULT_GLOB,
                     help="glob of Adjudication_Proposals workbooks")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--check-pending", action="store_true",
+                    help="validate every row, regardless of Approved, without writes")
     ap.add_argument("--no-shared-log", action="store_true",
                     help="skip the shared-drive MAPPING_IMPROVEMENT_LOG entry")
     args = ap.parse_args()
@@ -351,7 +398,11 @@ def main() -> None:
     if not paths:
         raise SystemExit(f"no proposal workbooks match {args.proposals}")
     print(f"[ingest] reading {len(paths)} proposal workbook(s)")
-    apply(paths, dry_run=args.dry_run, shared_log=not args.no_shared_log)
+    stats = apply(paths, dry_run=args.dry_run,
+                  shared_log=not args.no_shared_log,
+                  check_pending=args.check_pending)
+    if stats["errors"]:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

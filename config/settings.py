@@ -438,6 +438,22 @@ except KeyError:
 # a visible false-positive source (e.g. "mindray animal medical").
 MANUFACTURER_EXCLUDE_CUES = load_set("manufacturer_exclude_cues")
 
+# ── Known-surgical-manufacturer rescue (recall lever, 2026-07-14) ───────────
+# Governed list of surgical makers (master Players + curated alias canonicals).
+# A family row from one of these makers that fails the exact 5-tuple gate is
+# still trusted when its category 3-tuple is master-valid AND (if
+# RESCUE_REQUIRE_EVIDENCE) the family token appears in Detailed_Product; scope
+# cues are also bypassed for reference-valid rows from these makers. Rescued
+# rows are stamped in RESCUE_FLAG_COL for review. MANUFACTURER_RESCUE=False
+# restores the pre-rescue gate exactly.
+MANUFACTURER_RESCUE = True
+try:
+    SURGICAL_MANUFACTURER_RESCUE = load_set("surgical_manufacturer_rescue")
+except KeyError:
+    SURGICAL_MANUFACTURER_RESCUE = set()
+RESCUE_REQUIRE_EVIDENCE = True
+RESCUE_FLAG_COL = "Rescue_Flag"     # "S07" | "S12" | "S07+S12" | ""
+
 # ── Negative-scope exclusion (DQ 2026-07 final-output gate) ─────────────────
 # Out-of-scope categories that still occasionally match a surgical family/category
 # via a generic token. Applied as a FINAL gate (step3.apply_reference_gate) against

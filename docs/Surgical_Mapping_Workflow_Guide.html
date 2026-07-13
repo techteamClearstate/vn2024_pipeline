@@ -1,1329 +1,271 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clearstate Surgical Import Mapping Workflow Guide</title>
-  <style>
-    :root {
-      --navy: #172638;
-      --ink: #243244;
-      --muted: #637083;
-      --line: #d9e1ea;
-      --soft: #f5f7fa;
-      --pale: #eef3f8;
-      --blue: #2e6f95;
-      --teal: #16827a;
-      --green: #2d7d46;
-      --amber: #a86d00;
-      --red: #b3453f;
-      --white: #ffffff;
-      --shadow: 0 12px 34px rgba(23, 38, 56, 0.12);
-      --radius: 8px;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      color: var(--ink);
-      background: #ffffff;
-      font-family: Arial, Helvetica, sans-serif;
-      line-height: 1.5;
-      letter-spacing: 0;
-    }
-
-    a { color: var(--blue); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: rgba(255,255,255,0.96);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(8px);
-    }
-
-    .topbar-inner {
-      max-width: 1240px;
-      margin: 0 auto;
-      min-height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 12px 28px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 240px;
-    }
-
-    .brand img {
-      width: 142px;
-      height: auto;
-      display: block;
-    }
-
-    .brand-title {
-      font-size: 13px;
-      color: var(--muted);
-      border-left: 1px solid var(--line);
-      padding-left: 14px;
-      white-space: nowrap;
-    }
-
-    .nav {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .nav a {
-      padding: 7px 10px;
-      border-radius: 6px;
-      color: var(--ink);
-      font-size: 13px;
-    }
-
-    .nav a:hover { background: var(--pale); text-decoration: none; }
-
-    .hero {
-      background:
-        linear-gradient(90deg, rgba(23,38,56,0.97), rgba(23,38,56,0.88)),
-        repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 34px);
-      color: var(--white);
-      border-bottom: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .hero-inner {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 54px 28px 40px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
-      gap: 34px;
-      align-items: start;
-    }
-
-    .eyebrow {
-      color: #b7d7e8;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
-    h1 {
-      margin: 0 0 18px;
-      font-size: clamp(34px, 4.2vw, 58px);
-      line-height: 1.03;
-      letter-spacing: 0;
-      max-width: 920px;
-    }
-
-    .hero p {
-      margin: 0;
-      color: #d8e6ee;
-      font-size: 18px;
-      max-width: 850px;
-    }
-
-    .hero-panel {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: var(--radius);
-      padding: 18px;
-    }
-
-    .hero-panel h2 {
-      color: #ffffff;
-      margin: 0 0 10px;
-      font-size: 18px;
-    }
-
-    .hero-panel dl {
-      margin: 0;
-      display: grid;
-      grid-template-columns: 122px 1fr;
-      gap: 8px 10px;
-      font-size: 13px;
-    }
-
-    .hero-panel dt { color: #a9c9db; }
-    .hero-panel dd { margin: 0; color: #ffffff; overflow-wrap: anywhere; }
-
-    main {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 30px 28px 70px;
-    }
-
-    section {
-      padding: 34px 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    section:last-child { border-bottom: 0; }
-
-    h2 {
-      margin: 0 0 12px;
-      font-size: 28px;
-      line-height: 1.15;
-      color: var(--navy);
-    }
-
-    h3 {
-      margin: 24px 0 10px;
-      font-size: 18px;
-      color: var(--navy);
-    }
-
-    p { margin: 0 0 14px; }
-
-    .section-lead {
-      color: var(--muted);
-      max-width: 930px;
-      font-size: 16px;
-    }
-
-    .callout {
-      border-left: 4px solid var(--blue);
-      background: var(--pale);
-      padding: 15px 18px;
-      border-radius: 0 var(--radius) var(--radius) 0;
-      margin: 18px 0;
-    }
-
-    .callout strong { color: var(--navy); }
-
-    .grid {
-      display: grid;
-      gap: 16px;
-    }
-
-    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-
-    .card {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 18px;
-      box-shadow: 0 2px 10px rgba(23,38,56,0.04);
-    }
-
-    .card h3, .card h4 {
-      margin-top: 0;
-      color: var(--navy);
-    }
-
-    .card h4 {
-      font-size: 15px;
-      margin-bottom: 8px;
-    }
-
-    .small { font-size: 13px; color: var(--muted); }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      min-height: 22px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      background: var(--pale);
-      color: var(--navy);
-      white-space: nowrap;
-    }
-
-    .pill.good { background: #e8f4ec; color: var(--green); }
-    .pill.review { background: #fff3d9; color: var(--amber); }
-    .pill.stop { background: #fae9e7; color: var(--red); }
-
-    .flow-wrap {
-      margin-top: 22px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
-      gap: 20px;
-      align-items: start;
-    }
-
-    .flow {
-      display: grid;
-      gap: 10px;
-      padding: 16px;
-      background: var(--soft);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-
-    .step {
-      position: relative;
-      display: grid;
-      grid-template-columns: 34px 1fr 18px;
-      gap: 12px;
-      align-items: center;
-      min-height: 62px;
-      padding: 12px;
-      background: #ffffff;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-      text-align: left;
-      width: 100%;
-      color: inherit;
-      font: inherit;
-    }
-
-    .step:hover,
-    .step.active {
-      border-color: var(--blue);
-      box-shadow: var(--shadow);
-      transform: translateY(-1px);
-    }
-
-    .num {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--navy);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .step-title {
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 2px;
-    }
-
-    .step-note {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .chev {
-      color: var(--blue);
-      font-weight: 700;
-    }
-
-    .detail-panel {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 20px;
-      background: #ffffff;
-      box-shadow: var(--shadow);
-      min-height: 420px;
-      position: sticky;
-      top: 88px;
-    }
-
-    .detail-panel h3 {
-      margin-top: 0;
-      font-size: 21px;
-    }
-
-    .detail-panel ul, .detail-panel ol { padding-left: 20px; }
-    .detail-panel li { margin-bottom: 7px; }
-
-    .mini-flow {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
-      gap: 10px;
-      margin: 20px 0;
-      align-items: stretch;
-    }
-
-    .mini-node {
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 14px;
-      min-height: 100px;
-    }
-
-    .mini-node strong {
-      display: block;
-      color: var(--navy);
-      margin-bottom: 6px;
-    }
-
-    .mini-node span {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .table-scroll {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-      margin: 14px 0 4px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 760px;
-      font-size: 13px;
-    }
-
-    th {
-      text-align: left;
-      background: var(--pale);
-      color: var(--navy);
-      border-bottom: 1px solid var(--line);
-      padding: 10px 12px;
-      vertical-align: top;
-    }
-
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--line);
-      vertical-align: top;
-    }
-
-    tr:last-child td { border-bottom: 0; }
-    code {
-      background: #eef3f8;
-      padding: 1px 5px;
-      border-radius: 4px;
-      font-size: 12px;
-      color: #14324a;
-    }
-
-    .metric {
-      border-top: 4px solid var(--blue);
-    }
-
-    .metric strong {
-      display: block;
-      color: var(--navy);
-      font-size: 22px;
-      margin-bottom: 4px;
-    }
-
-    .decision {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 16px;
-    }
-
-    .decision .card { min-height: 240px; }
-
-    .footer {
-      background: var(--navy);
-      color: #d8e6ee;
-      padding: 22px 28px;
-      font-size: 13px;
-    }
-
-    .footer-inner {
-      max-width: 1240px;
-      margin: 0 auto;
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-
-    @media (max-width: 980px) {
-      .hero-inner, .flow-wrap, .grid.two, .grid.three, .grid.four, .decision {
-        grid-template-columns: 1fr;
-      }
-      .detail-panel { position: static; }
-      .mini-flow { grid-template-columns: 1fr; }
-      .nav { justify-content: flex-start; }
-      .topbar-inner { align-items: flex-start; flex-direction: column; }
-      .brand-title { white-space: normal; }
-    }
-
-    @media (max-width: 640px) {
-      .topbar-inner, .hero-inner, main { padding-left: 18px; padding-right: 18px; }
-      h1 { font-size: 34px; }
-      h2 { font-size: 24px; }
-      .hero-panel dl { grid-template-columns: 1fr; }
-      .brand { min-width: 0; flex-wrap: wrap; }
-      .brand img { width: 128px; }
-    }
-  </style>
-</head>
-<body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <img src="data:image/png;base64,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" alt="Clearstate">
-        <div class="brand-title">Surgical import mapping wiki</div>
-      </div>
-      <nav class="nav" aria-label="Guide navigation">
-        <a href="#overview">Overview</a>
-        <a href="#flow">Flow</a>
-        <a href="#references">References</a>
-        <a href="#examples">Examples</a>
-        <a href="#outputs">Outputs</a>
-        <a href="#metrics">Metrics</a>
-        <a href="#governance">Governance</a>
-      </nav>
-    </div>
-  </header>
-
-  <section class="hero">
-    <div class="hero-inner">
-      <div>
-        <div class="eyebrow">Current-release documentation</div>
-        <h1>Surgical Import Mapping Workflow Guide</h1>
-        <p>This wiki explains how the mapping system reads messy customs shipment text, proposes surgical brand and product mappings, validates them against the master surgical reference, and separates dashboard-ready rows from review-only and excluded rows.</p>
-      </div>
-      <aside class="hero-panel" aria-label="Document metadata">
-        <h2>Document Control</h2>
-        <dl>
-          <dt>Folder</dt>
-          <dd>1. Mapped Results</dd>
-          <dt>Countries</dt>
-          <dd>India, Pakistan, Vietnam</dd>
-          <dt>Years</dt>
-          <dd>FY2024, FY2025</dd>
-          <dt>Generated</dt>
-          <dd>2026-07-05 15:52:32</dd>
-          <dt>Status</dt>
-          <dd>Explains current mapping workflow and QA controls</dd>
-        </dl>
-      </aside>
-    </div>
-  </section>
-
-  <main>
-    <section id="overview">
-      <h2>Workflow Overview</h2>
-      <p class="section-lead">The system is designed to mimic how a trained analyst would map import rows: preserve the raw shipment text, search for known manufacturers and product clues, compare possible candidates against the master product list, reject obvious non-surgical rows, and send uncertain surgical-looking rows to review instead of silently excluding them.</p>
-
-      <div class="callout">
-        <strong>Human-like operating principle:</strong> the workflow does not trust one clue by itself. A family/model name, product phrase, manufacturer, HS code, and exclusion screen are considered together. The final dashboard row must be auditable back to evidence in the shipment text and a valid master-reference key.
-      </div>
-
-      <div class="grid four">
-        <div class="card metric">
-          <strong>1</strong>
-          <span>Preserve original text, then normalize for matching.</span>
-        </div>
-        <div class="card metric">
-          <strong>2</strong>
-          <span>Generate multiple candidates using aliases, fuzzy match, TF-IDF, and rules.</span>
-        </div>
-        <div class="card metric">
-          <strong>3</strong>
-          <span>Validate candidates against the latest surgical master list.</span>
-        </div>
-        <div class="card metric">
-          <strong>4</strong>
-          <span>Route rows to Trusted Dashboard, Review Queue, or Excluded/Unmapped.</span>
-        </div>
-      </div>
-
-      <h3>How the workflow behaves like a human analyst</h3>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Human analyst action</th>
-              <th>Workflow equivalent</th>
-              <th>Why it matters</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Read the shipment description in full.</td>
-              <td>Build normalized text from <code>Detailed_Product</code>, importer, exporter, HS code, and existing mapped fields while preserving the original raw fields.</td>
-              <td>Messy customs text often contains the only product clue, but the original wording must remain visible for audit.</td>
-            </tr>
-            <tr>
-              <td>Look for brand, family, and product names.</td>
-              <td>Apply manufacturer aliases, family aliases, product synonyms, abbreviation rules, misspelling variants, and customs phrase rules.</td>
-              <td>Examples include <code>DES</code> as drug-eluting stent, <code>PTCA</code> as angioplasty balloon/catheter context, and <code>cannulae</code>/<code>canula</code> as cannula variants.</td>
-            </tr>
-            <tr>
-              <td>Check whether a product belongs in surgical scope.</td>
-              <td>Use surgical product evidence and exclusion screens for dental, veterinary, cosmetic, lab/IVD, imaging-only, ophthalmic/intraocular, radiotherapy, donation, and non-surgical capital equipment.</td>
-              <td>Rows such as vaccines, refrigerators, ECG machines, CT scanners, and dental-only items must not become surgical dashboard rows.</td>
-            </tr>
-            <tr>
-              <td>Confirm the chosen mapping exists in the master list.</td>
-              <td>Family-tier dashboard rows must match <code>Segment | Sub-segment | Product | Player | Model/ Family Name</code>. Category-tier rows must match <code>Segment | Sub-segment | Product</code>.</td>
-              <td>This prevents fuzzy or semantic matches from inventing unsupported dashboard mappings.</td>
-            </tr>
-            <tr>
-              <td>Flag uncertainty for review.</td>
-              <td>Route generic-token, fuzzy-only, semantic-only, manufacturer-only, extended-HS, and reference-gap rows to <code>Review_Queue</code>.</td>
-              <td>Recall improves because possible surgical rows are captured for review instead of being silently dropped.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="flow">
-      <h2>Visual Workflow</h2>
-      <p class="section-lead">Double-click any step below to view what the workflow does, what evidence is generated, and which output sheets capture the result. The same detail panel also opens with a single click for easier navigation.</p>
-
-      <div class="flow-wrap">
-        <div class="flow" role="list" aria-label="Surgical mapping workflow steps">
-          <button class="step active" data-step="1" role="listitem" type="button">
-            <span class="num">1</span>
-            <span><span class="step-title">Load raw import workbook</span><span class="step-note">Read RawData and preserve original shipment text.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="2" role="listitem" type="button">
-            <span class="num">2</span>
-            <span><span class="step-title">Load surgical reference</span><span class="step-note">Use latest master and strict no-generic reference sheets.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="3" role="listitem" type="button">
-            <span class="num">3</span>
-            <span><span class="step-title">Normalize text</span><span class="step-note">Standardize punctuation, case, spacing, and variants.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="4" role="listitem" type="button">
-            <span class="num">4</span>
-            <span><span class="step-title">Generate candidates</span><span class="step-note">Combine exact, alias, fuzzy, TF-IDF, HS-rule, and semantic retrieval.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="5" role="listitem" type="button">
-            <span class="num">5</span>
-            <span><span class="step-title">Score evidence</span><span class="step-note">Separate product, family, manufacturer, HS, generic, and exclusion evidence.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="6" role="listitem" type="button">
-            <span class="num">6</span>
-            <span><span class="step-title">Validate against master list</span><span class="step-note">Require latest reference keys before dashboard inclusion.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="7" role="listitem" type="button">
-            <span class="num">7</span>
-            <span><span class="step-title">Apply exclusions and conflicts</span><span class="step-note">Screen imaging, lab, dental, veterinary, cosmetic, ophthalmic, and capital equipment.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="8" role="listitem" type="button">
-            <span class="num">8</span>
-            <span><span class="step-title">Route each row</span><span class="step-note">Trusted Dashboard, Review Queue, or Excluded/Unmapped.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="9" role="listitem" type="button">
-            <span class="num">9</span>
-            <span><span class="step-title">Rebuild dashboard</span><span class="step-note">Aggregate trusted rows with numeric quantity and value checks.</span></span>
-            <span class="chev">›</span>
-          </button>
-          <button class="step" data-step="10" role="listitem" type="button">
-            <span class="num">10</span>
-            <span><span class="step-title">QA, log, and learn</span><span class="step-note">Create QA tables, update aliases/rules, and track precision and recall.</span></span>
-            <span class="chev">›</span>
-          </button>
-        </div>
-
-        <aside class="detail-panel" aria-live="polite">
-          <h3 id="detail-title">1. Load raw import workbook</h3>
-          <div id="detail-body"></div>
-        </aside>
-      </div>
-
-      <h3>Candidate-to-routing logic</h3>
-      <div class="mini-flow" aria-label="Candidate routing flowchart">
-        <div class="mini-node"><strong>Raw text</strong><span>Detailed product, importer, exporter, HS code, quantity, value.</span></div>
-        <div class="mini-node"><strong>Candidate set</strong><span>Exact, alias, fuzzy, word/char TF-IDF, semantic, and HS-rule candidates.</span></div>
-        <div class="mini-node"><strong>Evidence scores</strong><span>Product, family, manufacturer, HS, generic-token risk, exclusion conflicts.</span></div>
-        <div class="mini-node"><strong>Master validation</strong><span>Latest family key or category key must pass before trusted inclusion.</span></div>
-        <div class="mini-node"><strong>Routing</strong><span>Trusted, review, or excluded with an auditable reason code.</span></div>
-      </div>
-    </section>
-
-    <section id="references">
-      <h2>Reference Information</h2>
-      <p class="section-lead">The reference list is the authority. Matching tools can suggest candidates, but the final dashboard mapping must validate against the master product list.</p>
-
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Reference source</th>
-              <th>Location</th>
-              <th>How the workflow uses it</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Master surgical brand/model list</td>
-              <td><code>C:\Users\Administrator\Documents\Working Folder\vn2024_pipeline\reference\brand_model\Surg_Brand_model_list_Master_03July26.xlsx</code></td>
-              <td><code>Updated</code> is the full latest surgical reference. It defines valid family-tier and category-tier keys.</td>
-            </tr>
-            <tr>
-              <td>Strict no-generic reference</td>
-              <td>Same workbook, sheet <code>Updated (excl. generic)</code></td>
-              <td>Used to prevent trusted mappings from relying only on generic/common family names such as <code>March</code>, <code>Express</code>, <code>Elite</code>, <code>Target</code>, or <code>Light Source</code>.</td>
-            </tr>
-            <tr>
-              <td>Compiled reference database</td>
-              <td><code>C:\Users\Administrator\Documents\Working Folder\vn2024_pipeline\reference\reference.sqlite</code></td>
-              <td>Reusable local reference store for deterministic matching and audit queries.</td>
-            </tr>
-            <tr>
-              <td>Term lists and mappings</td>
-              <td><code>reference\term_lists.csv</code>, <code>reference\term_mappings.csv</code>, <code>reference\list_catalog.csv</code></td>
-              <td>Source for surgical keywords, exclusion terms, mapping terms, and list catalog metadata.</td>
-            </tr>
-            <tr>
-              <td>Company reference</td>
-              <td><code>reference\companies\List_of_companies_v1.0_Master.xlsx</code></td>
-              <td>Supports manufacturer/player detection and alias learning.</td>
-            </tr>
-            <tr>
-              <td>Run and iteration log</td>
-              <td><code>G:\共享云端硬盘\...\1. Mapped Results\MAPPING_IMPROVEMENT_LOG.xlsx</code></td>
-              <td>Excel log of iterations, timestamps, row/value movement, QA findings, and improvement notes.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="callout">
-        <strong>Reference-compliance rule:</strong> a fuzzy, semantic, or LLM-generated suggestion can help find a candidate, but it cannot become a <code>Trusted_Dashboard</code> row unless the final tuple exists in the latest master reference.
-      </div>
-    </section>
-
-    <section id="examples">
-      <h2>Concrete Mapping Examples</h2>
-      <p class="section-lead">These examples show how the workflow separates strong surgical mappings from review-only and excluded rows.</p>
-
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Example</th>
-              <th>Shipment clues</th>
-              <th>Workflow decision</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Terumo guidewire</td>
-              <td><code>Ni-Ti alloy guide wire</code>, <code>Catheter guide wire set</code>, importer/exporter include Terumo.</td>
-              <td><span class="pill good">Trusted candidate</span></td>
-              <td>Strong product phrase, manufacturer evidence, and a valid master reference tuple such as <code>PVH | Peripheral Vascular | Guidewires | Terumo | Runthrough</code>. If no exclusion conflict appears, this is dashboard-defensible.</td>
-            </tr>
-            <tr>
-              <td>Vicryl surgical sutures</td>
-              <td><code>VICRYL</code>, <code>sterile surgical sutures</code>, Ethicon/J&amp;J terms, HS 3006.</td>
-              <td><span class="pill review">Extended HS review</span></td>
-              <td>The product is surgical-looking, but extended-HS business scope must be decided. The row is isolated in <code>Extended_Surgical_Decision</code> instead of silently excluded.</td>
-            </tr>
-            <tr>
-              <td>Abbott Xience DES</td>
-              <td><code>coronary artery stent</code>, <code>Xience</code>, Abbott terms.</td>
-              <td><span class="pill review">Reference or alias review</span></td>
-              <td>Strong surgical evidence. If the latest master tuple is missing or naming differs, create <code>Reference_Update_Request</code> or <code>Alias_Update_Request</code> rather than forcing an unsupported trusted mapping.</td>
-            </tr>
-            <tr>
-              <td>March token in vaccine text</td>
-              <td><code>Production date: March 2023</code>, vaccine/pharmaceutical language.</td>
-              <td><span class="pill stop">Excluded</span></td>
-              <td><code>March</code> is a generic token. Vaccine/pharma terms are strong negative evidence. The row must not map to APT Medical / March guiding catheters.</td>
-            </tr>
-            <tr>
-              <td>Express in food or non-device text</td>
-              <td><code>YOFLEX EXPRESS</code> or other non-device wording.</td>
-              <td><span class="pill stop">Excluded</span></td>
-              <td><code>Express</code> is a generic token and cannot create a Boston Scientific stent mapping without product and manufacturer support.</td>
-            </tr>
-            <tr>
-              <td>Excimer laser for refractive errors</td>
-              <td>Ophthalmic/refractive laser terms and eye-care company context.</td>
-              <td><span class="pill review">Precision-risk review</span></td>
-              <td>Even if a surgical-looking mapping is possible, ophthalmic or capital-equipment conflicts require review unless the business explicitly approves scope.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>What gets excluded before dashboard inclusion</h3>
-      <div class="grid three">
-        <div class="card">
-          <h4>Non-surgical healthcare scope</h4>
-          <p class="small">Dental-only, veterinary-only, cosmetic/aesthetic-only, lab/IVD-only, ophthalmic/intraocular-only, cochlear/hearing, donation/humanitarian, vaccine/pharmaceutical, and general medical supplies.</p>
-        </div>
-        <div class="card">
-          <h4>Equipment conflicts</h4>
-          <p class="small">CT/MRI, ultrasound machine, angiography machine, ECG machine, defibrillator, refrigerator, body warmer, intraoral scanner, laser/dry imager, linear accelerator, cyclotron, and radiotherapy equipment.</p>
-        </div>
-        <div class="card">
-          <h4>Generic-token traps</h4>
-          <p class="small"><code>March</code>, <code>Express</code>, <code>Target</code>, <code>Elite</code>, <code>Essential</code>, <code>Light Source</code>, <code>Hydra</code>, <code>Zero</code>, <code>Therapy</code>, and similar terms require supporting product and manufacturer evidence.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="outputs">
-      <h2>Output Workbook Structure</h2>
-      <p class="section-lead">Each country-year workbook is organized so dashboard rows, review rows, and excluded rows reconcile back to <code>RawData</code>. The workbook tabs are not interchangeable: some are dashboard outputs, some are review work queues, and some are audit or learning tables that explain why the workflow made each decision.</p>
-
-      <div class="decision">
-        <div class="card">
-          <span class="pill good">Trusted Dashboard</span>
-          <h3>Dashboard-ready rows</h3>
-          <p>Rows with surgical scope, latest reference validation, sufficient product evidence, no strong exclusion conflict, and no generic-token-only trigger.</p>
-          <p class="small">Typical output sheets: <code>Trusted_Dashboard</code>, <code>Dashboard_Rebuild</code>, or country-specific dashboard sheets.</p>
-        </div>
-        <div class="card">
-          <span class="pill review">Review Queue</span>
-          <h3>Captured but unresolved</h3>
-          <p>Surgical-looking rows with weak evidence, extended-HS products, reference gaps, semantic-only matches, fuzzy-only matches, manufacturer-only clues, or conflict terms.</p>
-          <p class="small">Supporting outputs include <code>Candidate_Table</code>, <code>Extended_Surgical_Decision</code>, <code>Reference_Update_Request</code>, and <code>Alias_Update_Request</code>.</p>
-        </div>
-        <div class="card">
-          <span class="pill stop">Excluded / Unmapped</span>
-          <h3>Outside current scope</h3>
-          <p>Rows with no surgical evidence or clear non-surgical evidence and no countervailing surgical signal.</p>
-          <p class="small">The recall-hunting screen checks excluded rows for surgical keywords so high-value surgical rows are not silently missed.</p>
-        </div>
-      </div>
-
-      <h3>How humans should use the output tabs</h3>
-      <p class="section-lead">Start with the validation and metrics tabs, then work from the highest-risk or highest-value review tabs into reusable alias, rule, or reference updates. Do not manually add rows to <code>Trusted_Dashboard</code>; record the correction and rerun the workflow so the evidence and reconciliation remain auditable.</p>
-
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Tab or sheet</th>
-              <th>What it means</th>
-              <th>Primary use case</th>
-              <th>How humans should interact with it</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>RawData</code></td>
-              <td>Original shipment-level source rows with stable <code>UniqueID</code>, product text, importer, exporter, HS code, quantity, and value.</td>
-              <td>Source of truth for reconciliation and audit.</td>
-              <td>Do not edit. Use it to verify the exact customs wording behind any mapping or review decision.</td>
-            </tr>
-            <tr>
-              <td><code>Trusted_Dashboard</code></td>
-              <td>Rows considered dashboard-ready: surgical scope, latest-reference valid, sufficient product evidence, and no unresolved exclusion or generic-token conflict.</td>
-              <td>Trusted row-level surgical mapping for business reporting.</td>
-              <td>Use for reporting. If a row is wrong, log the correction through the review, alias, rule, or reference-update process and rerun; do not hand-edit the trusted output.</td>
-            </tr>
-            <tr>
-              <td><code>Review_Queue</code></td>
-              <td>Surgical-looking or high-value uncertain rows that need human or business review before dashboard inclusion.</td>
-              <td>Manual review workbench for recall improvement.</td>
-              <td>Prioritize high-value rows, repeated clusters, reference gaps, extended-HS products, and generic-token risks. Record the decision and convert repeat patterns into reusable rules.</td>
-            </tr>
-            <tr>
-              <td><code>Excluded_Unmapped</code></td>
-              <td>Rows outside current surgical scope or rows with no enough surgical evidence after screening.</td>
-              <td>Audit of non-dashboard rows and false-negative checks.</td>
-              <td>Usually leave unchanged. Spot-check high-value rows and rows surfaced in surgical-keyword screens before confirming they are truly out of scope.</td>
-            </tr>
-            <tr>
-              <td><code>Dashboard_Rebuild</code></td>
-              <td>Aggregated dashboard view rebuilt from trusted rows after converting quantity and value fields to numeric measures.</td>
-              <td>Dashboard upload, rollup comparison, and final reporting.</td>
-              <td>Use as the reporting aggregate. Do not manually type fixes here; fix the underlying row routing or reference rule and rerun.</td>
-            </tr>
-            <tr>
-              <td><code>Candidate_Table</code></td>
-              <td>All candidate mappings considered for each row, with source method, rank, evidence scores, master-validation status, and routing decision.</td>
-              <td>Explain why the workflow chose, reviewed, or rejected a mapping.</td>
-              <td>Use when a reviewer asks, "Why did this map here?" Compare candidates and evidence before approving an alias or reference change.</td>
-            </tr>
-            <tr>
-              <td><code>Mapping_Decision_Log</code></td>
-              <td>Row-level final decision log with route, reason code, evidence terms, risk flags, and reference status.</td>
-              <td>Audit trail for final routing.</td>
-              <td>Use to trace a row from raw text to final tier. Reviewer corrections should update the decision log or correction tracker, then flow into rules on the next run.</td>
-            </tr>
-            <tr>
-              <td><code>Extended_Surgical_Decision</code></td>
-              <td>Rows that look surgical but sit in extended HS scope, such as sutures, mesh, hemostats, wound-management items, or other products pending scope approval.</td>
-              <td>Business-scope decision table.</td>
-              <td>Decide whether each product family belongs in the dashboard scope. Until approved, keep these rows in review rather than silently excluding them.</td>
-            </tr>
-            <tr>
-              <td><code>Alias_Update_Request</code></td>
-              <td>Suggested manufacturer, family, product, abbreviation, misspelling, and customs-phrase aliases discovered during review.</td>
-              <td>Turn repeated manual corrections into reusable matching knowledge.</td>
-              <td>Approve only aliases with clear evidence. After approval, add them to the maintained alias/rule tables and rerun the workflow.</td>
-            </tr>
-            <tr>
-              <td><code>Reference_Update_Request</code></td>
-              <td>Rows that appear surgical but do not validate against the latest master reference key.</td>
-              <td>Identify master-list gaps or naming conflicts.</td>
-              <td>Send to the master-reference owner. Do not force these rows into <code>Trusted_Dashboard</code> until the master is updated or the row validates to an existing key.</td>
-            </tr>
-            <tr>
-              <td><code>Precision_Risk_Rows</code></td>
-              <td>Rows with trusted or near-trusted mappings that include conflict terms, generic tokens, exclusion patterns, or weak evidence.</td>
-              <td>Quality-control queue for false-positive prevention.</td>
-              <td>Review before release, especially high-value rows. Move unresolved conflicts to <code>Review_Queue</code> or exclusion, unless there is an explicit approved override.</td>
-            </tr>
-            <tr>
-              <td><code>Potential_Missed_Surgical</code></td>
-              <td>Rows not trusted but containing high-signal surgical terms such as endoscopy, catheter, guidewire, stent, cannula, suture, mesh, valve, dialysis, stapler, or clip.</td>
-              <td>Recall-hunting list.</td>
-              <td>Use to find false negatives. Promote rows to review or trusted only when product evidence, master validation, and scope checks support the change.</td>
-            </tr>
-            <tr>
-              <td><code>Excluded_Surgicalish_Screen</code></td>
-              <td>Excluded rows that still contain surgical-looking language.</td>
-              <td>High-sensitivity false-negative audit.</td>
-              <td>Sample high-value and repeated patterns. If a pattern is truly surgical, create an alias, product rule, HS rule, or reference update request.</td>
-            </tr>
-            <tr>
-              <td><code>Review_Queue_Cluster_Summary</code></td>
-              <td>Review rows grouped by normalized phrase, HS code, importer/exporter, manufacturer hints, family hints, value, and repeated pattern.</td>
-              <td>Reduce review burden by reviewing repeated clusters instead of isolated rows.</td>
-              <td>Review the highest-value clusters first. One approved cluster decision can become a reusable rule for many rows.</td>
-            </tr>
-            <tr>
-              <td><code>Specific_Examples</code> or <code>Unresolved_Examples</code></td>
-              <td>Concrete rows or clusters used to explain fixed issues, risky mappings, and remaining decisions.</td>
-              <td>Reviewer training and handoff.</td>
-              <td>Use as examples when explaining the workflow to new reviewers or when deciding whether a rule should be generalized.</td>
-            </tr>
-            <tr>
-              <td><code>Gold_Label_Template</code></td>
-              <td>Human-labeling template with true scope, true mapping, reviewer, review date, confidence, reason, and correction type.</td>
-              <td>Build the ground truth needed to measure real precision and recall.</td>
-              <td>Label priority samples first: precision-risk trusted rows, high-value review rows, extended-HS rows, surgical-keyword excluded rows, and stratified clean trusted rows.</td>
-            </tr>
-            <tr>
-              <td><code>Metrics_Summary</code></td>
-              <td>Row/value split, precision and recall proxies, review burden, high-value unresolved rows, runtime, and cost where applicable.</td>
-              <td>Track whether each iteration improves accuracy and efficiency.</td>
-              <td>Read this before and after each run. A useful run should improve capture recall or review efficiency without breaking trusted validation or precision guardrails.</td>
-            </tr>
-            <tr>
-              <td><code>Validation</code></td>
-              <td>Release gates such as row/value reconciliation, master-reference validation, strict no-generic validation, aggregation checks, and trusted anomaly counts.</td>
-              <td>Go/no-go release control.</td>
-              <td>Do not release if a required check fails. Fix the underlying mapping, reference, or aggregation issue first.</td>
-            </tr>
-            <tr>
-              <td><code>Change_Log</code></td>
-              <td>Iteration timestamp, changed rules, changed aliases, row/value movement, QA results, unresolved issues, and release notes.</td>
-              <td>Version history and audit narrative.</td>
-              <td>Use to understand what changed since the prior run. The shared folder keeps the current version, while historical detail lives in version control and the log.</td>
-            </tr>
-            <tr>
-              <td><code>Experiment_Matrix</code></td>
-              <td>A0-A10 test results for alias expansion, fuzzy matching, TF-IDF, semantic retrieval, evidence scoring, LLM agents, and active learning.</td>
-              <td>Decide which workflow changes to adopt, reject, or test further.</td>
-              <td>Update after controlled tests. Do not adopt a method unless it improves recall or efficiency without unacceptable precision loss.</td>
-            </tr>
-            <tr>
-              <td><code>Evidence_Scoring_Model</code></td>
-              <td>Feature definitions, weights, penalties, thresholds, and routing logic for product, family, manufacturer, HS, TF-IDF, semantic, generic-token, and exclusion evidence.</td>
-              <td>Explain the scoring model behind routing.</td>
-              <td>Use when tuning thresholds or explaining why a row is trusted versus review-only.</td>
-            </tr>
-            <tr>
-              <td><code>Routing_Rules</code></td>
-              <td>Exact rules for <code>Trusted_Dashboard</code>, <code>Review_Queue</code>, and <code>Excluded_Unmapped</code>.</td>
-              <td>Business rule reference.</td>
-              <td>Use to align reviewers. Any change to these rules should be logged and tested against the validation gates.</td>
-            </tr>
-            <tr>
-              <td><code>Active_Learning_Updates</code></td>
-              <td>Approved corrections converted into alias, rule, exclusion, HS-scope, generic-token, or reference-update actions.</td>
-              <td>Prevent the same manual correction from recurring.</td>
-              <td>After approval, feed these updates into maintained rule/reference files and rerun. Track whether repeat review burden declines.</td>
-            </tr>
-            <tr>
-              <td><code>Workflow_Recommendations</code></td>
-              <td>Prioritized operational recommendations for immediate fixes, controlled experiments, deferred items, and methods to avoid.</td>
-              <td>Next-action planning.</td>
-              <td>Use at release review to decide what should be fixed in the next iteration.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>How to handle a consolidated map file</h3>
-      <div class="callout">
-        <strong>Current folder rule:</strong> the mapped-results folder keeps one current workbook for each country-year, plus the Excel improvement log and this HTML guide. A separate row-level consolidated map workbook is not kept here by default because it would add another output workbook beyond the six current country-year files.
-      </div>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Need</th>
-              <th>Where to look</th>
-              <th>What to do</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Country-year row-level mapping</td>
-              <td><code>G:\共享云端硬盘\New EIU Gateway\0. Gateway Ops &amp; Databases\Import Data Master\6. Workflow\Surgicals\Claude code\1. Mapped Results</code>, in the six current mapped workbooks.</td>
-              <td>Open the relevant country-year workbook and use <code>RawData</code>, <code>Trusted_Dashboard</code>, <code>Review_Queue</code>, and <code>Excluded_Unmapped</code> joined by <code>UniqueID</code>.</td>
-            </tr>
-            <tr>
-              <td>Cross-country metrics, QA status, and iteration history</td>
-              <td><code>MAPPING_IMPROVEMENT_LOG.xlsx</code> in the same mapped-results folder.</td>
-              <td>Use this as the consolidated management view for what changed, current QA status, row/value movement, and improvement tracking.</td>
-            </tr>
-            <tr>
-              <td>Combined QA workbook across all six files</td>
-              <td><code>D:\vn2024_remapped_current\reports\All_Countries_Surgical_Mapping_QA_Report.xlsx</code></td>
-              <td>Use this working-folder report for detailed cross-country QA. Release it to the shared folder only if the folder owner approves adding a QA workbook beyond the six mapped outputs.</td>
-            </tr>
-            <tr>
-              <td>New consolidated row-level map</td>
-              <td>Generate from the six current workbooks, not by manually merging edited copies.</td>
-              <td>Build it with <code>Country</code>, <code>Fiscal_Year</code>, <code>Source_File</code>, <code>UniqueID</code>, output tier, mapped tuple, evidence fields, and value/quantity. Store it in the working output package unless the shared-folder file policy is changed.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Recommended reviewer sequence</h3>
-      <div class="mini-flow" aria-label="Reviewer workflow for output tabs">
-        <div class="mini-node"><strong>1. Check release gates</strong><span>Open <code>Validation</code> and <code>Metrics_Summary</code> first.</span></div>
-        <div class="mini-node"><strong>2. Use trusted outputs</strong><span>Report from <code>Trusted_Dashboard</code> and <code>Dashboard_Rebuild</code>.</span></div>
-        <div class="mini-node"><strong>3. Prioritize review</strong><span>Start with <code>Precision_Risk_Rows</code>, high-value <code>Review_Queue</code>, and <code>Extended_Surgical_Decision</code>.</span></div>
-        <div class="mini-node"><strong>4. Capture recall gaps</strong><span>Review <code>Potential_Missed_Surgical</code>, <code>Excluded_Surgicalish_Screen</code>, and cluster summaries.</span></div>
-        <div class="mini-node"><strong>5. Convert learning</strong><span>Approve alias, rule, and reference requests, then rerun and compare metrics.</span></div>
-      </div>
-
-      <h3>Files kept in the mapped-results folder</h3>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>File type</th>
-              <th>Expected files</th>
-              <th>Rule</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Mapped outputs</td>
-              <td><code>India_FY2024</code>, <code>India_FY2025</code>, <code>Pakistan_FY2024</code>, <code>Pakistan_FY2025</code>, <code>Vietnam_FY2024</code>, <code>Vietnam_FY2025</code></td>
-              <td>Keep exactly one latest workbook per country-year. Do not accumulate dated copies in this folder.</td>
-            </tr>
-            <tr>
-              <td>Improvement log</td>
-              <td><code>MAPPING_IMPROVEMENT_LOG.xlsx</code></td>
-              <td>Tracks iterations, biggest changes, timestamps, QA outcomes, and key workflow improvements in Excel format.</td>
-            </tr>
-            <tr>
-              <td>Workflow guide</td>
-              <td><code>Surgical_Mapping_Workflow_Guide.html</code></td>
-              <td>Current wiki-style explanation of the mapping process, references, metrics, and QA controls.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="metrics">
-      <h2>Optimization Metrics</h2>
-      <p class="section-lead">The workflow optimizes for high recall while keeping the trusted dashboard defensible. Precision around 90% is acceptable if recall improves materially, but trusted rows must still pass reference validation and exclusion checks.</p>
-
-      <div class="grid two">
-        <div class="card">
-          <h3>Recall</h3>
-          <p><strong>Meaning in this workflow:</strong> of all true surgical import rows, how many did the workflow capture either in <code>Trusted_Dashboard</code> or <code>Review_Queue</code>?</p>
-          <p><strong>Why it matters:</strong> low recall means surgical value is hidden in <code>Excluded_Unmapped</code>. The process therefore routes uncertain surgical-looking rows to review instead of dropping them.</p>
-          <p><code>Capture recall = (Trusted surgical rows + Review surgical rows) / All true surgical rows</code></p>
-        </div>
-        <div class="card">
-          <h3>Precision</h3>
-          <p><strong>Meaning in this workflow:</strong> of rows included in <code>Trusted_Dashboard</code>, how many are truly in surgical scope and correctly mapped?</p>
-          <p><strong>Why it matters:</strong> dashboard users need defensible outputs. Trusted precision is protected by master-reference validation, product evidence, generic-token guardrails, and exclusion screens.</p>
-          <p><code>Trusted precision = Correct trusted surgical rows / All trusted rows</code></p>
-        </div>
-      </div>
-
-      <h3>QA checks before release</h3>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Check</th>
-              <th>Target</th>
-              <th>Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Trusted latest master validation failures</td>
-              <td>0</td>
-              <td>No dashboard family/category tuple should be outside the latest master reference.</td>
-            </tr>
-            <tr>
-              <td>Trusted strict no-generic failures</td>
-              <td>0</td>
-              <td>No trusted family row should rely only on a generic reference row.</td>
-            </tr>
-            <tr>
-              <td>Dashboard aggregation mismatches</td>
-              <td>0</td>
-              <td><code>Quantity</code> and <code>Total_Value_USD</code> must aggregate numerically and reconcile to trusted raw rows.</td>
-            </tr>
-            <tr>
-              <td>Trusted rows with explicit exclusion scope flags</td>
-              <td>0</td>
-              <td>Rows with dental, veterinary, lab, imaging, ophthalmic, radiotherapy, donation, or capital-equipment conflicts should not be trusted without override.</td>
-            </tr>
-            <tr>
-              <td>High-value surgical rows silently excluded</td>
-              <td>0 or near 0</td>
-              <td>Excluded rows are screened for surgical keywords, clustered, and moved to review when evidence is present.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="governance">
-      <h2>Workflow Governance and Continuous Improvement</h2>
-      <p class="section-lead">The mapping workflow improves through a repeatable active-learning loop. Human review is not a one-off correction; each correction should become a reusable alias, rule, exclusion term, or reference-update request.</p>
-
-      <div class="grid three">
-        <div class="card">
-          <h3>Candidate Table</h3>
-          <p class="small">Shows all considered candidates per row, including source method, evidence scores, master validation, and final routing decision. This is the audit trail for why a row was or was not mapped.</p>
-        </div>
-        <div class="card">
-          <h3>Alias and Rule Tables</h3>
-          <p class="small">Capture manufacturer aliases, family aliases, product synonyms, abbreviations, misspellings, customs phrases, negative terms, generic tokens, HS scope rules, and product disambiguation rules.</p>
-        </div>
-        <div class="card">
-          <h3>Gold Labels</h3>
-          <p class="small">A human-labeled evaluation table used to calculate real precision and recall, not only proxy metrics. Prioritize high-value review rows, extended-HS rows, precision-risk trusted rows, and excluded surgical-keyword clusters.</p>
-        </div>
-      </div>
-
-      <h3>Active learning loop</h3>
-      <div class="mini-flow" aria-label="Active learning loop flowchart">
-        <div class="mini-node"><strong>Review row</strong><span>Human confirms surgical scope, mapping, exclusion, or ambiguity.</span></div>
-        <div class="mini-node"><strong>Classify correction</strong><span>Alias, rule, reference gap, exclusion issue, HS scope, or remap.</span></div>
-        <div class="mini-node"><strong>Update knowledge</strong><span>Add reusable alias/rule or reference-update request.</span></div>
-        <div class="mini-node"><strong>Rerun mapping</strong><span>Regenerate workbook and QA report from the same logic.</span></div>
-        <div class="mini-node"><strong>Measure change</strong><span>Track recall, precision, review burden, false positives, false negatives, runtime, and LLM cost.</span></div>
-      </div>
-
-      <h3>Optional LLM agents</h3>
-      <p>LLMs are used only after deterministic candidate generation. They should not act as a one-shot raw-row-to-final-mapping system. Their output must be structured JSON and must pass master-reference validation before any trusted dashboard inclusion.</p>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Agent</th>
-              <th>Trigger</th>
-              <th>Expected output</th>
-              <th>Guardrail</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Scope Agent</td>
-              <td>High-value review rows and excluded rows with surgical terms.</td>
-              <td>Surgical / non-surgical / ambiguous label with evidence terms.</td>
-              <td>Cannot directly create trusted mappings.</td>
-            </tr>
-            <tr>
-              <td>Resolver Agent</td>
-              <td>Multiple close candidates or product/family/manufacturer conflict.</td>
-              <td>Selected candidate, confidence, reason, and human-review flag.</td>
-              <td>Selected tuple must exist in the master reference before trusted inclusion.</td>
-            </tr>
-            <tr>
-              <td>Conflict Agent</td>
-              <td>Trusted rows with exclusion terms or generic-token risk.</td>
-              <td>Keep, review, exclude, or remap recommendation.</td>
-              <td>Strong exclusion conflicts move rows out of trusted unless manually approved.</td>
-            </tr>
-            <tr>
-              <td>Recall Hunter Agent</td>
-              <td>High-value review/excluded clusters and repeated unknown phrases.</td>
-              <td>Likely missed surgical rows plus suggested aliases, rules, and reference updates.</td>
-              <td>Suggestions become deterministic rules or review items before production use.</td>
-            </tr>
-            <tr>
-              <td>QC Agent</td>
-              <td>Before final release and after major rule updates.</td>
-              <td>False-positive candidates, false-negative candidates, and unresolved issues.</td>
-              <td>Independent check of trusted precision and recall hunting outputs.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="footer-inner">
-      <span>Clearstate surgical import mapping workflow guide</span>
-      <span>Generated 2026-07-05 15:52:32</span>
-    </div>
-  </footer>
-
-  <script>
-    const stepDetails = {
-      "1": {
-        title: "1. Load raw import workbook",
-        body: `
-          <p><strong>What happens:</strong> the pipeline reads the country-year workbook and treats <code>RawData</code> as the row-level source of truth.</p>
-          <ul>
-            <li>Original fields such as <code>Detailed_Product</code>, <code>Importer</code>, <code>Exporter</code>, <code>HS_Code</code>, <code>Quantity</code>, and <code>Total_Value_USD</code> are preserved.</li>
-            <li>A stable <code>UniqueID</code> is used to reconcile trusted, review, and excluded outputs back to RawData.</li>
-            <li>No mapping decision is allowed to break row-count or value reconciliation.</li>
-          </ul>
-          <p><strong>Audit point:</strong> <code>Trusted_Dashboard</code> + <code>Review_Queue</code> + <code>Excluded_Unmapped</code> should exactly reconcile to RawData where that three-way structure is used.</p>`
-      },
-      "2": {
-        title: "2. Load surgical reference",
-        body: `
-          <p><strong>What happens:</strong> the latest surgical master list is loaded before candidate generation.</p>
-          <ul>
-            <li><code>Updated</code> defines the full latest surgical reference.</li>
-            <li><code>Updated (excl. generic)</code> is used as a stricter control against generic family names.</li>
-            <li>Family-tier trusted keys require <code>Segment | Sub-segment | Product | Player | Model/ Family Name</code>.</li>
-            <li>Category-tier trusted keys require <code>Segment | Sub-segment | Product</code>.</li>
-          </ul>
-          <p><strong>Example:</strong> a row may mention <code>Xience</code> and coronary stent terms. If the latest master does not contain the final Abbott / Xience / DES tuple, the row is routed to reference review rather than forced into the dashboard.</p>`
-      },
-      "3": {
-        title: "3. Normalize text",
-        body: `
-          <p><strong>What happens:</strong> the workflow creates normalized matching text while keeping the original shipment wording unchanged.</p>
-          <ul>
-            <li>Lowercase conversion, punctuation cleanup, whitespace normalization, and hyphen/underscore handling.</li>
-            <li>Variant expansion for terms such as <code>cannula</code>, <code>cannulae</code>, and <code>canula</code>.</li>
-            <li>Abbreviation expansion for terms such as <code>DES</code>, <code>BMS</code>, <code>PTCA</code>, <code>CRT-D</code>, <code>ICD</code>, <code>TAVI</code>, and <code>TAVR</code>.</li>
-          </ul>
-          <p><strong>Why it matters:</strong> customs descriptions are inconsistent. Normalization lets the system find surgical evidence without altering the raw text used for audit.</p>`
-      },
-      "4": {
-        title: "4. Generate candidates",
-        body: `
-          <p><strong>What happens:</strong> the workflow keeps multiple plausible candidates instead of choosing the first apparent match.</p>
-          <ul>
-            <li><strong>Exact and alias match:</strong> direct manufacturer, family, product, abbreviation, and customs-phrase rules.</li>
-            <li><strong>Fuzzy match:</strong> catches spelling noise and truncated names, but fuzzy-only results go to review.</li>
-            <li><strong>Word TF-IDF:</strong> improves recall for product phrases such as stent system, guidewire, catheter, suture, mesh, trocar, stapler, implant, endoscopy, and dialysis.</li>
-            <li><strong>Character TF-IDF:</strong> helps with punctuation, spelling variants, and partial model/family terms.</li>
-            <li><strong>Semantic retrieval:</strong> can discover candidate rows missed by lexical rules, but semantic-only matches remain review-only.</li>
-          </ul>
-          <p><strong>Output:</strong> <code>Candidate_Table</code> records candidate rank, source method, scores, validation status, and routing decision.</p>`
-      },
-      "5": {
-        title: "5. Score evidence",
-        body: `
-          <p><strong>What happens:</strong> the workflow replaces one generic match-confidence label with separate evidence features.</p>
-          <ul>
-            <li>Positive evidence: product phrase, family alias, manufacturer alias, category match, HS compatibility, fuzzy score, word TF-IDF, char TF-IDF, semantic score.</li>
-            <li>Negative evidence: exclusion terms, generic-token risk, product/category conflict, and master-reference failure.</li>
-            <li>Priority evidence: high-value unresolved rows and repeated clusters.</li>
-          </ul>
-          <p><strong>Example:</strong> <code>VICRYL sterile surgical sutures</code> has strong product and family evidence but may remain in Extended HS review until the business confirms HS 3006 dashboard scope.</p>`
-      },
-      "6": {
-        title: "6. Validate against master list",
-        body: `
-          <p><strong>What happens:</strong> every trusted candidate is checked against the latest reference before dashboard inclusion.</p>
-          <ul>
-            <li>Family-tier rows must pass the full latest master key.</li>
-            <li>Category-tier rows must pass the latest category key.</li>
-            <li>Rows that fail latest-reference validation are routed to <code>Review_Queue</code> and, where appropriate, <code>Reference_Update_Request</code>.</li>
-          </ul>
-          <p><strong>Guardrail:</strong> Fuzzy, semantic, and LLM suggestions cannot invent a trusted tuple outside the master list.</p>`
-      },
-      "7": {
-        title: "7. Apply exclusions and conflicts",
-        body: `
-          <p><strong>What happens:</strong> exclusion and conflict rules run before final dashboard inclusion.</p>
-          <ul>
-            <li>Excluded or reviewed categories include dental, veterinary, cosmetic/aesthetic, lab/IVD, imaging-only, ophthalmic/intraocular, cochlear/hearing, donation/humanitarian, radiotherapy, linear accelerator/cyclotron, and non-surgical capital equipment.</li>
-            <li>Conflict terms include <code>CT scanner</code>, <code>MRI</code>, <code>ultrasound machine</code>, <code>ECG machine</code>, <code>defibrillator</code>, <code>refrigerator</code>, <code>body warmer</code>, <code>laser imager</code>, <code>intraoral scanner</code>, and <code>reagent</code>.</li>
-            <li>Generic tokens such as <code>March</code>, <code>Express</code>, <code>Elite</code>, and <code>Target</code> require supporting product and manufacturer evidence.</li>
-          </ul>
-          <p><strong>Example:</strong> <code>Production date: March 2023</code> in a vaccine row is not APT Medical / March. It is excluded because the product context conflicts with surgical scope.</p>`
-      },
-      "8": {
-        title: "8. Route each row",
-        body: `
-          <p><strong>What happens:</strong> each row receives a final routing decision and reason code.</p>
-          <ul>
-            <li><strong><code>Trusted_Dashboard</code>:</strong> surgical scope, master-valid, strong product evidence, no exclusion conflict, no generic-token-only match. Humans use this for reporting, not manual row edits.</li>
-            <li><strong><code>Review_Queue</code>:</strong> surgical-looking but weak evidence, extended-HS, reference gap, alias gap, fuzzy-only, semantic-only, manufacturer-only, high-value uncertain, or conflicting evidence. Humans review these rows and convert repeat decisions into reusable rules.</li>
-            <li><strong><code>Excluded_Unmapped</code>:</strong> no surgical evidence or clear non-surgical scope without countervailing surgical evidence. Humans usually spot-check only high-value or surgical-keyword exceptions.</li>
-            <li><strong><code>Mapping_Decision_Log</code>:</strong> records the route, reason code, evidence terms, risk flags, and reference status for audit.</li>
-          </ul>
-          <p><strong>Recall principle:</strong> uncertain surgical-looking rows go to review, not silent exclusion.</p>`
-      },
-      "9": {
-        title: "9. Rebuild dashboard",
-        body: `
-          <p><strong>What happens:</strong> trusted rows are aggregated into the dashboard output.</p>
-          <ul>
-            <li><code>Quantity</code> is converted to numeric before aggregation.</li>
-            <li><code>Total_Value_USD</code> is summed and reconciled to trusted source rows.</li>
-            <li><code>Dashboard_Rebuild</code> is generated from current trusted rows rather than manually edited.</li>
-            <li>The row-level trusted source remains <code>Trusted_Dashboard</code>; the grouped dashboard view is the aggregation layer.</li>
-          </ul>
-          <p><strong>Release check:</strong> dashboard aggregation value and quantity mismatches must be zero.</p>`
-      },
-      "10": {
-        title: "10. QA, log, and learn",
-        body: `
-          <p><strong>What happens:</strong> the workflow produces QA outputs and converts reviewer corrections into reusable knowledge.</p>
-          <ul>
-            <li>Start with <code>Validation</code> and <code>Metrics_Summary</code> to check release gates, row/value movement, precision, recall, review burden, and runtime.</li>
-            <li>QA outputs include <code>Precision_Risk_Rows</code>, <code>Potential_Missed_Surgical</code>, <code>Excluded_Surgicalish_Screen</code>, <code>Extended_Surgical_Decision</code>, <code>Reference_Update_Request</code>, <code>Alias_Update_Request</code>, cluster summaries, and metrics.</li>
-            <li>Human corrections become alias updates, product rules, exclusion rules, HS-scope rules, generic-token rules, or reference-update requests.</li>
-            <li><code>Gold_Label_Template</code> captures reviewed truth labels so precision and recall can move from proxy estimates to measured values.</li>
-            <li>The Excel improvement log records timestamp, iteration, row/value movement, precision/recall impact, and unresolved decisions across all six country-year files.</li>
-          </ul>
-          <p><strong>Continuous improvement:</strong> rerun the pipeline after every approved rule/reference update and compare precision, recall, review burden, and runtime to the previous baseline.</p>`
-      }
-    };
-
-    const detailTitle = document.getElementById("detail-title");
-    const detailBody = document.getElementById("detail-body");
-    const buttons = document.querySelectorAll(".step");
-
-    function showStep(stepId) {
-      const detail = stepDetails[stepId];
-      if (!detail) return;
-      buttons.forEach(button => button.classList.toggle("active", button.dataset.step === stepId));
-      detailTitle.textContent = detail.title;
-      detailBody.innerHTML = detail.body;
-    }
-
-    buttons.forEach(button => {
-      button.addEventListener("click", () => showStep(button.dataset.step));
-      button.addEventListener("dblclick", () => showStep(button.dataset.step));
-    });
-
-    showStep("1");
-  </script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Surgical Mapping Workflow Guide · 20260712_recall_audit_v3</title>
+<style>
+:root{--ink:#0e0e0e;--blue:#0047ab;--muted:#777;--paper:#f5f7fa;--line:#d8dee8;--white:#fff;--pale:#eaf1fb;--green:#147a42;--amber:#9a5b00}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Arial,Helvetica,sans-serif}
+a{color:var(--blue)}.hero{background:var(--ink);color:#fff;padding:54px max(24px,calc((100vw - 1180px)/2)) 44px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;color:#94bfff;font-weight:700;font-size:12px}
+h1{font-size:clamp(32px,5vw,58px);line-height:1.04;max-width:850px;margin:12px 0 18px}.dek{font-size:19px;color:#d9dde4;max-width:840px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:30px}.metric{padding:18px;border:1px solid #333;background:#181818}.metric b{font-size:25px;display:block}.metric span{color:#aaa}
+nav{position:sticky;top:0;z-index:3;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow:auto;padding:10px max(16px,calc((100vw - 1180px)/2))}nav a{white-space:nowrap;text-decoration:none;padding:7px 9px;border-radius:4px;font-size:12px;font-weight:700}
+main{max-width:1180px;margin:0 auto;padding:32px 22px 70px}section{margin:0 0 46px}h2{font-size:29px;margin:0 0 8px}h3{font-size:20px;margin:9px 0}.lead{color:#555;max-width:850px}
+.notice{border-left:5px solid var(--blue);background:#fff;padding:18px 20px;margin:18px 0;box-shadow:0 4px 18px #0e0e0e0d}.notice.warning{border-color:#d38700}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card,.stage{background:#fff;border:1px solid var(--line);padding:22px;box-shadow:0 5px 20px #0e0e0e0a}.stage{margin:16px 0;scroll-margin-top:70px}.stage-meta,.rule-head{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}.stage-type{text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--blue)}
+.stage-type.terminal{color:var(--green)}.stage-type.presentation{color:var(--amber)}.rule{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}code{font:12px/1.5 Consolas,monospace;background:#f1f3f6;padding:2px 5px;word-break:break-word}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}.chip{font-size:11px;background:var(--pale);color:#153962;padding:5px 8px;border-radius:99px}
+.table-wrap{overflow:auto;background:#fff;border:1px solid var(--line)}table{border-collapse:collapse;width:100%;min-width:760px}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left}th{background:var(--blue);color:#fff;position:sticky;top:0}td.num{text-align:right;font-variant-numeric:tabular-nums}.status{font-size:11px;font-weight:700;text-transform:uppercase}.pass{color:var(--green)}
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:10px;margin:18px 0}.flow div{background:#fff;border:1px solid var(--line);padding:17px}.arrow{align-self:center;color:var(--blue);font-size:24px}
+footer{background:#fff;border-top:1px solid var(--line);padding:24px;text-align:center;color:var(--muted)}
+@media(max-width:760px){.metrics,.grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg);justify-self:center}main{padding-inline:16px}}
+</style></head><body>
+<header class="hero"><div class="eyebrow">Review-only prediction audit · registry 2026.07.10.2</div>
+<h1>Surgical mapping workflow, reconstructed and measured</h1>
+<p class="dek">A self-readable guide to candidate logic, terminal routing, recall-risk inventories, review sampling, reconciliation, and source lineage. It reports the current production semantics without changing them.</p>
+<div class="metrics"><div class="metric"><b>3,573,729</b><span>complete source rows</span></div><div class="metric"><b>$14,506,512,044.56</b><span>valid parsed value</span></div><div class="metric"><b>28,192,890,445.020515</b><span>valid parsed volume</span></div></div></header>
+<nav><a href="#overview">Overview</a><a href="#sources">Sources</a><a href="#routing">Routing</a><a href="#recall">Recall risks</a><a href="#review">Review</a><a href="#S00_EXTRACTION">S00</a><a href="#S01_HS_ELIGIBILITY">S01</a><a href="#S02_DENTAL_SUPPRESSION">S02</a><a href="#S03_FAMILY_MATCH">S03</a><a href="#S04_CATEGORY_FALLBACK">S04</a><a href="#S05_MANUFACTURER_FALLBACK">S05</a><a href="#S06_STANDARDIZATION">S06</a><a href="#S07_REFERENCE_VALIDATION">S07</a><a href="#S08_SCOPE_WHITELIST">S08</a><a href="#S09_GENERIC_ANOMALY">S09</a><a href="#S10_EXTENDED_HS">S10</a><a href="#S11_HS_PRIOR">S11</a><a href="#S12_REMAP_GUARDS">S12</a><a href="#S13_TERMINAL_ROUTING">S13</a><a href="#S14_PRESENTATION_EXPORT">S14</a></nav>
+<main>
+<section id="overview"><h2>What is authoritative</h2><p class="lead">Run <code>20260712_recall_audit_v3</code> is governed by a versioned registry and fixed seed. SQLite holds the complete row-level data; the workbook and this page show summaries and samples generated from it.</p>
+<div class="grid"><div class="card"><h3>Row identity</h3><p><code>(run_id, output_file_id, source_row_id)</code> is stable and unique. Raw numeric strings, parsed values and explicit valid/missing/invalid statuses are retained.</p></div><div class="card"><h3>Reconciliation</h3><p>PASS: 54. Value tolerance is $0.01 and volume tolerance is 0.000001. Publication fails closed on any FAIL.</p></div></div>
+<div class="notice"><strong>Metrics.</strong> Transaction count is <code>COUNT(*)</code>. Value and volume sum valid parsed observations; missing and invalid counts remain visible. Weighted ASP (average selling price) is the average dollars per unit — valid value divided by valid volume — and is blank when volume is zero.</div>
+<p><a href="../outputs/20260712_recall_audit_v3/prediction_audit.sqlite">Open SQLite authority</a> · <a href="../outputs/20260712_recall_audit_v3/Prediction_Funnel_and_Review.xlsx">Open bounded review workbook</a></p></section>
+<section id="sources"><h2>Complete-source lineage</h2><p class="lead">All six declared populations passed independent physical-row checks. India FY2025 uses the complete uncapped CSV; its 1,048,575-data-row XLSX is rejected as Excel-limited. The other five governed legacy XLSX sources are below the cap, with the format limitation explicitly recorded.</p><div class="table-wrap"><table><thead><tr><th>Output</th><th>Country</th><th>FY</th><th>Rows</th><th>Value</th><th>Volume</th><th>Ingestion</th><th>Status</th></tr></thead><tbody><tr><td>India 2024</td><td>India</td><td>2024</td>
+        <td class=num>631,630</td><td class=num>$2,084,057,825.66</td>
+        <td class=num>5,363,594,791.298326</td><td>governed_uncapped_legacy_excel_migration</td>
+        <td><span class="status pass">complete</span></td></tr><tr><td>India 2025</td><td>India</td><td>2025</td>
+        <td class=num>1,682,283</td><td class=num>$5,608,922,539.72</td>
+        <td class=num>13,372,455,389.83219</td><td>complete_csv_current_remap</td>
+        <td><span class="status pass">complete</span></td></tr><tr><td>Pakistan 2024</td><td>Pakistan</td><td>2024</td>
+        <td class=num>84,645</td><td class=num>$612,476,350.31</td>
+        <td class=num>1,655,065,264.61</td><td>governed_uncapped_legacy_excel_migration</td>
+        <td><span class="status pass">complete</span></td></tr><tr><td>Pakistan 2025</td><td>Pakistan</td><td>2025</td>
+        <td class=num>96,293</td><td class=num>$772,771,859.50</td>
+        <td class=num>2,729,705,956.33</td><td>governed_uncapped_legacy_excel_migration</td>
+        <td><span class="status pass">complete</span></td></tr><tr><td>VN 2024</td><td>Vietnam</td><td>2024</td>
+        <td class=num>520,835</td><td class=num>$3,236,822,896.27</td>
+        <td class=num>2,246,084,390.97</td><td>governed_uncapped_legacy_excel_migration</td>
+        <td><span class="status pass">complete</span></td></tr><tr><td>VN 2025</td><td>Vietnam</td><td>2025</td>
+        <td class=num>558,043</td><td class=num>$2,191,460,573.10</td>
+        <td class=num>2,825,984,651.98</td><td>governed_uncapped_legacy_excel_migration</td>
+        <td><span class="status pass">complete</span></td></tr></tbody></table></div></section>
+<section id="routing"><h2>How data flows through the steps</h2><p class="lead">Each record is checked by the candidate steps (S01–S12), then given one final status at the terminal step (S13: Trusted, Review or Excluded), and finally exported (S14). Candidate states are diagnostic and not terminal routes.</p><div class="flow"><div><strong>S01–S12 · candidate</strong><br>Eligible, hit, suppressed, missed, recovered or released states remain observable and can continue.</div><span class="arrow">→</span><div><strong>S13 · terminal</strong><br>Every extracted row receives exactly one current route: Trusted, Review or Excluded.</div><span class="arrow">→</span><div><strong>S14 · presentation</strong><br>Aggregates and the governed sample are exported; complete detail remains in SQLite.</div></div><div class="table-wrap"><table><thead><tr><th>Output</th><th>Terminal tier</th><th>Transactions</th><th>Value</th><th>Volume</th></tr></thead><tbody><tr><td>IN_2024</td><td>Excluded</td><td class=num>13,576</td><td class=num>$155,802,919.61</td><td class=num>36,623,593.760888</td></tr><tr><td>IN_2024</td><td>Review</td><td class=num>454,237</td><td class=num>$1,244,165,090.56</td><td class=num>5,296,774,294.731642</td></tr><tr><td>IN_2024</td><td>Trusted</td><td class=num>163,817</td><td class=num>$684,089,815.49</td><td class=num>30,196,902.805796</td></tr><tr><td>IN_2025</td><td>Excluded</td><td class=num>571,109</td><td class=num>$2,366,683,247.54</td><td class=num>6,756,539,068.768649</td></tr><tr><td>IN_2025</td><td>Review</td><td class=num>867,603</td><td class=num>$2,126,186,135.92</td><td class=num>6,573,035,813.629339</td></tr><tr><td>IN_2025</td><td>Trusted</td><td class=num>243,571</td><td class=num>$1,116,053,156.26</td><td class=num>42,880,507.434202</td></tr><tr><td>PK_2024</td><td>Excluded</td><td class=num>66,771</td><td class=num>$406,808,192.99</td><td class=num>1,472,836,510.52</td></tr><tr><td>PK_2024</td><td>Review</td><td class=num>14,954</td><td class=num>$159,380,012.94</td><td class=num>176,663,548.7</td></tr><tr><td>PK_2024</td><td>Trusted</td><td class=num>2,920</td><td class=num>$46,288,144.38</td><td class=num>5,565,205.39</td></tr><tr><td>PK_2025</td><td>Excluded</td><td class=num>74,358</td><td class=num>$521,855,240.23</td><td class=num>2,531,820,750.22</td></tr><tr><td>PK_2025</td><td>Review</td><td class=num>18,851</td><td class=num>$192,943,379.46</td><td class=num>188,244,743.6</td></tr><tr><td>PK_2025</td><td>Trusted</td><td class=num>3,084</td><td class=num>$57,973,239.81</td><td class=num>9,640,462.51</td></tr><tr><td>VN_2024</td><td>Excluded</td><td class=num>307,895</td><td class=num>$2,414,092,179.22</td><td class=num>1,339,288,829.53</td></tr><tr><td>VN_2024</td><td>Review</td><td class=num>160,573</td><td class=num>$562,273,440.64</td><td class=num>868,239,390.44</td></tr><tr><td>VN_2024</td><td>Trusted</td><td class=num>52,367</td><td class=num>$260,457,276.41</td><td class=num>38,556,171</td></tr><tr><td>VN_2025</td><td>Excluded</td><td class=num>353,141</td><td class=num>$1,490,001,951.33</td><td class=num>1,894,482,853.23</td></tr><tr><td>VN_2025</td><td>Review</td><td class=num>149,723</td><td class=num>$450,695,480.01</td><td class=num>839,656,425.75</td></tr><tr><td>VN_2025</td><td>Trusted</td><td class=num>55,179</td><td class=num>$250,763,141.76</td><td class=num>91,845,373</td></tr></tbody></table></div></section>
+<section id="recall"><h2>Recall-risk inventories</h2><p class="lead">These are complete deterministic inventories, not statistical recall estimates. Human labels are required before estimating statistical recall.</p><div class="notice warning"><strong>MRI separation.</strong> We track three separate things: (1) the label says MRI-safe, (2) the item actually conflicts with imaging systems, and (3) it is a surgical device used around imaging. So “MRI-compatible / conditional / safe” language is inventoried separately from actual imaging equipment and from perioperative surgical-device evidence. The later S12 guard never promotes a row in this release.</div><p>Pakistan nonstandard manufacturer and HS-prior tiers — records with unusual formatting, or matched only via an older HS-code prior — remain reviewable and are never relabeled Trusted by this audit. MRI and nonstandard recommendations are shadow-only.</p><div class="table-wrap"><table><thead><tr><th>Risk type</th><th>Current tier</th><th>Transactions</th><th>Value</th></tr></thead><tbody><tr><td>MRI actual imaging-system conflict</td><td>Excluded</td><td class=num>7,489</td><td class=num>$265,114,255.16</td></tr><tr><td>MRI actual imaging-system conflict</td><td>Review</td><td class=num>682</td><td class=num>$19,956,898.41</td></tr><tr><td>MRI compatible recall risk</td><td>Excluded</td><td class=num>513</td><td class=num>$4,064,549.20</td></tr><tr><td>MRI compatible recall risk</td><td>Review</td><td class=num>1</td><td class=num>$330.81</td></tr><tr><td>MRI perioperative surgical signal</td><td>Excluded</td><td class=num>2</td><td class=num>$30,823.68</td></tr><tr><td>Non-standard tier: hs_prior</td><td>Excluded</td><td class=num>490</td><td class=num>$4,773,391.02</td></tr><tr><td>Non-standard tier: hs_prior</td><td>Review</td><td class=num>77,250</td><td class=num>$138,495,525.70</td></tr><tr><td>Non-standard tier: manufacturer</td><td>Excluded</td><td class=num>4,213</td><td class=num>$65,046,629.68</td></tr><tr><td>Non-standard tier: manufacturer</td><td>Review</td><td class=num>1,206,228</td><td class=num>$2,985,408,676.07</td></tr></tbody></table></div></section>
+<section id="review"><h2>Reviewer-ready sample</h2><div class="grid"><div class="card"><h3>Exact design</h3><p>25 rows per output: 12 hand-picked target rows plus 13 rows chosen by a fixed algorithm for even coverage across data groups (a deterministic stratified-random sample), for 150 total. The seed is <code>20260710</code>.</p></div><div class="card"><h3>Responsible inference</h3><p>Random rows carry inclusion probability and sampling weight. Purposeful targets do not support weighted population estimates. Surgical relevance and mapping correctness are labeled separately.</p></div></div><p><strong>Precision compliance</strong> means the logic ran correctly (deterministic rules compliance), not statistical precision. <strong>Recall proxy</strong> means we listed every potential risk by rule (complete deterministic risk coverage), not statistical recall — human labels are still needed.</p></section>
+<section id="logic"><h2>Versioned stage and rule registry</h2><p class="lead">All S00–S14 stages are shown in execution order. Predicates and outcomes below are generated from the same registry loaded into SQLite.</p><article class="stage" id="S00_EXTRACTION">
+      <div class="stage-meta"><span class="stage-type extraction">extraction</span><span>Order 0 · v1.0</span></div>
+      <h3>S00_EXTRACTION · Complete source extraction</h3>
+      <p><strong>Population.</strong> Every physical row after the source header in the declared complete CSV/TSV source, or an explicitly governed uncapped legacy migration.</p>
+      <p><strong>Stage logic.</strong> Required columns exist and the observed row count equals the independently counted source rows. Capped Excel input is rejected.</p>
+      <p><strong>Outcomes.</strong> Passed, Excluded</p>
+      <div class="chips"><span class="chip">Eligible · Passed: 3,573,729</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S00_COMPLETE_SOURCE</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Declared physical source rows after the header.</p>
+              <p><strong>Predicate.</strong> <code>source_exists AND required_columns_present AND observed_rows = expected_rows AND NOT excel_row_limit_detected</code></p>
+              <p><strong>Outcome.</strong> Passed when TRUE; fail closed before row publication when FALSE.</p>
+              <p><strong>Reason precedence.</strong> source_missing → required_column_missing → excel_row_limit_detected → row_count_mismatch → complete_source_loaded</p>
+            </div>
+    </article><article class="stage" id="S01_HS_ELIGIBILITY">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 10 · v1.0</span></div>
+      <h3>S01_HS_ELIGIBILITY · HS eligibility</h3>
+      <p><strong>Population.</strong> Rows that passed extraction.</p>
+      <p><strong>Stage logic.</strong> Evaluate configured HS4 eligibility. Current production MATCH_ALL_HS4 semantics allow every HS4 to continue; HS exclusions remain observable rule hits.</p>
+      <p><strong>Outcomes.</strong> Passed, Suppressed</p>
+      <div class="chips"><span class="chip">Eligible · Eligible: 3,573,729</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S01_MATCH_ALL_HS4</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows passing S00.</p>
+              <p><strong>Predicate.</strong> <code>MATCH_ALL_HS4 = TRUE OR HS4 NOT IN configured_hs_exclusions</code></p>
+              <p><strong>Outcome.</strong> Eligible when TRUE; Suppressed but observable when FALSE.</p>
+              <p><strong>Reason precedence.</strong> configured_hs_exclusion → hs_eligible</p>
+            </div>
+    </article><article class="stage" id="S02_DENTAL_SUPPRESSION">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 20 · v1.0</span></div>
+      <h3>S02_DENTAL_SUPPRESSION · Dental candidate suppression</h3>
+      <p><strong>Population.</strong> HS-eligible rows.</p>
+      <p><strong>Stage logic.</strong> Suppress dental-only phrases from surgical family/category candidate generation unless an independent surgical signal is present.</p>
+      <p><strong>Outcomes.</strong> Passed, Suppressed, Recovered</p>
+      <div class="chips"><span class="chip">Recovered · Recovered: 19,488</span><span class="chip">Suppressed · Suppressed: 281,013</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S02_DENTAL_SIGNAL</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> HS-eligible rows containing a dental cue.</p>
+              <p><strong>Predicate.</strong> <code>dental_regex(source_text) AND NOT Independent_Surgical_Signal</code></p>
+              <p><strong>Outcome.</strong> Suppressed when TRUE; Recovered when dental_regex(source_text) AND Independent_Surgical_Signal.</p>
+              <p><strong>Reason precedence.</strong> dental_with_independent_surgical_signal → dental_only → no_dental_cue</p>
+            </div>
+    </article><article class="stage" id="S03_FAMILY_MATCH">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 30 · v1.0</span></div>
+      <h3>S03_FAMILY_MATCH · Family matching and conflict reranking</h3>
+      <p><strong>Population.</strong> Rows continuing after candidate suppression.</p>
+      <p><strong>Stage logic.</strong> Match reference family/model phrases, then rerank overlapping candidates by phrase quality, HS context, product evidence, and conflict controls.</p>
+      <p><strong>Outcomes.</strong> Passed, Review, Suppressed</p>
+      <div class="chips"><span class="chip">Hit · Hit: 551,797</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S03_FAMILY_CANDIDATE</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows whose Match_Tier contains family.</p>
+              <p><strong>Predicate.</strong> <code>LOWER(Match_Tier) LIKE &#x27;%family%&#x27;</code></p>
+              <p><strong>Outcome.</strong> Hit when TRUE; Missed when the stage is applicable without an accepted family candidate.</p>
+              <p><strong>Reason precedence.</strong> family_conflict → family_match → no_family_match</p>
+            </div>
+    </article><article class="stage" id="S04_CATEGORY_FALLBACK">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 40 · v1.0</span></div>
+      <h3>S04_CATEGORY_FALLBACK · Category fallback and negative/accessory cues</h3>
+      <p><strong>Population.</strong> Rows without an accepted family match plus matched rows requiring conflict checks.</p>
+      <p><strong>Stage logic.</strong> Use category phrases only when stronger family evidence is absent; negative, accessory-only, veterinary, dental, ophthalmic/imaging and other conflict cues can suppress or send the candidate to Review.</p>
+      <p><strong>Outcomes.</strong> Passed, Suppressed, Review</p>
+      <div class="chips"><span class="chip">Hit · Hit: 281,375</span><span class="chip">Missed · Review: 79,888</span><span class="chip">Suppressed · Suppressed: 533,386</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S04_CATEGORY_OR_CONFLICT</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Category-tier rows or rows carrying negative/accessory cues.</p>
+              <p><strong>Predicate.</strong> <code>LOWER(Match_Tier) LIKE &#x27;%category%&#x27; OR Negative_Conflict_Group &lt;&gt; &#x27;&#x27; OR accessory_regex(source_text)</code></p>
+              <p><strong>Outcome.</strong> Suppressed for a negative conflict; Hit for an accepted category candidate; Review for accessory ambiguity.</p>
+              <p><strong>Reason precedence.</strong> negative_conflict → accessory_only → category_match → no_category_match</p>
+            </div>
+    </article><article class="stage" id="S05_MANUFACTURER_FALLBACK">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 50 · v1.0</span></div>
+      <h3>S05_MANUFACTURER_FALLBACK · Manufacturer fallback</h3>
+      <p><strong>Population.</strong> Rows without accepted family/category product evidence.</p>
+      <p><strong>Stage logic.</strong> Recognized manufacturer aliases may provide a non-standard manufacturer tier. The mapping is retained in SQLite even when it is not Trusted.</p>
+      <p><strong>Outcomes.</strong> Passed, Review, Suppressed</p>
+      <div class="chips"><span class="chip">Missed · Review: 1,210,441</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S05_MANUFACTURER_CANDIDATE</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows whose Match_Tier contains manufacturer.</p>
+              <p><strong>Predicate.</strong> <code>LOWER(Match_Tier) LIKE &#x27;%manufacturer%&#x27;</code></p>
+              <p><strong>Outcome.</strong> Hit only when terminal Trusted; otherwise Review. The mapped manufacturer is never deleted from SQLite.</p>
+              <p><strong>Reason precedence.</strong> manufacturer_ambiguous → manufacturer_fallback → no_manufacturer_match</p>
+            </div>
+    </article><article class="stage" id="S06_STANDARDIZATION">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 60 · v1.0</span></div>
+      <h3>S06_STANDARDIZATION · Dimension standardization</h3>
+      <p><strong>Population.</strong> Rows with any proposed mapped dimension.</p>
+      <p><strong>Stage logic.</strong> Canonicalize manufacturer, family, segment, sub-segment and product labels without changing the source text or stable row identifier.</p>
+      <p><strong>Outcomes.</strong> Passed, Review</p>
+      <div class="chips"><span class="chip">Hit · Hit: 2,327,714</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S06_CANONICAL_DIMENSIONS</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows with at least one nonblank mapped dimension.</p>
+              <p><strong>Predicate.</strong> <code>COALESCE(Manufacturer, Family, Segment, Sub_segment, Product_V0, &#x27;&#x27;) &lt;&gt; &#x27;&#x27;</code></p>
+              <p><strong>Outcome.</strong> Hit when standardized fields are present; Review when a standardization conflict is recorded.</p>
+              <p><strong>Reason precedence.</strong> standardization_conflict → standardized</p>
+            </div>
+    </article><article class="stage" id="S07_REFERENCE_VALIDATION">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 70 · v1.0</span></div>
+      <h3>S07_REFERENCE_VALIDATION · Reference validation</h3>
+      <p><strong>Population.</strong> Rows with standardized mapped dimensions.</p>
+      <p><strong>Stage logic.</strong> The standardized Segment × Sub-segment × Product tuple must exist in the governed surgical master before it can be Trusted.</p>
+      <p><strong>Outcomes.</strong> Passed, Review, Suppressed</p>
+      <div class="chips"><span class="chip">Hit · Hit: 264,022</span><span class="chip">Missed · Review: 2,063,692</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S07_REFERENCE_TUPLE</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows with standardized mapped dimensions.</p>
+              <p><strong>Predicate.</strong> <code>LOWER(COALESCE(Reference_Key_Status, Ref_Valid, &#x27;&#x27;)) IN (&#x27;valid&#x27;,&#x27;y&#x27;,&#x27;yes&#x27;,&#x27;true&#x27;,&#x27;1&#x27;,&#x27;reference-valid&#x27;)</code></p>
+              <p><strong>Outcome.</strong> Hit when TRUE; Review when FALSE or missing.</p>
+              <p><strong>Reason precedence.</strong> reference_tuple_invalid → reference_tuple_missing → reference_tuple_valid</p>
+            </div>
+    </article><article class="stage" id="S08_SCOPE_WHITELIST">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 80 · v1.0</span></div>
+      <h3>S08_SCOPE_WHITELIST · Scope and whitelist logic</h3>
+      <p><strong>Population.</strong> Reference-validated and reviewable rows.</p>
+      <p><strong>Stage logic.</strong> Apply governed exclusion/scope lists and product evidence requirements. Whitelist or independent surgical evidence may recover a suppressed candidate.</p>
+      <p><strong>Outcomes.</strong> Passed, Suppressed, Recovered, Review</p>
+      <div class="chips"><span class="chip">Recovered · Recovered: 655,590</span><span class="chip">Suppressed · Suppressed: 362,481</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S08_SCOPE_CONTROL</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows with a Scope_Flag or independent surgical recovery signal.</p>
+              <p><strong>Predicate.</strong> <code>Scope_Flag &lt;&gt; &#x27;&#x27;; recovery predicate is Independent_Surgical_Signal = 1</code></p>
+              <p><strong>Outcome.</strong> Suppressed for scope exclusion; Recovered when independent surgical evidence overrides only the reviewable candidate suppression.</p>
+              <p><strong>Reason precedence.</strong> whitelist_recovery → independent_surgical_recovery → scope_exclusion → in_scope</p>
+            </div>
+    </article><article class="stage" id="S09_GENERIC_ANOMALY">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 90 · v1.0</span></div>
+      <h3>S09_GENERIC_ANOMALY · Generic and token anomaly guards</h3>
+      <p><strong>Population.</strong> Rows with generic/product tokens or anomaly flags.</p>
+      <p><strong>Stage logic.</strong> Date/month tokens, APT/March collisions, generic terms, high-risk tokens and vector auto-mapping anomalies prevent unsupported promotion and remain reviewable.</p>
+      <p><strong>Outcomes.</strong> Passed, Review, Suppressed</p>
+      <div class="chips"><span class="chip">Suppressed · Review: 547,283</span><span class="chip">Suppressed · Suppressed: 768,026</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S09_TOKEN_ANOMALY</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows with Generic_Token_Risk, Date_Month_Token_Risk, APT_March_Rule_Risk or High_Risk_Token.</p>
+              <p><strong>Predicate.</strong> <code>Generic_Token_Risk = 1 OR Date_Month_Token_Risk = 1 OR APT_March_Rule_Risk = 1 OR High_Risk_Token &lt;&gt; &#x27;&#x27;</code></p>
+              <p><strong>Outcome.</strong> Review unless a stronger production guard already assigns Excluded.</p>
+              <p><strong>Reason precedence.</strong> date_month_collision → apt_march_collision → generic_token → high_risk_token → no_anomaly</p>
+            </div>
+    </article><article class="stage" id="S10_EXTENDED_HS">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 100 · v1.0</span></div>
+      <h3>S10_EXTENDED_HS · Extended-HS handling</h3>
+      <p><strong>Population.</strong> Rows using Extended-HS evidence or carrying an Extended-HS false-positive flag.</p>
+      <p><strong>Stage logic.</strong> Extended-HS may add candidate evidence but cannot override stronger negative, reference, scope or anomaly controls.</p>
+      <p><strong>Outcomes.</strong> Passed, Review, Suppressed</p>
+      <div class="chips"><span class="chip">Suppressed · Suppressed: 774</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S10_EXTENDED_HS_CONTROL</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Extended-HS tier rows or rows with Extended_False_Positive_Risk.</p>
+              <p><strong>Predicate.</strong> <code>LOWER(Match_Tier) LIKE &#x27;%extended%&#x27; OR Extended_False_Positive_Risk = 1</code></p>
+              <p><strong>Outcome.</strong> Suppressed when false-positive risk is set; Hit when supported.</p>
+              <p><strong>Reason precedence.</strong> extended_hs_false_positive_risk → extended_hs_supported → not_applicable</p>
+            </div>
+    </article><article class="stage" id="S11_HS_PRIOR">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 110 · v1.0</span></div>
+      <h3>S11_HS_PRIOR · HS-prior recovery</h3>
+      <p><strong>Population.</strong> Product-less manufacturer or unmatched rows for which a governed HS × manufacturer prior exists.</p>
+      <p><strong>Stage logic.</strong> Recover a candidate product from the governed HS × manufacturer prior without overriding a stronger lexical hit. The hs_prior tier remains visible even when not Trusted.</p>
+      <p><strong>Outcomes.</strong> Recovered, Review, Suppressed</p>
+      <div class="chips"><span class="chip">Missed · Review: 77,740</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S11_HS_PRIOR_RECOVERY</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows whose Match_Tier is hs_prior.</p>
+              <p><strong>Predicate.</strong> <code>LOWER(Match_Tier) = &#x27;hs_prior&#x27;</code></p>
+              <p><strong>Outcome.</strong> Recovered only when terminal Trusted; otherwise Review. The mapped dimensions remain retained.</p>
+              <p><strong>Reason precedence.</strong> hs_prior_conflict → hs_prior_recovery → no_prior</p>
+            </div>
+    </article><article class="stage" id="S12_REMAP_GUARDS">
+      <div class="stage-meta"><span class="stage-type candidate">candidate</span><span>Order 120 · v1.0</span></div>
+      <h3>S12_REMAP_GUARDS · Precision guards and recall-risk capture</h3>
+      <p><strong>Population.</strong> Every mapped or risk-flagged row before terminal routing.</p>
+      <p><strong>Stage logic.</strong> Apply evidence, master, reference, generic, ophthalmic/imaging and vector guards. MRI-compatible text is inventoried as a recall risk; it is not auto-promoted in this review-only release.</p>
+      <p><strong>Outcomes.</strong> Passed, Suppressed, Recovered, Review</p>
+      <div class="chips"><span class="chip">Hit · Hit: 520,938</span><span class="chip">Missed · Review: 1,665,941</span><span class="chip">Suppressed · Suppressed: 1,386,850</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S12_FINAL_GUARD</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Every mapped, risk-flagged or non-Trusted row before terminal routing.</p>
+              <p><strong>Predicate.</strong> <code>terminal tier reconstructed from Output_Tier, Dash_Include and QA_Status after reference, scope, generic, ophthalmic/imaging, vector and evidence guards</code></p>
+              <p><strong>Outcome.</strong> Hit for Trusted; Review for Review; Suppressed for Excluded; MRI-compatible rows are separately inventoried without promotion.</p>
+              <p><strong>Reason precedence.</strong> ophthalmic_imaging_conflict → vector_guard → generic_guard → reference_guard → evidence_guard → guard_pass</p>
+            </div><div class="rule">
+              <div class="rule-head"><code>S12_MRI_COMPATIBLE_RISK</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Rows matching the MRI-compatible regular expression.</p>
+              <p><strong>Predicate.</strong> <code>regex(&#x27;\bmri[\s-]*(compatible|compatibility|conditional|safe)\b&#x27;, source_text)</code></p>
+              <p><strong>Outcome.</strong> Inventory only; never changes production routing in this release.</p>
+              <p><strong>Reason precedence.</strong> mri_named_reference_valid_trusted → mri_compatible_review_risk → mri_actual_imaging_conflict</p>
+            </div>
+    </article><article class="stage" id="S13_TERMINAL_ROUTING">
+      <div class="stage-meta"><span class="stage-type terminal">terminal</span><span>Order 130 · v1.0</span></div>
+      <h3>S13_TERMINAL_ROUTING · Terminal routing</h3>
+      <p><strong>Population.</strong> Every extracted row after all applicable candidate stages.</p>
+      <p><strong>Stage logic.</strong> Route exactly once: Trusted only when current production gates pass; Review for unresolved or auditable candidates; Excluded otherwise. Review and Excluded remain distinct.</p>
+      <p><strong>Outcomes.</strong> Trusted, Review, Excluded</p>
+      <div class="chips"><span class="chip">Eligible · Trusted: 520,938</span><span class="chip">Missed · Review: 1,665,941</span><span class="chip">Suppressed · Excluded: 1,386,850</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S13_EXACTLY_ONE_ROUTE</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Every extracted row.</p>
+              <p><strong>Predicate.</strong> <code>Output_Tier IN (&#x27;Trusted&#x27;,&#x27;Review&#x27;,&#x27;Excluded&#x27;) OR deterministic fallback from Dash_Include and QA_Status</code></p>
+              <p><strong>Outcome.</strong> Exactly one of Trusted, Review or Excluded.</p>
+              <p><strong>Reason precedence.</strong> trusted_reference_valid_surgical → review_required → excluded_no_accepted_candidate</p>
+            </div>
+    </article><article class="stage" id="S14_PRESENTATION_EXPORT">
+      <div class="stage-meta"><span class="stage-type presentation">presentation</span><span>Order 140 · v1.0</span></div>
+      <h3>S14_PRESENTATION_EXPORT · Presentation export</h3>
+      <p><strong>Population.</strong> SQLite aggregates and the governed 150-row review sample only.</p>
+      <p><strong>Stage logic.</strong> Export aggregate roll-ups and review samples to Excel. Complete row-level data and inventories remain in SQLite; no RawData or decision-log worksheet is created.</p>
+      <p><strong>Outcomes.</strong> Presented, RetainedInSQLite, Excluded</p>
+      <div class="chips"><span class="chip">No applicable row state</span></div>
+      <div class="rule">
+              <div class="rule-head"><code>S14_BOUNDED_PRESENTATION</code><span>v1.1</span></div>
+              <p><strong>Input.</strong> Registry metadata, SQLite aggregates and the governed 150-row sample.</p>
+              <p><strong>Predicate.</strong> <code>workbook_bytes &lt; 100000000 AND workbook_has_no_rawdata_sheet AND workbook_has_no_decision_log_sheet</code></p>
+              <p><strong>Outcome.</strong> Presented for bounded aggregates/sample; row-level facts and full inventories remain in SQLite.</p>
+              <p><strong>Reason precedence.</strong> aggregate_presented → row_level_retained_in_sqlite → presentation_limit_failure</p>
+            </div>
+    </article></section>
+</main><footer>Generated from registry 2026.07.10.2 and SQLite run 20260712_recall_audit_v3. Review-only; no production mapping changed.</footer>
+</body></html>

@@ -16,6 +16,8 @@ Checks:
   4. Dashboard bounds — lower <= upper for every row; manufacturer volume is
      NOT in the bounds (bounds restricted to cfg.DASHBOARD_BOUND_TIERS).
 """
+import argparse
+import json
 import pickle
 import re
 import sys
@@ -60,7 +62,74 @@ def _load_reference_master() -> dict | None:
     return data
 
 
-def main() -> int:
+def _check_remap_report(report: Path, anchors_json: Path) -> int:
+    """Validate a six-market remap report without relying on the mutable local CSV cache."""
+    if not report.exists():
+        print(f"  [QC] FAIL: remap report not found: {report}")
+        return 1
+    if not anchors_json.exists():
+        print(f"  [QC] FAIL: remap anchors not found: {anchors_json}")
+        return 1
+
+    metrics = pd.read_excel(report, sheet_name="Metrics_By_File")
+    validation = pd.read_excel(report, sheet_name="Validation_By_File")
+    current = metrics[metrics["Run"].astype(str).str.startswith("A1")].copy()
+    ok = True
+
+    pairs = set(zip(current["Country"].astype(str), current["Year"].astype(int)))
+    if len(current) != 6 or len(pairs) != 6:
+        ok = _fail(f"expected 6 distinct A1 market-years, found {len(current)} rows/{len(pairs)} pairs")
+
+    row_delta = current["RawData rows"] - (
+        current["Trusted rows"] + current["Review rows"] + current["Excluded rows"]
+    )
+    value_delta = current["RawData value"] - (
+        current["Trusted value"] + current["Review value"] + current["Excluded value"]
+    )
+    if (row_delta != 0).any() or (value_delta.abs() > 1.0).any():
+        ok = _fail("A1 Trusted/Review/Excluded partitions do not reconcile to RawData")
+    else:
+        print("  [QC] PASS: all six A1 status partitions reconcile to RawData")
+
+    failed = validation[validation["Status"].astype(str).str.upper() == "FAIL"]
+    if not failed.empty:
+        ok = _fail(f"{len(failed):,} validation checks have FAIL status")
+    else:
+        warnings = int((validation["Status"].astype(str).str.upper() == "WARN").sum())
+        print(f"  [QC] PASS: no validation failures ({warnings} review warning(s))")
+
+    raw_anchors = json.loads(anchors_json.read_text(encoding="utf-8"))
+    anchors = {
+        tuple(key.rsplit("_", 1)): (int(value["trusted_rows"]), float(value["trusted_value"]))
+        for key, value in raw_anchors.items()
+    }
+    anchors = {(country, int(year)): values for (country, year), values in anchors.items()}
+    if set(anchors) != pairs:
+        ok = _fail("versioned remap-anchor market-years do not match the A1 report")
+    for (country, year), (rows_pin, value_pin) in anchors.items():
+        cur = current[(current["Country"] == country) & (current["Year"] == year)]
+        if cur.empty:
+            continue
+        rows_now = int(cur["Trusted rows"].iloc[0])
+        value_now = float(cur["Trusted value"].iloc[0])
+        if rows_now != rows_pin or abs(value_now - value_pin) > 0.01:
+            ok = _fail(f"remap anchor {country} {year}: trusted "
+                       f"{rows_now:,}/${value_now:,.2f} vs pinned "
+                       f"{rows_pin:,}/${value_pin:,.2f}")
+    if ok:
+        print(f"  [QC] PASS: exact trusted anchors ({len(anchors)} market-years)")
+    print("  [QC] ALL REMAP CHECKS PASSED" if ok else "  [QC] SOME REMAP CHECKS FAILED")
+    return 0 if ok else 1
+
+
+def main(remap_report: Path | None = None, remap_anchors_json: Path | None = None,
+         remap_only: bool = False) -> int:
+    if remap_only:
+        if remap_report is None or remap_anchors_json is None:
+            print("  [QC] FAIL: --remap-only requires --remap-report and --remap-anchors-json")
+            return 1
+        return _check_remap_report(remap_report, remap_anchors_json)
+
     df = pd.read_csv(cfg.MAPPED_CSV, low_memory=False, dtype=str)
     df = df.fillna("")
     tier = cfg.TIER_COL
@@ -119,8 +188,14 @@ def main() -> int:
     if ref is not None:
         dim_cols = ["Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family"]
         cat_cols = dim_cols[:3]
+        # Maker-rescued (S07b) rows are exempt from the exact 5-tuple check by
+        # design (governed surgical maker + master-valid category + family token
+        # evidenced in the description); they still face the category check.
+        rescue_col = getattr(cfg, "RESCUE_FLAG_COL", "Rescue_Flag")
+        not_rescued = (~df[rescue_col].str.contains("S07", na=False)
+                       if rescue_col in df.columns else pd.Series(True, index=df.index))
         bad_family = 0
-        for combo in df.loc[include & (df[tier] == "family"), dim_cols].drop_duplicates().itertuples(index=False, name=None):
+        for combo in df.loc[include & (df[tier] == "family") & not_rescued, dim_cols].drop_duplicates().itertuples(index=False, name=None):
             if tuple(_norm_exact(v) for v in combo) not in ref["full_exact"]:
                 bad_family += 1
         bad_category = 0
@@ -172,8 +247,8 @@ def main() -> int:
     #    against the combined QA report so no 400-700MB workbook is re-read.
     #    Update DELIBERATELY after an intended mapping change (e.g. approved
     #    adjudication ingestion + rerun), never to paper over a regression.
-    report = (Path(__file__).resolve().parent / "outputs" / "remapped_current"
-              / "reports" / "All_Countries_Surgical_Mapping_QA_Report.xlsx")
+    report = remap_report or (Path(__file__).resolve().parent / "outputs" / "remapped_current"
+                              / "reports" / "All_Countries_Surgical_Mapping_QA_Report.xlsx")
     if report.exists():
         anchors = {  # (country, year): (trusted rows, trusted value $)
             ("Pakistan", 2024): (2_920, 46_288_144.38),
@@ -183,6 +258,13 @@ def main() -> int:
             ("Vietnam", 2024): (52_367, 260_457_276.41),
             ("Vietnam", 2025): (55_179, 250_763_141.76),
         }
+        if remap_anchors_json:
+            raw_anchors = json.loads(remap_anchors_json.read_text(encoding="utf-8"))
+            anchors = {
+                tuple(key.rsplit("_", 1)): (int(value["trusted_rows"]), float(value["trusted_value"]))
+                for key, value in raw_anchors.items()
+            }
+            anchors = {(country, int(year)): values for (country, year), values in anchors.items()}
         m = pd.read_excel(report, sheet_name="Metrics_By_File")
         m = m[m["Run"].astype(str).str.startswith("A1")]
         bad = 0
@@ -208,4 +290,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--remap-report", type=Path, help="Combined QA report to validate instead of the current baseline.")
+    parser.add_argument("--remap-anchors-json", type=Path, help="Deliberately versioned trusted anchors for --remap-report.")
+    parser.add_argument("--remap-only", action="store_true",
+                        help="Validate the six-market remap report without reading the mutable local pipeline cache.")
+    args = parser.parse_args()
+    raise SystemExit(main(args.remap_report, args.remap_anchors_json, args.remap_only))
