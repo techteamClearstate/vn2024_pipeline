@@ -102,7 +102,50 @@ def source_text(row: dict[str, object]) -> str:
 
 
 def reference_is_valid(value: object) -> bool:
-    return text(value).lower() in {"valid", "y", "yes", "true", "1", "reference-valid"}
+    return normalize_reference_status(value) == "Valid"
+
+
+def normalize_reference_status(value: object, master_status: object = "") -> str:
+    """Normalize production reference evidence to the audit's binary contract.
+
+    Current mapped workbooks carry the richer governed-master vocabulary in
+    ``Reference_Key_Status`` as well as ``Master_Validation_Status``.  The audit
+    keeps the detailed value in ``master_validation_status`` and stores a
+    separate binary gate result in ``reference_status`` so S07 and downstream
+    aggregates remain comparable across market-years.
+    """
+    raw = text(value).lower()
+    detailed = text(master_status).lower()
+    valid = {
+        "valid", "y", "yes", "true", "1", "reference-valid",
+        "pass_full_strict", "pass_category",
+        "latest master family tuple", "latest master category tuple",
+    }
+    invalid = {
+        "invalid", "n", "no", "false", "0", "reference-invalid",
+        "pass_full_latest_generic_risk", "reference_update_needed",
+        "category_reference_update_needed", "generic reference family only",
+        "missing latest master family tuple", "missing latest master category tuple",
+        "hs-prior only",
+    }
+    if raw in valid:
+        return "Valid"
+    if raw in invalid:
+        return "Invalid"
+    if raw in {"", "not_applicable"}:
+        if detailed in valid:
+            return "Valid"
+        if detailed in invalid:
+            return "Invalid"
+        return ""
+    return "Invalid"
+
+
+def row_reference_status(row: dict[str, object]) -> str:
+    return normalize_reference_status(
+        row.get("Reference_Key_Status") or row.get("Ref_Valid"),
+        row.get("Master_Validation_Status"),
+    )
 
 
 class GovernedMasterStatusEnricher:
@@ -181,7 +224,7 @@ def derive_reason(row: dict[str, object], tier: str) -> tuple[str, str]:
     qa = text(row.get("QA_Status"))
     negative = text(row.get("Negative_Conflict_Group"))
     scope = text(row.get("Scope_Flag"))
-    reference = text(row.get("Reference_Key_Status") or row.get("Ref_Valid"))
+    reference = row_reference_status(row)
     if tier == "Trusted":
         return "trusted_reference_valid_surgical", "S13_TERMINAL_ROUTING"
     if truthy(row.get("Ophthalmic_Imaging_Conflict_Risk")) or "ophthalmic" in qa.lower() or "imaging" in qa.lower():
@@ -622,6 +665,54 @@ def iter_legacy_xlsx(path: Path) -> tuple[int, Iterator[list[dict[str, object]]]
     return observed, chunks(), headers
 
 
+def iter_partitioned_xlsx(path: Path) -> tuple[int, Iterator[list[dict[str, object]]], list[str]]:
+    """Stream one logical row table spread across Excel's per-sheet row limit."""
+    workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    part_names = [
+        name for name in workbook.sheetnames
+        if name == "RawData" or name.startswith("RawData_Part_")
+    ]
+    part_names.sort(key=lambda name: 1 if name == "RawData" else int(name.rsplit("_", 1)[1]))
+    if not part_names or part_names[0] != "RawData":
+        workbook.close()
+        raise RuntimeError(f"FAIL CLOSED: partitioned RawData sheets missing: {path}")
+
+    headers: list[str] | None = None
+    observed = 0
+    for name in part_names:
+        worksheet = workbook[name]
+        sheet_headers = [text(cell.value) for cell in next(worksheet.iter_rows(min_row=1, max_row=1))]
+        if headers is None:
+            headers = sheet_headers
+            missing = REQUIRED_COLUMNS - set(headers)
+            if missing:
+                workbook.close()
+                raise RuntimeError(f"FAIL CLOSED: required columns missing from {path}: {sorted(missing)}")
+        elif sheet_headers != headers:
+            workbook.close()
+            raise RuntimeError(f"FAIL CLOSED: header mismatch in {path} sheet {name}")
+        observed += max(0, worksheet.max_row - 1)
+
+    assert headers is not None
+
+    def chunks() -> Iterator[list[dict[str, object]]]:
+        batch: list[dict[str, object]] = []
+        try:
+            for name in part_names:
+                worksheet = workbook[name]
+                for values in worksheet.iter_rows(min_row=2, values_only=True):
+                    batch.append(dict(zip(headers, values)))
+                    if len(batch) >= CHUNK_ROWS:
+                        yield batch
+                        batch = []
+            if batch:
+                yield batch
+        finally:
+            workbook.close()
+
+    return observed, chunks(), headers
+
+
 def iter_current_csv(path: Path) -> tuple[int, Iterator[list[dict[str, object]]], list[str]]:
     observed = count_delimited_rows(path)
     headers = list(pd.read_csv(path, dtype=str, nrows=0).columns)
@@ -673,7 +764,7 @@ def build_stage_states(
     mapped = any(text(row.get(c)) for c in ("Manufacturer", "Family", "Segment", "Sub-segment", "Product_V0"))
     negative = text(row.get("Negative_Conflict_Group"))
     scope = text(row.get("Scope_Flag"))
-    reference = text(row.get("Reference_Key_Status") or row.get("Ref_Valid"))
+    reference = row_reference_status(row)
 
     states: list[tuple[object, ...]] = []
 
@@ -897,6 +988,22 @@ def ingest_output(
             raise RuntimeError(f"FAIL CLOSED: mapped CSV count {observed:,} != complete source {complete_rows:,}")
         source_format = "csv"
         completeness_basis = "Complete mapped CSV reconciled to independently counted immutable raw CSV"
+    elif mode == "complete_partitioned_excel_current_remap":
+        if complete_path is None or not complete_path.exists():
+            raise RuntimeError(f"FAIL CLOSED: complete source missing: {complete_path}")
+        complete_rows = count_delimited_rows(complete_path)
+        if complete_rows != expected:
+            raise RuntimeError(f"FAIL CLOSED: complete source count {complete_rows:,} != expected {expected:,}")
+        observed, chunks, _headers = iter_partitioned_xlsx(path)
+        if observed != complete_rows:
+            raise RuntimeError(
+                f"FAIL CLOSED: partitioned mapped workbook count {observed:,} != complete source {complete_rows:,}"
+            )
+        source_format = "xlsx"
+        completeness_basis = (
+            "Complete partitioned Excel final output reconciled to independently counted immutable raw CSV; "
+            "SQLite remains the audit authority"
+        )
     else:
         raise RuntimeError(f"Unsupported ingestion_mode: {mode}")
     if observed != expected:
@@ -957,7 +1064,7 @@ def ingest_output(
             value, value_status = parse_number(raw_value)
             volume, volume_status = parse_number(raw_volume)
             match_tier = text(row.get("Match_Tier"))
-            reference_status = text(row.get("Reference_Key_Status") or row.get("Ref_Valid"))
+            reference_status = row_reference_status(row)
             mri_risk = int(bool(MRI_COMPATIBLE_RE.search(description)))
             mri_actual = int(bool(MRI_IMAGING_RE.search(description)))
             mri_perioperative = int(bool(mri_risk and PERIOPERATIVE_RE.search(description)))
@@ -1298,8 +1405,18 @@ def normalized_dimension(column: str, active: bool) -> str:
     return f"CASE WHEN {column} IS NULL OR trim({column})='' THEN '{DIMENSION_UNMAPPED}' ELSE {column} END"
 
 
-def build_removal_cube(connection: sqlite3.Connection, run_id: str) -> None:
-    connection.execute("DELETE FROM removal_cube WHERE run_id=?", (run_id,))
+def build_removal_cube(connection: sqlite3.Connection, run_id: str, resume: bool = False) -> None:
+    if resume:
+        completed_levels = {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT DISTINCT grouping_level FROM removal_cube WHERE run_id=?", (run_id,)
+            )
+        }
+    else:
+        connection.execute("DELETE FROM removal_cube WHERE run_id=?", (run_id,))
+        connection.commit()
+        completed_levels = set()
     levels = [
         ("All", False, False, False),
         ("Manufacturer", True, False, False),
@@ -1309,6 +1426,14 @@ def build_removal_cube(connection: sqlite3.Connection, run_id: str) -> None:
         ("Manufacturer × Family × Product", True, True, True),
     ]
     for level, use_m, use_f, use_p in levels:
+        if level in completed_levels:
+            print(f"  Reusing committed removal grouping: {level}", flush=True)
+            continue
+        connection.execute(
+            "DELETE FROM removal_cube WHERE run_id=? AND grouping_level=?", (run_id, level)
+        )
+        connection.commit()
+        print(f"  Building removal grouping: {level}", flush=True)
         m = normalized_dimension("f.manufacturer", use_m)
         fam = normalized_dimension("f.family", use_f)
         prod = normalized_dimension("f.product", use_p)
@@ -1372,7 +1497,8 @@ def build_removal_cube(connection: sqlite3.Connection, run_id: str) -> None:
         """, (run_id, run_id, run_id, run_id, run_id, level, level))
         connection.commit()
     connection.execute(
-        "CREATE INDEX idx_removal_cube_lookup ON removal_cube(run_id,output_file_id,reason_kind,grouping_level,stage_id)"
+        "CREATE INDEX IF NOT EXISTS idx_removal_cube_lookup "
+        "ON removal_cube(run_id,output_file_id,reason_kind,grouping_level,stage_id)"
     )
     connection.commit()
 
@@ -1484,10 +1610,14 @@ def build_reconciliation_qc(
         add_qc(connection, run_id, output_id, "Funnel terminal reconciliation", funnel_terminal, count,
                funnel_terminal == count, "S13 funnel partitions the physical output")
         if output_id == "IN_2025":
-            passed_india = count > EXCEL_MAX_DATA_ROWS and mode == "complete_csv_current_remap" and complete == 1
+            passed_india = (
+                count > EXCEL_MAX_DATA_ROWS
+                and mode in {"complete_csv_current_remap", "complete_partitioned_excel_current_remap"}
+                and complete == 1
+            )
             add_qc(connection, run_id, output_id, "India FY2025 no Excel-cap truncation", count,
-                   f">{EXCEL_MAX_DATA_ROWS} complete_csv_current_remap", passed_india,
-                   "Complete CSV is authoritative; capped workbook is rejected")
+                   f">{EXCEL_MAX_DATA_ROWS} complete current remap", passed_india,
+                   "Complete immutable CSV reconciles to partitioned Excel final output and SQLite authority")
         if output_id.startswith("PK_"):
             bad_nonstandard = connection.execute(
                 "SELECT COUNT(*) FROM row_fact WHERE run_id=? AND output_file_id=? AND nonstandard_tier=1 AND output_tier='Trusted'",
@@ -1624,7 +1754,7 @@ def main() -> int:
         print("Building funnel cube...", flush=True)
         build_funnel_cube(connection, run_id)
         print("Building removal cube...", flush=True)
-        build_removal_cube(connection, run_id)
+        build_removal_cube(connection, run_id, resume=args.resume_building)
         build_baseline_manifest(connection, run_id, repo, config_path, registry_path, sources, Path(__file__).resolve())
         build_reconciliation_qc(connection, run_id, required_ids)
         failed = connection.execute(

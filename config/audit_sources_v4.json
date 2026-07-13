@@ -1,0 +1,64 @@
+{
+  "run_id": "20260713_recall_audit_v4",
+  "fixed_seed": 20260710,
+  "reference_sources": [
+    "reference/brand_model/Surg_Brand_model_list_Master_03July26.xlsx"
+  ],
+  "outputs": [
+    {
+      "output_file_id": "VN_2024",
+      "output_label": "VN 2024",
+      "country": "Vietnam",
+      "fiscal_year": "2024",
+      "path": "outputs/20260713_llm_adjudication/raw_outputs/mapped_results/Vietnam_FY2024_ML_Map_Mapped.xlsx",
+      "ingestion_mode": "governed_uncapped_legacy_excel_migration",
+      "expected_rows": 520835
+    },
+    {
+      "output_file_id": "VN_2025",
+      "output_label": "VN 2025",
+      "country": "Vietnam",
+      "fiscal_year": "2025",
+      "path": "outputs/20260713_llm_adjudication/raw_outputs/mapped_results/Vietnam_FY2025_ML_Map_Mapped.xlsx",
+      "ingestion_mode": "governed_uncapped_legacy_excel_migration",
+      "expected_rows": 558043
+    },
+    {
+      "output_file_id": "PK_2024",
+      "output_label": "Pakistan 2024",
+      "country": "Pakistan",
+      "fiscal_year": "2024",
+      "path": "outputs/20260713_llm_adjudication/raw_outputs/mapped_results/Pakistan_FY2024_ML_Map_Mapped.xlsx",
+      "ingestion_mode": "governed_uncapped_legacy_excel_migration",
+      "expected_rows": 84645
+    },
+    {
+      "output_file_id": "PK_2025",
+      "output_label": "Pakistan 2025",
+      "country": "Pakistan",
+      "fiscal_year": "2025",
+      "path": "outputs/20260713_llm_adjudication/raw_outputs/mapped_results/Pakistan_FY2025_ML_Map_Mapped.xlsx",
+      "ingestion_mode": "governed_uncapped_legacy_excel_migration",
+      "expected_rows": 96293
+    },
+    {
+      "output_file_id": "IN_2024",
+      "output_label": "India 2024",
+      "country": "India",
+      "fiscal_year": "2024",
+      "path": "outputs/20260713_llm_adjudication/raw_outputs/mapped_results/India_FY2024_ML_Map_Mapped.xlsx",
+      "ingestion_mode": "governed_uncapped_legacy_excel_migration",
+      "expected_rows": 631630
+    },
+    {
+      "output_file_id": "IN_2025",
+      "output_label": "India 2025",
+      "country": "India",
+      "fiscal_year": "2025",
+      "path": "outputs/20260713_llm_adjudication/raw_outputs/mapped_results/India_FY2025_ML_Map_Mapped.xlsx",
+      "complete_source_path": "data/uploads/IMP_IN.FY2025.Processed.inscope.csv",
+      "ingestion_mode": "complete_partitioned_excel_current_remap",
+      "expected_rows": 1682283
+    }
+  ]
+}

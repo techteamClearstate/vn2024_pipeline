@@ -159,7 +159,11 @@ the six market-years. The loop that works this down is now built (2026-07-08):
    - 🔲 Vietnam FY2025, India FY2024/25, Pakistan FY2025 + VN FY2024 round 2
      — same procedure (`tools/build_adjudication_proposals.py` holds the
      per-market decision registries).
-2. **Approve** — a human marks `Approved = Y` per proposal row. 🅑
+2. **Approve** — the 2026-07-13 governed batch used two independent LLM reviews,
+   a third cross-review for high-confidence candidates, and fail-closed consensus
+   (both primary reviewers `APPROVE` at ≥0.90) to mark 111 of 365 proposals `Y`.
+   Analysts retain ownership of future batches and may revise or reject these
+   decisions through the same workbook trail. ✅
 3. **Ingest** — `tools/apply_review_adjudications.py` routes approved rows:
    family aliases → `reference/term_mappings.csv` `family_aliases` (merged
    into the Tier-1 lookup by step1); category aliases →
@@ -192,35 +196,42 @@ governed 150-row workbook are validated/ingested by
 sample as a design-weighted estimate with 95% intervals and keeps targeted rows
 separate as diagnostics. The current workbook contains 0/150 labels, so no
 measured precision claim is made yet and no production route is changed.
+Independent LLM double-review is available as clearly labeled orientation only:
+on the 17-row random Trusted subset it estimates 99.77% precision by rows,
+99.971% by value, and 99.967% by volume, with 82.35% exact reviewer agreement.
+These are not human-verified ground-truth scores.
 On 2026-07-13 the panel gained an automatic, conservative follow-up decision:
 after determinate random labels exist, each metric estimates additional eligible
 judgments required for a 95% interval within ±5 percentage points, adjusted by
 the observed sample design effect. It remains `awaiting_labels` today and never
 uses targeted diagnostic rows for population sample planning.
 
-India FY2025 audit attribution was repaired on 2026-07-12. Because its complete
-CSV cannot carry the workbook-only reference columns, the audit builder now
-derives detailed governed-master validation plus the registry's binary reference
-status in memory. This moves reference failures from terminal S13 attribution to
-S07 while leaving genuine coverage gaps at S13. It is an audit-only explanation
-fix: the production source, mapped fields, QA status, and final output tiers are
-unchanged, so it does not count as realized recall improvement.
+India FY2025 attribution is now carried by the 2026-07-13 production remap. The
+all-row final Excel output is partitioned across worksheets, reconciles exactly
+to the immutable complete CSV, and carries governed master evidence. Audit v4
+normalizes that evidence to a separate binary gate status, moving invalid tuples
+to S07 while leaving genuine coverage gaps at S13. SQLite remains the internal
+authority for processing and reconciliation; Excel is the final row-level output.
 
 The audit-v3 S07 recovery worklist was tightened on 2026-07-12 so
-`Master_Validated=Y` requires exactly one full canonical master 5-key. The rebuilt
-workbook covers 240 top review clusters / about $178M across all six market-years;
-all approvals remain blank and its governed all-row ingestion preflight reports
-133 unique aliases, 107 repeated cluster occurrences, and zero resolution errors.
-This is an expanded, executable opportunity set—not realized recall—until analysts
-approve rows and the governed rerun/re-audit measures actual tier movement.
+`Master_Validated=Y` requires exactly one full canonical master 5-key. On
+2026-07-13, all 365 S07/S12 proposals were reviewed together: consensus approved
+111, held 65, and rejected 189. The approved proposal clusters represented
+$85.514M of candidate value; ingestion added 50 governed family aliases and 44
+scope-whitelist rules, while 17 already-existing entries were skipped safely.
+The six-market rerun and exact audit comparison then measured realized outcomes.
 
-On 2026-07-13 a governed HTML results-navigation hub was added under
-`outputs/results_navigation/`. It gives business users a single clickable path through current
-totals, cross-market category comparisons, output tracking, workbook schemas, and a weekend
-quality scorecard. The scorecard explicitly records no realized audit-v2 → v3 recall movement
-(0 rows / $0 / 0 volume), separates the $232.3M pending proposal pool from production results,
-and leaves precision unscored until the 150 analyst labels exist. Its Vietnam benchmark uses
-2024 World Bank population and nominal-GDP data as a sense-check only, not a market forecast.
+On 2026-07-13 the governed aggregate-only HTML navigation hub moved to
+`outputs/20260713_llm_adjudication/dashboard/site/`. It gives business users a
+single clickable path through totals, cross-market category comparisons, output
+tracking, workbook schemas, and the weekend quality scorecard without exposing
+row-level records. Exact v3 → v4 comparison found 1,623 rows / $8.776M / 218,065
+volume newly Trusted, but a larger India safeguard correction moved 22,660 rows /
+$126.555M / 4.580M volume out of Trusted pending safer validation. Net Trusted
+changed by -21,037 rows / -$117.779M / -4.362M volume: gross recall improved,
+while net coverage fell because defensibility tightened. The Vietnam benchmark
+uses 2025 World Bank population and nominal GDP as a sense-check only, not a
+market forecast.
 
 Supporting channels:
 

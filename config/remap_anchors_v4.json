@@ -1,0 +1,26 @@
+{
+  "Pakistan_2024": {
+    "trusted_rows": 2936,
+    "trusted_value": 46301542.00
+  },
+  "Pakistan_2025": {
+    "trusted_rows": 3099,
+    "trusted_value": 58045913.37
+  },
+  "India_2024": {
+    "trusted_rows": 163956,
+    "trusted_value": 688597044.11
+  },
+  "India_2025": {
+    "trusted_rows": 221195,
+    "trusted_value": 990167155.20
+  },
+  "Vietnam_2024": {
+    "trusted_rows": 52775,
+    "trusted_value": 261974219.41
+  },
+  "Vietnam_2025": {
+    "trusted_rows": 55940,
+    "trusted_value": 252759867.37
+  }
+}

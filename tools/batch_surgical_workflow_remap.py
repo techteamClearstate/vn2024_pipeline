@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import json
 import math
 import os
 import re
@@ -29,6 +30,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools import vietnam_fy2024_workflow_improvement as wf  # noqa: E402
+from config import settings as cfg  # noqa: E402
+from src.step3_map import apply_reference_gate  # noqa: E402
 
 
 INPUT_DIR = ROOT / "outputs"
@@ -85,6 +88,16 @@ RAW_SIGNAL_COLUMNS = [
     "Product_V0",
     "Brand",
     "Model",
+]
+
+# Family aliases are learned/adjudicated against the source product description,
+# not against mapping columns that a previous run already populated.  Keeping
+# this list deliberately narrow prevents an old Family/Manufacturer value from
+# becoming self-confirming evidence in a later remap.
+ALIAS_SOURCE_COLUMNS = [
+    "Detailed_Product",
+    "Product_Description",
+    "Description",
 ]
 
 MAX_CANDIDATE_EXTRA_ROWS_PER_METHOD = 25_000
@@ -368,8 +381,41 @@ def regex_contains(series: pd.Series, pattern: re.Pattern | str) -> pd.Series:
     return series.astype("string").str.contains(str(pattern), regex=True, na=False)
 
 
+def configured_complete_source(path: Path) -> Path | None:
+    """Return the governed complete mapped source for an Excel-capped market.
+
+    The audit-source registry is the authority for exceptional ingestion.  In
+    particular, India FY2025 has more rows than one Excel worksheet can hold,
+    so reading the legacy workbook's ``RawData`` sheet would silently discard
+    more than 600k rows.
+    """
+    config_path = ROOT / "config" / "audit_sources.json"
+    if not config_path.exists():
+        return None
+    country, year = parse_country_year(path)
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    for source in config.get("outputs", []):
+        if (
+            source.get("country") == country
+            and str(source.get("fiscal_year")) == str(year)
+            and source.get("ingestion_mode") == "complete_csv_current_remap"
+        ):
+            candidate = ROOT / str(source["path"])
+            if not candidate.is_file():
+                raise FileNotFoundError(
+                    f"Governed complete source is missing for {country} FY{year}: {candidate}"
+                )
+            return candidate
+    return None
+
+
 def read_raw(path: Path) -> pd.DataFrame:
-    raw = pd.read_excel(path, sheet_name="RawData", dtype=str)
+    complete_source = configured_complete_source(path)
+    if complete_source is not None:
+        log_step(f"{path.name}: using complete source {complete_source.relative_to(ROOT)}")
+        raw = pd.read_csv(complete_source, dtype=str, low_memory=False)
+    else:
+        raw = pd.read_excel(path, sheet_name="RawData", dtype=str)
     raw = raw.fillna("")
     for column in [VALUE_COL, QUANTITY_COL, "ASP_USD"]:
         if column in raw.columns:
@@ -407,6 +453,122 @@ def ensure_base_columns(df: pd.DataFrame) -> pd.DataFrame:
     if "Original_Detailed_Product" not in out.columns and "Detailed_Product" in out.columns:
         out["Original_Detailed_Product"] = out["Detailed_Product"].astype(str)
     return out
+
+
+def apply_governed_family_aliases(
+    baseline: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Apply adjudicated family aliases to non-Trusted rows before rerouting.
+
+    The normal end-to-end mapper merges ``cfg.FAMILY_ALIASES`` into its Tier-1
+    lookup.  This batch workflow starts from governed, already-mapped workbooks,
+    so it must reproduce that narrowly-scoped step or approved aliases would not
+    affect the rerun.  Every hit is still sent through the standard reference and
+    scope gate; this function never grants Trusted status directly.
+    """
+    aliases = getattr(cfg, "FAMILY_ALIASES", {})
+    if not aliases:
+        return baseline, pd.DataFrame(
+            columns=["Change_Type", "Rows", "Value_USD", "Rule"]
+        )
+
+    parsed: dict[str, tuple[str, str, str, str, str]] = {}
+    for term, key5 in aliases.items():
+        parts = tuple(part.strip() for part in str(key5).split("|"))
+        if len(parts) != 5:
+            raise ValueError(
+                f"Governed family alias {term!r} has malformed five-key value {key5!r}"
+            )
+        parsed[str(term).strip().lower()] = parts  # type: ignore[assignment]
+
+    source_columns = [column for column in ALIAS_SOURCE_COLUMNS if column in baseline.columns]
+    if not source_columns:
+        return baseline, pd.DataFrame(
+            columns=["Change_Type", "Rows", "Value_USD", "Rule"]
+        )
+
+    description = baseline[source_columns[0]].fillna("").astype(str)
+    for column in source_columns[1:]:
+        description = description.str.cat(
+            baseline[column].fillna("").astype(str), sep=" "
+        )
+
+    # Match the same whole-word semantics as the Tier-1 pipeline matcher.  Terms
+    # are longest-first so a specific model wins over a shorter nested family.
+    ordered_terms = sorted(parsed, key=len, reverse=True)
+    alternation = "|".join(re.escape(term) for term in ordered_terms)
+    extracted = description.str.extract(
+        rf"(?i)(?<![a-z0-9])({alternation})(?![a-z0-9])", expand=False
+    ).fillna("").str.lower()
+
+    eligible = extracted.ne("") & ~wf.output_tier(baseline).eq("Trusted_Dashboard")
+    if "HS4" in baseline.columns:
+        hs4 = pd.to_numeric(baseline["HS4"], errors="coerce")
+        excluded_hs4 = set(getattr(cfg, "SCOPE_EXCLUDE_HS4", set()))
+        if excluded_hs4:
+            eligible &= ~hs4.isin(excluded_hs4)
+    dental_cues = tuple(getattr(cfg, "DENTAL_NEGATIVE_CUES", ()))
+    if dental_cues:
+        description_lower = description.str.lower()
+        dental = pd.Series(False, index=baseline.index)
+        for cue in dental_cues:
+            dental |= description_lower.str.contains(str(cue).lower(), regex=False, na=False)
+        eligible &= ~dental
+
+    if not bool(eligible.any()):
+        return baseline, pd.DataFrame(
+            columns=["Change_Type", "Rows", "Value_USD", "Rule"]
+        )
+
+    out = baseline.copy()
+    for column in ["Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family"]:
+        audit_column = f"Pre_Adjudication_{column.replace('-', '_')}"
+        if audit_column not in out.columns:
+            out[audit_column] = out[column].fillna("").astype(str)
+
+    matched_terms = extracted.loc[eligible]
+    for term, index in matched_terms.groupby(matched_terms).groups.items():
+        segment, subsegment, product, player, family = parsed[term]
+        out.loc[index, ["Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family"]] = [
+            segment,
+            subsegment,
+            product,
+            player,
+            family,
+        ]
+        out.loc[index, "Match_Status"] = "Matched"
+        out.loc[index, "Match_Tier"] = "family"
+        out.loc[index, "Match_Confidence"] = "high"
+        if "HS4" in out.columns:
+            surgical = pd.to_numeric(out.loc[index, "HS4"], errors="coerce").isin(
+                cfg.SURGICAL_HS4
+            )
+            out.loc[index, "Match_Scope"] = surgical.map(
+                {True: cfg.SCOPE_SURGICAL_LABEL, False: cfg.SCOPE_EXTENDED_LABEL}
+            )
+        out.loc[index, "Adjudicated_Family_Alias"] = term
+        out.loc[index, "Adjudicated_Alias_Applied"] = "Y"
+
+    # Re-run the production reference/scope decision tree only for changed rows.
+    # This recomputes Ref_Valid, Scope_Flag, QA_Status and Dash_Include and makes
+    # approval necessary but never sufficient for a row to become Trusted.
+    gated = apply_reference_gate(out.loc[eligible].copy())
+    for column in gated.columns:
+        if column not in out.columns:
+            out[column] = ""
+    out.loc[eligible, gated.columns] = gated
+
+    change_rows = []
+    for term, index in matched_terms.groupby(matched_terms).groups.items():
+        change_rows.append(
+            {
+                "Change_Type": f"Governed LLM-adjudicated family alias: {term}",
+                "Rows": int(len(index)),
+                "Value_USD": value_usd(out.loc[index]),
+                "Rule": "Approved alias; then standard reference/scope gate",
+            }
+        )
+    return out, pd.DataFrame(change_rows)
 
 
 def strong_product_support(df: pd.DataFrame, ev: pd.DataFrame) -> pd.Series:
@@ -2052,24 +2214,21 @@ def write_cell(worksheet: Any, row: int, col: int, value: Any, text_format: Any 
     worksheet.write_string(row, col, text, text_format)
 
 
-def write_df(workbook: Any, sheet_name: str, df: pd.DataFrame, max_rows: int = EXCEL_MAX_DATA_ROWS) -> None:
+def _write_df_part(workbook: Any, sheet_name: str, frame: pd.DataFrame) -> None:
     worksheet = workbook.add_worksheet(clean_sheet_name(sheet_name))
     header_format = workbook.add_format({"bold": True, "bg_color": "#D9EAF7", "border": 1})
     text_format = workbook.add_format({"text_wrap": False})
-    if df is None:
-        df = pd.DataFrame()
-    if df.empty:
+    if frame.empty:
         worksheet.write_row(0, 0, ["Note"], header_format)
         worksheet.write_string(1, 0, "No rows")
         worksheet.freeze_panes(1, 0)
         worksheet.set_column(0, 0, 22)
         return
 
-    frame = df.reset_index(drop=True)
     columns = [str(column) for column in frame.columns]
     worksheet.write_row(0, 0, columns, header_format)
-    write_rows = min(len(frame), max_rows)
-    for excel_row, values in enumerate(frame.iloc[:write_rows].itertuples(index=False, name=None), start=1):
+    write_rows = len(frame)
+    for excel_row, values in enumerate(frame.itertuples(index=False, name=None), start=1):
         for col_idx, value in enumerate(values):
             write_cell(worksheet, excel_row, col_idx, value, text_format)
     worksheet.freeze_panes(1, 0)
@@ -2078,6 +2237,20 @@ def write_df(workbook: Any, sheet_name: str, df: pd.DataFrame, max_rows: int = E
         sample = frame.iloc[:100, col_idx].map(lambda value: "" if pd.isna(value) else str(value))
         width = min(max([len(column), *(sample.map(len).tolist() or [0])]) + 2, 42)
         worksheet.set_column(col_idx, col_idx, width)
+
+
+def write_df(workbook: Any, sheet_name: str, df: pd.DataFrame, max_rows: int = EXCEL_MAX_DATA_ROWS) -> None:
+    """Write every row, splitting oversized tables across numbered sheets."""
+    if df is None:
+        df = pd.DataFrame()
+    frame = df.reset_index(drop=True)
+    if len(frame) <= max_rows:
+        _write_df_part(workbook, sheet_name, frame)
+        return
+    for start in range(0, len(frame), max_rows):
+        part_number = start // max_rows + 1
+        part_name = sheet_name if part_number == 1 else f"{sheet_name}_Part_{part_number}"
+        _write_df_part(workbook, part_name, frame.iloc[start : start + max_rows].reset_index(drop=True))
 
 
 def write_workbook(path: Path, tables: OrderedDict[str, pd.DataFrame]) -> None:
@@ -2242,8 +2415,17 @@ def process_one(path: Path, master_keys: wf.MasterKeys) -> tuple[Path, Path, dic
     log_step(f"{path.name}: building baseline metrics")
     before_metrics = metrics_snapshot(country, year, "A0 Baseline", baseline, before_ev, 0, full_recall_screen=False)
 
+    log_step(f"{path.name}: applying governed adjudicated aliases")
+    adjudicated, alias_changes = apply_governed_family_aliases(baseline)
+    adjudicated_ev = wf.build_evidence(adjudicated, master_keys)
     log_step(f"{path.name}: routing rows")
-    improved, ev, changes = route_file(raw, master_keys, baseline=baseline, ev=before_ev)
+    improved, ev, route_changes = route_file(
+        adjudicated,
+        master_keys,
+        baseline=adjudicated,
+        ev=adjudicated_ev,
+    )
+    changes = pd.concat([alias_changes, route_changes], ignore_index=True)
     runtime = time.perf_counter() - start
     log_step(f"{path.name}: building improved metrics and validation")
     after_metrics = metrics_snapshot(country, year, "A1 Recall/Evidence Remap", improved, ev, runtime)
@@ -2282,7 +2464,7 @@ def process_one(path: Path, master_keys: wf.MasterKeys) -> tuple[Path, Path, dic
         f"validation_failures={fail_count}",
         flush=True,
     )
-    del raw, baseline, before_ev, improved, ev, workbook_tables, qa_tables
+    del raw, baseline, before_ev, adjudicated, adjudicated_ev, improved, ev, workbook_tables, qa_tables
     SOURCE_TEXT_NORM_CACHE.clear()
     gc.collect()
     return output_path, report_path, consolidated

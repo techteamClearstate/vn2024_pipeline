@@ -146,16 +146,22 @@ def verify(database: Path, workbook: Path | None, html_path: Path | None) -> dic
             require(tuple(sample) == (25, 12, 13, 0, 0), f"{output_id} sample design is invalid: {tuple(sample)}")
 
         india = connection.execute("SELECT * FROM source_file WHERE output_file_id='IN_2025'").fetchone()
-        require(india["source_format"].lower() == "csv" and india["observed_rows"] > 1_048_575,
-                "India FY2025 must use its complete uncapped CSV.")
-        require(india["ingestion_mode"] == "complete_csv_current_remap", "India FY2025 ingestion mode is incorrect.")
+        require(
+            india["source_format"].lower() == "xlsx" and india["observed_rows"] > 1_048_575,
+            "India FY2025 must use its complete partitioned Excel final output.",
+        )
+        require(
+            india["ingestion_mode"] == "complete_partitioned_excel_current_remap",
+            "India FY2025 ingestion mode is incorrect.",
+        )
         require(
             Path(india["source_path"]).resolve() != Path(india["complete_source_path"]).resolve(),
             "India FY2025 must retain distinct mapped-current and immutable-complete lineage.",
         )
         require(
-            "governed master validation v1" in india["completeness_basis"].lower(),
-            "India FY2025 must disclose its audit-only governed master enrichment.",
+            "immutable raw csv" in india["completeness_basis"].lower()
+            and "sqlite remains the audit authority" in india["completeness_basis"].lower(),
+            "India FY2025 must disclose its immutable-CSV reconciliation and SQLite authority.",
         )
         india_master_statuses = {
             row[0] for row in connection.execute(
