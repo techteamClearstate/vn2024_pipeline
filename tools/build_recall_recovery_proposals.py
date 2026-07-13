@@ -205,7 +205,7 @@ def main() -> None:
         if v > d["quote_v"]:
             d["quote_v"], d["quote"] = v, (desc or "")[:180]
     for (country, fy, mfr, fam), d in sorted(s12.items(), key=lambda kv: -kv[1]["value"]):
-        phrase_rx = r"\\b" + r"\\s+".join(re.escape(w) for w in _norm(fam).split()) + r"\\b"
+        phrase_rx = r"\b" + r"\s+".join(re.escape(w) for w in _norm(fam).split()) + r"\b"
         rows.append({
             "Market": country, "FY": fy,
             "Cluster_QA_Status": "Review - ophthalmic/imaging guard",

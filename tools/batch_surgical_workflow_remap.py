@@ -381,13 +381,21 @@ def regex_contains(series: pd.Series, pattern: re.Pattern | str) -> pd.Series:
     return series.astype("string").str.contains(str(pattern), regex=True, na=False)
 
 
-def configured_complete_source(path: Path) -> Path | None:
-    """Return the governed complete mapped source for an Excel-capped market.
+def configured_complete_source(path: Path) -> tuple[Path, int | None] | None:
+    """Return the governed complete RAW source for an Excel-capped market.
 
     The audit-source registry is the authority for exceptional ingestion.  In
     particular, India FY2025 has more rows than one Excel worksheet can hold,
     so reading the legacy workbook's ``RawData`` sheet would silently discard
     more than 600k rows.
+
+    Uses the registry's ``complete_source_path`` — the immutable governed raw
+    upload under ``data/uploads/`` — and NEVER ``path``, which points at
+    ``data/intermediate/vn_v0_mapped.csv``: a single mutable cache shared by
+    every market/year run through ``run_pipeline.py`` and already fully MAPPED
+    by whichever market ran last. Reading that file here would either raise
+    ``FileNotFoundError`` on a clean checkout or, worse, silently remap this
+    market/year from a different market's cached mapping.
     """
     config_path = ROOT / "config" / "audit_sources.json"
     if not config_path.exists():
@@ -400,20 +408,33 @@ def configured_complete_source(path: Path) -> Path | None:
             and str(source.get("fiscal_year")) == str(year)
             and source.get("ingestion_mode") == "complete_csv_current_remap"
         ):
-            candidate = ROOT / str(source["path"])
+            complete_source_path = source.get("complete_source_path")
+            if not complete_source_path:
+                raise ValueError(
+                    f"Governed source registry is missing complete_source_path for {country} FY{year}"
+                )
+            candidate = ROOT / str(complete_source_path)
             if not candidate.is_file():
                 raise FileNotFoundError(
                     f"Governed complete source is missing for {country} FY{year}: {candidate}"
                 )
-            return candidate
+            expected_rows = source.get("expected_rows")
+            return candidate, (int(expected_rows) if expected_rows is not None else None)
     return None
 
 
 def read_raw(path: Path) -> pd.DataFrame:
     complete_source = configured_complete_source(path)
     if complete_source is not None:
-        log_step(f"{path.name}: using complete source {complete_source.relative_to(ROOT)}")
-        raw = pd.read_csv(complete_source, dtype=str, low_memory=False)
+        candidate, expected_rows = complete_source
+        log_step(f"{path.name}: using complete source {candidate.relative_to(ROOT)}")
+        raw = pd.read_csv(candidate, dtype=str, low_memory=False)
+        if expected_rows is not None and len(raw) != expected_rows:
+            raise ValueError(
+                f"Governed complete source row count mismatch for "
+                f"{candidate.relative_to(ROOT)}: expected {expected_rows:,} rows, "
+                f"found {len(raw):,}. Refusing to remap with an unverified source."
+            )
     else:
         raw = pd.read_excel(path, sheet_name="RawData", dtype=str)
     raw = raw.fillna("")

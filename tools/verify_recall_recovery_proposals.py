@@ -79,7 +79,7 @@ def _verify_s12(frame, db: Path) -> tuple[int, int, float]:
             errors.append(f"row {excel_row}: S12 cluster absent from authority/evidence subset")
             continue
         family = _text(row["Cluster_Family"])
-        expected_regex = r"\\b" + r"\\s+".join(re.escape(w) for w in _norm(family).split()) + r"\\b"
+        expected_regex = r"\b" + r"\s+".join(re.escape(w) for w in _norm(family).split()) + r"\b"
         checks = {
             "Target_Table": _text(row["Target_Table"]) == "surgical_context_whitelist",
             "Family_In_Evidence": _text(row["Family_In_Evidence"]).upper() == "Y",
