@@ -9,3 +9,8 @@ data/intermediate/
 
 # Row-grain audit authorities and their review artifacts are regenerable and can be multi-GB.
 outputs/20260710_recall_audit_v2/
+outputs/20260712_recall_audit_v3/
+
+# Scratch working directory for the LLM cross-review adjudication pass
+# (packets, raw model outputs, node_modules symlink) — regenerable, not a deliverable.
+outputs/20260713_llm_adjudication/

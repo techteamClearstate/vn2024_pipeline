@@ -24,3 +24,4 @@ surgical_context_whitelist,usage,scope_adjudication,term_list,regex,SURGICAL_CON
 generic_token_families,exclusion,generic,term_list,loose_label,GENERIC_TOKENS,"step3_map, tools/reference_compliance",Generic-looking family labels that require capital-equipment sanity check.
 capital_equipment_cues,exclusion,scope_exclude,term_list,regex,CAPITAL_EQUIPMENT_CUES,"step3_map, tools/reference_compliance",Description cues that make a generic-token family suspicious.
 surgical_candidate_terms,usage,qa_recall,term_list,regex,SURGICAL_CANDIDATE_TERMS,tools/reference_compliance,Recall-audit terms for unmatched surgical candidates in DQ reports.
+surgical_manufacturer_rescue,inclusion,manufacturer,term_list,exact_norm_party,SURGICAL_MANUFACTURER_RESCUE,step3_map,"Known surgical makers whose family rows may be rescued at S07/S12 when the category tuple is master-valid and the family token is evidenced in the description."

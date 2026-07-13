@@ -226,6 +226,23 @@ def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
     master = _reference_master()
     relabels = 0
 
+    # Known-surgical-manufacturer rescue (S07b/S12b). Governed maker list,
+    # norm_party on both sides — the same normalization Tier-3 alias matching
+    # uses on trade-party text. Empty set disables both softenings exactly.
+    rescue_set = ({norm_party(t) for t in getattr(cfg, "SURGICAL_MANUFACTURER_RESCUE", ())}
+                  if getattr(cfg, "MANUFACTURER_RESCUE", False) else set())
+    rescue_set.discard("")
+    rescue = pd.Series("", index=out.index, dtype=object)
+    if rescue_set:
+        mfr_vals = out["Manufacturer"].fillna("").astype(str)
+        rescue_maker = mfr_vals.map(
+            {v: norm_party(v) in rescue_set for v in mfr_vals.unique()})
+    else:
+        rescue_maker = pd.Series(False, index=out.index)
+    desc_raw = (out[cfg.VN_DESCRIPTION_COL].fillna("").astype(str)
+                if cfg.VN_DESCRIPTION_COL in out.columns
+                else pd.Series("", index=out.index))
+
     if master is None:
         qa.loc[tier.eq("manufacturer")] = cfg.QA_AUDIT_MFR
         qa.loc[matched & bound] = cfg.QA_REVIEW_NOREF
@@ -256,6 +273,32 @@ def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
                 qa.loc[idx] = cfg.QA_REVIEW_GEN
                 relabels += len(idx)
                 continue
+            # S07b — known-surgical-maker rescue: the exact 5-tuple is missing
+            # from the master, but the maker is a governed surgical company AND
+            # the (Segment, Sub-segment, Product) category is master-valid. Only
+            # rows whose family token is evidenced in the description are
+            # trusted (the recall audit sized non-evidenced holds as spurious
+            # relabel artifacts); the remainder falls through to review below.
+            if rescue_set and norm_party(combo[3]) in rescue_set:
+                cat_ok = exact[:3] in master["category_exact"]
+                cat_canon = None if cat_ok else master["category_loose"].get(loose[:3])
+                if cat_ok or cat_canon is not None:
+                    fam_norm = norm_loose(combo[4])
+                    if getattr(cfg, "RESCUE_REQUIRE_EVIDENCE", True):
+                        evid = pd.Index([i for i in idx
+                                         if fam_norm and fam_norm in norm_loose(desc_raw.at[i])])
+                    else:
+                        evid = idx if fam_norm else pd.Index([])
+                    if len(evid):
+                        if cat_canon is not None:
+                            _align_category(out, evid, cat_canon)
+                        ref_valid.loc[evid] = "Y"
+                        qa.loc[evid] = cfg.QA_MAPPED
+                        rescue.loc[evid] = "S07"
+                        idx = idx.difference(evid)
+                        if not len(idx):
+                            continue
+
             conflict_cats = master["pf_cats"].get(loose[3:5])
             if conflict_cats:
                 qa.loc[idx] = cfg.QA_REVIEW_CAT
@@ -322,6 +365,15 @@ def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
                     scope_flag.at[i] = ""
                     continue
 
+            # S12b — reference-valid rows from governed surgical makers bypass
+            # the negative-scope cues (a known maker's in-reference product is
+            # presumed surgical even when its description trips an imaging/
+            # dental/etc. keyword).
+            if rescue_maker.at[i] and ref_valid.at[i] == "Y":
+                scope_flag.at[i] = ""
+                rescue.at[i] = (rescue.at[i] + "+S12") if rescue.at[i] else "S12"
+                continue
+
             scope_flag.at[i] = flag
             if qa.at[i] in (cfg.QA_MAPPED, cfg.QA_AUDIT_HSPRIOR, ""):
                 qa.at[i] = cfg.QA_REVIEW_SCOPE + ": " + flag
@@ -348,10 +400,13 @@ def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
     out[cfg.SCOPE_FLAG_COL] = scope_flag
     out[cfg.DASH_INCLUDE_COL] = np.where(include, "Y", "")
     out[cfg.QA_STATUS_COL] = qa
+    out[getattr(cfg, "RESCUE_FLAG_COL", "Rescue_Flag")] = rescue
 
     if master is not None:
         bad_full = 0
-        for combo in out.loc[include & tier.eq("family"), DIM_COLS].fillna("").astype(str).drop_duplicates().itertuples(index=False, name=None):
+        # S07-rescued rows are exempt from the exact 5-tuple invariant by design;
+        # they remain covered by the category invariant below.
+        for combo in out.loc[include & tier.eq("family") & rescue.eq(""), DIM_COLS].fillna("").astype(str).drop_duplicates().itertuples(index=False, name=None):
             if tuple(norm_exact(v) for v in combo) not in master["full_exact"]:
                 bad_full += 1
         bad_cat = 0
@@ -362,6 +417,8 @@ def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
         scope_rx, whitelist_rx, _ = _scope_regexes()
         desc_lc = _scope_text(out)
         for i in out.index[include]:
+            if rescue_maker.at[i]:      # S12b bypass is a sanctioned release
+                continue
             group, keyword = _scope_hit(desc_lc.at[i], scope_rx, whitelist_rx)
             if group is None:
                 continue
@@ -380,9 +437,11 @@ def apply_reference_gate(out: pd.DataFrame) -> pd.DataFrame:
     n_scope = int((bound & scope_flag.ne("")).sum())
     n_ext = int(qa.eq(cfg.QA_REVIEW_EXT).sum())
     n_ref = int(ref_valid.eq("Y").sum())
+    n_rescue = int(rescue.ne("").sum())
     print(f"  [ref-gate] {n_inc:,}/{n_bound:,} bound rows trusted "
           f"({n_ref:,} reference-valid; {n_ext:,} Extended-review; "
-          f"{n_scope:,} scope-excluded; {relabels:,} relabelled)")
+          f"{n_scope:,} scope-excluded; {relabels:,} relabelled; "
+          f"{n_rescue:,} maker-rescued)")
     return out
 
 

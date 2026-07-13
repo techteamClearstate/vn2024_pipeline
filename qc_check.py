@@ -188,8 +188,14 @@ def main(remap_report: Path | None = None, remap_anchors_json: Path | None = Non
     if ref is not None:
         dim_cols = ["Segment", "Sub-segment", "Product_V0", "Manufacturer", "Family"]
         cat_cols = dim_cols[:3]
+        # Maker-rescued (S07b) rows are exempt from the exact 5-tuple check by
+        # design (governed surgical maker + master-valid category + family token
+        # evidenced in the description); they still face the category check.
+        rescue_col = getattr(cfg, "RESCUE_FLAG_COL", "Rescue_Flag")
+        not_rescued = (~df[rescue_col].str.contains("S07", na=False)
+                       if rescue_col in df.columns else pd.Series(True, index=df.index))
         bad_family = 0
-        for combo in df.loc[include & (df[tier] == "family"), dim_cols].drop_duplicates().itertuples(index=False, name=None):
+        for combo in df.loc[include & (df[tier] == "family") & not_rescued, dim_cols].drop_duplicates().itertuples(index=False, name=None):
             if tuple(_norm_exact(v) for v in combo) not in ref["full_exact"]:
                 bad_family += 1
         bad_category = 0
